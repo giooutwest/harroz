@@ -297,9 +297,9 @@ const MessagesTab = ({ isPixelTheme = false, onFriendClick }: MessagesTabProps) 
   // Conversation view
   if (selectedFriend) {
     return (
-      <div className="flex flex-col h-[calc(100vh-140px)]">
+      <div className="flex flex-col" style={{ height: 'calc(100vh - 140px)' }}>
         {/* Header */}
-        <div className={`flex items-center gap-3 p-4 border-b border-border bg-card ${isPixelTheme ? "" : "rounded-t-xl"}`}>
+        <div className={`flex-shrink-0 flex items-center gap-3 p-4 border-b border-border bg-card ${isPixelTheme ? "" : "rounded-t-xl"}`}>
           <button
             onClick={() => setSelectedFriend(null)}
             className="p-2 hover:bg-secondary rounded-full transition-colors"
@@ -365,7 +365,7 @@ const MessagesTab = ({ isPixelTheme = false, onFriendClick }: MessagesTabProps) 
         </div>
 
         {/* Input */}
-        <div className="p-4 border-t border-border bg-card">
+        <div className="flex-shrink-0 p-4 border-t border-border bg-card">
           <div className="flex gap-2">
             <Input
               placeholder="Type a message..."
