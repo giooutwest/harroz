@@ -1,0 +1,298 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap');
+
+@layer base {
+  :root {
+    /* Dark theme - Pure black aesthetic */
+    --background: 0 0% 0%;
+    --foreground: 0 0% 98%;
+
+    --card: 0 0% 5%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 0 0% 5%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 0 0% 98%;
+    --primary-foreground: 0 0% 0%;
+
+    --secondary: 0 0% 12%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 60%;
+
+    --accent: 0 0% 15%;
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 0 0% 15%;
+    --input: 0 0% 15%;
+    --ring: 0 0% 98%;
+
+    --radius: 1rem;
+
+    /* Mood colors */
+    --mood-1: 0 70% 50%;
+    --mood-2: 15 70% 50%;
+    --mood-3: 30 80% 55%;
+    --mood-4: 40 85% 55%;
+    --mood-5: 50 90% 55%;
+    --mood-6: 55 85% 55%;
+    --mood-7: 120 50% 45%;
+    --mood-8: 140 55% 45%;
+    --mood-9: 210 80% 55%;
+    --mood-10: 220 85% 60%;
+
+    /* Pixel art theme colors */
+    --pixel-bg: 260 30% 12%;
+    --pixel-primary: 280 80% 65%;
+    --pixel-secondary: 320 70% 55%;
+    --pixel-accent: 180 80% 60%;
+
+    /* Tab bar */
+    --tab-bar: 0 0% 8%;
+    --tab-active: 0 0% 98%;
+    --tab-inactive: 0 0% 45%;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .theme-pixel {
+    --background: 260 30% 8%;
+    --foreground: 60 100% 95%;
+    --card: 260 30% 12%;
+    --card-foreground: 60 100% 95%;
+    --primary: 280 80% 65%;
+    --primary-foreground: 260 30% 8%;
+    --secondary: 320 70% 55%;
+    --secondary-foreground: 60 100% 95%;
+    --muted: 260 20% 20%;
+    --muted-foreground: 260 20% 60%;
+    --accent: 180 80% 60%;
+    --accent-foreground: 260 30% 8%;
+    --border: 280 40% 25%;
+    --tab-bar: 260 30% 10%;
+    --tab-active: 280 80% 65%;
+    --tab-inactive: 260 20% 50%;
+  }
+
+  .theme-fruit {
+    --background: 350 60% 97%;
+    --foreground: 350 40% 20%;
+    --card: 350 50% 95%;
+    --card-foreground: 350 40% 20%;
+    --primary: 350 70% 60%;
+    --primary-foreground: 350 60% 97%;
+    --secondary: 30 80% 90%;
+    --secondary-foreground: 30 50% 25%;
+    --muted: 350 30% 90%;
+    --muted-foreground: 350 20% 45%;
+    --accent: 30 90% 70%;
+    --accent-foreground: 30 50% 20%;
+    --border: 350 40% 85%;
+    --input: 350 40% 90%;
+    --ring: 350 70% 60%;
+    --tab-bar: 350 50% 93%;
+    --tab-active: 350 70% 55%;
+    --tab-inactive: 350 25% 60%;
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 98%;
+  }
+
+  /* Cute sticker backdrop for fruit theme */
+  .theme-fruit::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    z-index: 0;
+    background-image: 
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Ctext x='30' y='35' font-size='20' text-anchor='middle' opacity='0.08'%3E🍓%3C/text%3E%3C/svg%3E"),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Ctext x='40' y='45' font-size='18' text-anchor='middle' opacity='0.06'%3E🍑%3C/text%3E%3C/svg%3E"),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='70' height='70' viewBox='0 0 70 70'%3E%3Ctext x='35' y='40' font-size='16' text-anchor='middle' opacity='0.07'%3E🍒%3C/text%3E%3C/svg%3E"),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90' viewBox='0 0 90 90'%3E%3Ctext x='45' y='50' font-size='22' text-anchor='middle' opacity='0.05'%3E🌸%3C/text%3E%3C/svg%3E"),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Ctext x='50' y='55' font-size='20' text-anchor='middle' opacity='0.06'%3E💕%3C/text%3E%3C/svg%3E"),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='75' height='75' viewBox='0 0 75 75'%3E%3Ctext x='37' y='42' font-size='18' text-anchor='middle' opacity='0.07'%3E🍇%3C/text%3E%3C/svg%3E");
+    background-position: 
+      0 0,
+      30px 40px,
+      60px 20px,
+      15px 70px,
+      80px 60px,
+      45px 10px;
+  }
+
+  .theme-fruit > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Calligraphy / White theme (sleek, serif + script headings) */
+  .theme-calligraphy {
+    --background: 0 0% 100%;
+    --foreground: 220 6% 12%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 6% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 6% 12%;
+
+    --primary: 45 90% 55%; /* subtle warm gold */
+    --primary-foreground: 220 6% 12%;
+
+    --secondary: 220 10% 96%;
+    --secondary-foreground: 220 6% 12%;
+
+    --muted: 220 8% 94%;
+    --muted-foreground: 220 6% 36%;
+
+    --accent: 45 85% 65%;
+    --accent-foreground: 220 6% 12%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 220 8% 92%;
+    --input: 220 8% 96%;
+    --ring: 45 90% 60%;
+
+    --radius: 1rem;
+
+    /* Tab bar */
+    --tab-bar: 220 8% 98%;
+    --tab-active: 45 90% 55%;
+    --tab-inactive: 220 8% 70%;
+
+    /* Sidebar tweaks */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 220 6% 12%;
+    --sidebar-primary: 220 8% 96%;
+    --sidebar-primary-foreground: 220 6% 12%;
+    --sidebar-accent: 45 90% 65%;
+    --sidebar-accent-foreground: 220 6% 12%;
+    --sidebar-border: 220 8% 92%;
+    --sidebar-ring: 45 90% 60%;
+
+    font-family: 'Playfair Display', Georgia, serif;
+  }
+
+  /* Script headings for calligraphy theme */
+  .theme-calligraphy h1,
+  .theme-calligraphy h2,
+  .theme-calligraphy h3,
+  .theme-calligraphy .splash-title {
+    font-family: 'Great Vibes', 'Playfair Display', serif;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  /* Safe area support for notched phones */
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top, 0);
+  }
+}
+
+@layer components {
+  /* Mood circle colors */
+  .mood-1, .mood-2 { @apply bg-mood-low; }
+  .mood-3, .mood-4 { @apply bg-mood-mid-low; }
+  .mood-5, .mood-6 { @apply bg-mood-mid; }
+  .mood-7, .mood-8 { @apply bg-mood-mid-high; }
+  .mood-9, .mood-10 { @apply bg-mood-high; }
+
+  /* Pixel art styling */
+  .pixel-border {
+    image-rendering: pixelated;
+    box-shadow: 
+      4px 0 0 0 hsl(var(--border)),
+      -4px 0 0 0 hsl(var(--border)),
+      0 4px 0 0 hsl(var(--border)),
+      0 -4px 0 0 hsl(var(--border));
+  }
+
+  .pixel-text {
+    font-family: 'Press Start 2P', monospace;
+    letter-spacing: 0.02em;
+  }
+
+  /* Pixel theme applies pixel font globally */
+  .theme-pixel {
+    font-family: 'Press Start 2P', monospace;
+  }
+
+  .theme-pixel h1,
+  .theme-pixel h2,
+  .theme-pixel h3,
+  .theme-pixel button,
+  .theme-pixel span,
+  .theme-pixel p {
+    font-family: 'Press Start 2P', monospace;
+  }
+
+  /* Glass effect for cards */
+  .glass-card {
+    backdrop-filter: blur(20px);
+    background: hsla(0, 0%, 8%, 0.8);
+  }
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  /* Ensure scrollbars are always on top */
+::-webkit-scrollbar {
+  z-index: 9999;
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--muted-foreground) / 0.3);
+  border-radius: 20px;
+}
+}

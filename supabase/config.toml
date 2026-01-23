@@ -1,0 +1,11 @@
+project_id = "zfhbacqithzcqdwrxidn"
+
+[functions.generate-vapid-keys]
+verify_jwt = false
+
+[functions.queue-daily-reminders]
+verify_jwt = false
+# Note: Schedule is configured in Supabase Dashboard, not here
+
+[functions.send-push-notifications]
+verify_jwt = false
