@@ -499,7 +499,7 @@ const MessagesTab = ({ isPixelTheme = false, onFriendClick }: MessagesTabProps) 
               exit={{ y: "100%", opacity: 0 }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
               onClick={(e) => e.stopPropagation()}
-              className={`bg-card border border-border w-full sm:max-w-md max-h-[80vh] overflow-hidden flex flex-col ${
+              className={`bg-card border border-border w-full sm:max-w-md h-[80vh] flex flex-col ${
                 isPixelTheme ? "" : "sm:rounded-3xl rounded-t-3xl"
               }`}
               style={{ borderRadius: isPixelTheme ? "0" : undefined }}
