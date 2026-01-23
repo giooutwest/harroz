@@ -215,3 +215,4 @@ const FeedbackSheet = ({ isOpen, onClose, isPixelTheme }: FeedbackSheetProps) =>
 };
 
 export default FeedbackSheet;
+ 
