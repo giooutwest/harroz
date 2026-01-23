@@ -297,7 +297,7 @@ const MessagesTab = ({ isPixelTheme = false, onFriendClick }: MessagesTabProps) 
   // Conversation view
   if (selectedFriend) {
     return (
-      <div className="flex flex-col" style={{ height: 'calc(100vh - 140px)' }}>
+      <div className="flex flex-col h-full max-h-[calc(100vh-200px)]">
         {/* Header */}
         <div className={`flex-shrink-0 flex items-center gap-3 p-4 border-b border-border bg-card ${isPixelTheme ? "" : "rounded-t-xl"}`}>
           <button
@@ -499,13 +499,13 @@ const MessagesTab = ({ isPixelTheme = false, onFriendClick }: MessagesTabProps) 
               exit={{ y: "100%", opacity: 0 }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
               onClick={(e) => e.stopPropagation()}
-              className={`bg-card border border-border w-full sm:max-w-md h-[80vh] flex flex-col ${
+              className={`bg-card border border-border w-full sm:max-w-md max-h-[80vh] flex flex-col ${
                 isPixelTheme ? "" : "sm:rounded-3xl rounded-t-3xl"
               }`}
               style={{ borderRadius: isPixelTheme ? "0" : undefined }}
             >
               {/* Header */}
-              <div className="flex items-center justify-between p-4 border-b border-border">
+              <div className="flex-shrink-0 flex items-center justify-between p-4 border-b border-border">
                 <h3 className={`font-semibold ${isPixelTheme ? "text-xs" : "text-lg"}`}>
                   New Message
                 </h3>
@@ -521,7 +521,7 @@ const MessagesTab = ({ isPixelTheme = false, onFriendClick }: MessagesTabProps) 
               </div>
 
               {/* Search */}
-              <div className="p-4 border-b border-border">
+              <div className="flex-shrink-0 p-4 border-b border-border">
                 <Input
                   placeholder="Search friends..."
                   value={searchQuery}

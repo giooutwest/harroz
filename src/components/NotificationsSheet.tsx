@@ -15,7 +15,7 @@ interface NotificationsSheetProps {
 
 interface Notification {
   id: string;
-  type: "like" | "comment" | "friend_request";
+  type: "like" | "comment" | "friend_request" | "message" | "nudge";
   actor_id: string;
   mood_id: string | null;
   comment_id: string | null;
@@ -152,7 +152,7 @@ const NotificationsSheet = ({ isOpen, onClose, isPixelTheme = false, onNotificat
                     <button key={notif.id} onClick={() => handleNotificationClick(notif)} className={`w-full bg-secondary p-3 flex items-center gap-3 text-left ${isPixelTheme ? "" : "rounded-xl"}`} style={{ borderRadius: isPixelTheme ? "0" : undefined }}>
                       <div className={`w-10 h-10 flex items-center justify-center overflow-hidden ${isPixelTheme ? "" : "rounded-full"}`}>{notif.actor_profile?.avatar_url ? <img src={notif.actor_profile.avatar_url} alt="" className="w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.parentElement!.innerHTML = '<svg class="w-5 h-5 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>'; }} /> : <User className="w-5 h-5 text-muted-foreground" />}</div>
                       <div className="flex-1 min-w-0">
-                        <p className={`${isPixelTheme ? "text-[8px]" : "text-sm"}`}><span className="font-medium">{notif.actor_profile?.display_name || "Someone"}</span> {notif.type === "like" ? "liked your mood" : notif.type === "comment" ? "commented on your mood" : "sent you a friend request"}</p>
+                        <p className={`${isPixelTheme ? "text-[8px]" : "text-sm"}`}><span className="font-medium">{notif.actor_profile?.display_name || "Someone"}</span> {notif.type === "like" ? "liked your mood" : notif.type === "comment" ? "commented on your mood" : notif.type === "message" ? "sent you a message" : notif.type === "nudge" ? "nudged you" : "sent you a friend request"}</p>
                         <p className={`text-muted-foreground ${isPixelTheme ? "text-[6px]" : "text-xs"}`}>{formatDistanceToNow(new Date(notif.created_at), { addSuffix: true })}</p>
                       </div>
                     </button>
