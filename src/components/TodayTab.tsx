@@ -361,14 +361,34 @@ const TodayTab = ({ isPixelTheme = false }: TodayTabProps) => {
                   <span className={`text-muted-foreground font-medium ${isPixelTheme ? "text-[10px]" : "text-xs"}`}>Yesterday's Mood</span>
                   <button onClick={dismissYesterdaySummary} className="p-1 hover:bg-secondary rounded-full transition-colors"><X className="w-4 h-4 text-muted-foreground" /></button>
                 </div>
-                {yesterdaysMood.photo_url ? (
-                  <div className="relative w-full aspect-square bg-secondary/30">
-                    <img src={yesterdaysMood.photo_url} alt="Yesterday's mood" className="w-full h-full object-cover" onError={(e) => { e.currentTarget.parentElement!.innerHTML = '<div class="w-full h-48 flex items-center justify-center bg-secondary/30"><svg class="w-10 h-10 text-primary-foreground" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg></div>'; }} />
+                <div
+                  onClick={() => setShowYesterdayEngagement(true)}
+                  className="cursor-pointer hover:bg-secondary/20 transition-colors"
+                >
+                  {yesterdaysMood.photo_url ? (
+                    <div className="relative w-full aspect-square bg-secondary/30">
+                      <img src={yesterdaysMood.photo_url} alt="Yesterday's mood" className="w-full h-full object-cover" onError={(e) => { e.currentTarget.parentElement!.innerHTML = '<div class="w-full h-48 flex items-center justify-center bg-secondary/30"><svg class="w-10 h-10 text-primary-foreground" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg></div>'; }} />
+                    </div>
+                  ) : (
+                    <div className="w-full h-48 flex items-center justify-center bg-secondary/30"><YesterdayMoodIcon className="w-10 h-10 text-primary-foreground" /></div>
+                  )}
+                  <div className="p-4">
+                    <p className={`text-foreground/90 mb-3 ${isPixelTheme ? "text-xs" : "text-sm"}`}>{getMoodLabel(yesterdaysMood.rating)} ({yesterdaysMood.rating}/10)</p>
+                    {yesterdaysMood.caption && (
+                      <p className={`text-muted-foreground italic mb-3 ${isPixelTheme ? "text-[10px]" : "text-xs"}`}>"{yesterdaysMood.caption}"</p>
+                    )}
+                    <div className="flex items-center gap-4 text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <Heart className="w-4 h-4" />
+                        <span className={isPixelTheme ? "text-[10px]" : "text-xs"}>{yesterdaysMood.likes_count}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <MessageCircle className="w-4 h-4" />
+                        <span className={isPixelTheme ? "text-[10px]" : "text-xs"}>{yesterdaysMood.comments_count}</span>
+                      </div>
+                    </div>
                   </div>
-                ) : (
-                  <div className="w-full h-48 flex items-center justify-center bg-secondary/30"><YesterdayMoodIcon className="w-10 h-10 text-primary-foreground" /></div>
-                )}
-                <div className="p-4"><p className={`text-foreground/90 ${isPixelTheme ? "text-xs" : "text-sm"}`}>{getMoodLabel(yesterdaysMood.rating)} ({yesterdaysMood.rating}/10)</p></div>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
