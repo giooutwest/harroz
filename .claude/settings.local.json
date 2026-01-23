@@ -16,7 +16,9 @@
       "Bash(git push:*)",
       "Bash(git pull:*)",
       "Bash(git merge:*)",
-      "Bash(npx vercel:*)"
+      "Bash(npx vercel:*)",
+      "Bash(git config:*)",
+      "Bash(ls:*)"
     ]
   }
 }
