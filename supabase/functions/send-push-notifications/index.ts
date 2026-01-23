@@ -50,11 +50,16 @@ async function generateVAPIDAuthHeader(
   const payloadB64 = btoa(String.fromCharCode(...encoder.encode(JSON.stringify(jwtPayload))))
     .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
 
-  // Import private key for signing
-  const privateKeyUint8 = base64ToUint8Array(vapidPrivateKey);
+  // Import private key for signing from JWK format
+  // The private key is stored as base64url 'd' parameter from JWK
   const cryptoKey = await crypto.subtle.importKey(
-    'pkcs8',
-    privateKeyUint8.buffer,
+    'jwk',
+    {
+      kty: 'EC',
+      crv: 'P-256',
+      d: vapidPrivateKey,
+      ext: true
+    },
     { name: 'ECDSA', namedCurve: 'P-256' },
     false,
     ['sign']
