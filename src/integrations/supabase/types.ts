@@ -322,6 +322,36 @@ export type Database = {
         }
         Relationships: []
       }
+      private_journal_entries: {
+        Row: {
+          id: string
+          user_id: string
+          date: string
+          content: string | null
+          photos: string[]
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          date: string
+          content?: string | null
+          photos?: string[]
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          date?: string
+          content?: string | null
+          photos?: string[]
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -330,6 +360,7 @@ export type Database = {
           discoverable_by: string
           display_name: string | null
           id: string
+          journal_pin_hash: string | null
           show_caption_to_friends: boolean
           show_comments_to_friends_only: boolean
           show_daily_quote: boolean
@@ -338,7 +369,7 @@ export type Database = {
           updated_at: string
           user_id: string
           username: string | null
-          current_streak: number | null // 🔥 ADDED
+          current_streak: number | null
         }
         Insert: {
           avatar_url?: string | null
@@ -347,6 +378,7 @@ export type Database = {
           discoverable_by?: string
           display_name?: string | null
           id?: string
+          journal_pin_hash?: string | null
           show_caption_to_friends?: boolean
           show_comments_to_friends_only?: boolean
           show_daily_quote?: boolean
@@ -355,7 +387,7 @@ export type Database = {
           updated_at?: string
           user_id: string
           username?: string | null
-          current_streak?: number | null // 🔥 ADDED
+          current_streak?: number | null
         }
         Update: {
           avatar_url?: string | null
@@ -364,6 +396,7 @@ export type Database = {
           discoverable_by?: string
           display_name?: string | null
           id?: string
+          journal_pin_hash?: string | null
           show_caption_to_friends?: boolean
           show_comments_to_friends_only?: boolean
           show_daily_quote?: boolean
@@ -372,7 +405,7 @@ export type Database = {
           updated_at?: string
           user_id?: string
           username?: string | null
-          current_streak?: number | null // 🔥 ADDED
+          current_streak?: number | null
         }
         Relationships: []
       }
@@ -443,6 +476,14 @@ export type Database = {
       }
       is_close_friend: {
         Args: { owner_id: string; viewer_id: string }
+        Returns: boolean
+      }
+      set_journal_pin: {
+        Args: { p_user_id: string; p_pin: string }
+        Returns: boolean
+      }
+      verify_journal_pin: {
+        Args: { p_user_id: string; p_pin: string }
         Returns: boolean
       }
     }

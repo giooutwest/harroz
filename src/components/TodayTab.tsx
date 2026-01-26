@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Heart, CloudRain, Cloud, Sun, Star, Camera, X, MessageCircle, User, Lock, Pencil, Flame, Share2, Users } from "lucide-react";
+import { Sparkles, Heart, CloudRain, Cloud, Sun, Star, Camera, X, MessageCircle, User, Lock, Pencil, Flame, Share2, Users, BookOpen } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { PixelStorm, PixelRain, PixelCloudy, PixelPartlyCloudy, PixelSunny, PixelHeart } from "./PixelIcons";
@@ -15,6 +15,11 @@ import CountdownTimer from "./CountdownTimer";
 import MoodEngagementSheet from "./MoodEngagementSheet";
 import { Badge } from "@/components/ui/badge";
 import html2canvas from "html2canvas";
+import TodayTabNav, { TodaySection } from "./TodayTabNav";
+import PinEntryModal from "./PinEntryModal";
+import JournalEditor from "./JournalEditor";
+import { useJournalPin } from "@/hooks/useJournalPin";
+import { useJournalEntry } from "@/hooks/useJournalEntry";
 
 const captionSchema = z.string().max(500, "Caption must be 500 characters or less").trim();
 
@@ -119,13 +124,24 @@ const TodayTab = ({ isPixelTheme = false }: TodayTabProps) => {
   
   const [showYesterdaySummary, setShowYesterdaySummary] = useState(false);
   const [showPhotoViewer, setShowPhotoViewer] = useState(false);
-  
+
+  // Journal state
+  const [activeSection, setActiveSection] = useState<TodaySection>("post");
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [pinModalMode, setPinModalMode] = useState<"setup" | "verify">("verify");
+  const [isJournalUnlocked, setIsJournalUnlocked] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const shareRef = useRef<HTMLDivElement>(null);
-  
+
   const { toast } = useToast();
   const { user } = useAuth();
   const timeWindow = useTimeWindowStatic();
+
+  // Journal hooks
+  const journalPin = useJournalPin();
+  const todayDate = getLocalDateString();
+  const journalEntry = useJournalEntry(todayDate);
 
   useEffect(() => {
     if (user) {
@@ -343,6 +359,37 @@ const TodayTab = ({ isPixelTheme = false }: TodayTabProps) => {
   const HeartIcon = isPixelTheme ? PixelHeart : Heart;
   const showLockedState = !timeWindow.isOpen && !submitted;
 
+  // Handle section change
+  const handleSectionChange = (section: TodaySection) => {
+    if (section === "journal" && !isJournalUnlocked) {
+      // Need to verify or setup PIN
+      if (journalPin.hasPin) {
+        setPinModalMode("verify");
+      } else {
+        setPinModalMode("setup");
+      }
+      setShowPinModal(true);
+    } else {
+      setActiveSection(section);
+    }
+  };
+
+  // Handle PIN success
+  const handlePinSuccess = () => {
+    setIsJournalUnlocked(true);
+    setActiveSection("journal");
+  };
+
+  // Handle journal save
+  const handleJournalSave = async (content: string, newPhotos: File[], existingPhotoPaths: string[]) => {
+    return journalEntry.saveEntry(content, newPhotos, existingPhotoPaths);
+  };
+
+  // Handle journal cancel - go back to post view
+  const handleJournalCancel = () => {
+    setActiveSection("post");
+  };
+
   if (showLockedState) {
     const YesterdayMoodIcon = yesterdaysMood ? getMoodIcon(yesterdaysMood.rating, isPixelTheme) : null;
     return (
@@ -400,9 +447,64 @@ const TodayTab = ({ isPixelTheme = false }: TodayTabProps) => {
 
   return (
     <div className="flex flex-col items-center px-6 py-8 pb-32">
-      <AnimatePresence mode="wait">
-        {!submitted ? (
-          <motion.div key="input" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="w-full max-w-sm flex flex-col items-center">
+      {/* Navigation between Post and Journal - only show when window is open */}
+      {timeWindow.isOpen && (
+        <div className="w-full max-w-sm mb-4">
+          <TodayTabNav
+            activeSection={activeSection}
+            onSectionChange={handleSectionChange}
+            isJournalLocked={!isJournalUnlocked}
+            isPixelTheme={isPixelTheme}
+          />
+        </div>
+      )}
+
+      {/* PIN Entry Modal */}
+      <PinEntryModal
+        isOpen={showPinModal}
+        onClose={() => setShowPinModal(false)}
+        onSuccess={handlePinSuccess}
+        mode={pinModalMode}
+        verifyPin={journalPin.verifyPin}
+        setupPin={journalPin.setupPin}
+        isPixelTheme={isPixelTheme}
+      />
+
+      {/* Journal Section */}
+      {activeSection === "journal" && isJournalUnlocked && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="w-full max-w-sm"
+        >
+          <div className="flex items-center gap-3 mb-6">
+            <div className={`w-12 h-12 bg-primary/10 flex items-center justify-center ${isPixelTheme ? "" : "rounded-full"}`}>
+              <BookOpen className="w-6 h-6 text-primary" />
+            </div>
+            <div>
+              <h2 className={`font-bold ${isPixelTheme ? "text-sm" : "text-lg"}`}>Private Journal</h2>
+              <p className={`text-muted-foreground ${isPixelTheme ? "text-[8px]" : "text-xs"}`}>
+                {journalEntry.entry ? "Edit your entry" : "Write about your day"}
+              </p>
+            </div>
+          </div>
+          <JournalEditor
+            existingEntry={journalEntry.entry}
+            existingPhotoUrls={journalEntry.signedPhotoUrls}
+            onSave={handleJournalSave}
+            onDelete={journalEntry.entry ? journalEntry.deleteEntry : undefined}
+            onCancel={handleJournalCancel}
+            isPixelTheme={isPixelTheme}
+            canEdit={journalEntry.canEdit}
+          />
+        </motion.div>
+      )}
+
+      {/* Mood Post Section */}
+      {activeSection === "post" && (
+        <AnimatePresence mode="wait">
+          {!submitted ? (
+            <motion.div key="input" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="w-full max-w-sm flex flex-col items-center">
             <div className="flex flex-col items-center mb-2">
               <motion.h1 className={`text-2xl md:text-3xl font-bold text-center ${isPixelTheme ? "text-lg leading-relaxed" : ""}`}>{displayName ? `Hey ${displayName}! ✨` : "Hey there! ✨"}</motion.h1>
               {currentStreak > 0 && (<Badge variant="secondary" className="mt-2 bg-orange-50 text-orange-600 border-orange-100 gap-1.5 px-3 py-1"><Flame className="w-3 h-3 fill-orange-500" /><span className="font-bold">{currentStreak} Day Streak</span></Badge>)}
@@ -523,6 +625,7 @@ const TodayTab = ({ isPixelTheme = false }: TodayTabProps) => {
           </motion.div>
         )}
       </AnimatePresence>
+      )}
 
       {/* Engagement Sheet for Today's Mood */}
       {todaysMoodId && (

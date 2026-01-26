@@ -281,6 +281,18 @@ const FriendsTab = ({ isPixelTheme = false, initialSelectedFriendId, initialSele
     toast({ title: `Nudged ${friendName}! ⚡` });
   };
 
+  const handleDismissNudge = async (nudgeId: string) => {
+    if (!user) return;
+    // @ts-ignore
+    await supabase.from('nudges').delete().eq('id', nudgeId).eq('receiver_id', user.id);
+    setNudges(prev => prev.filter(n => n.id !== nudgeId));
+  };
+
+  const handleNudgeBack = async (nudgeId: string, senderId: string, senderName: string) => {
+    await handleSendNudge(senderId, senderName);
+    await handleDismissNudge(nudgeId);
+  };
+
   return (
     <div className="px-4 py-6 pb-28">
       <div className="flex items-center justify-between mb-6">
@@ -328,24 +340,35 @@ const FriendsTab = ({ isPixelTheme = false, initialSelectedFriendId, initialSele
             <div className="space-y-3">
               <h3 className={`font-bold text-sm text-muted-foreground ${isPixelTheme ? "text-[10px]" : ""}`}>Nudges</h3>
               {nudges.map((nudge) => (
-                <div key={nudge.id} className={`bg-card border border-border p-4 flex items-center justify-between ${isPixelTheme ? "" : "rounded-xl"}`} style={{ borderRadius: isPixelTheme ? "0" : undefined }}>
+                <motion.div
+                  key={nudge.id}
+                  initial={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -100 }}
+                  className={`bg-card border border-border p-4 flex items-center justify-between ${isPixelTheme ? "" : "rounded-xl"}`}
+                  style={{ borderRadius: isPixelTheme ? "0" : undefined }}
+                >
                   <div className="flex items-center gap-3">
                     <div className={`w-10 h-10 bg-secondary flex items-center justify-center overflow-hidden ${isPixelTheme ? "" : "rounded-full"}`}>
                       {nudge.sender_profile?.avatar_url ? <img src={nudge.sender_profile.avatar_url} className="w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.parentElement!.innerHTML = '<svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>'; }} /> : <User className="w-5 h-5" />}
                     </div>
                     <div>
                       <p className={`font-medium ${isPixelTheme ? "text-xs" : "text-sm"}`}>
-                        <span className="font-bold">{nudge.sender_profile?.username || "Unknown"}</span> nudged you!
+                        <span className="font-bold">{nudge.sender_profile?.display_name || nudge.sender_profile?.username || "Someone"}</span> nudged you!
                       </p>
                       <p className={`text-muted-foreground ${isPixelTheme ? "text-[6px]" : "text-xs"}`}>
                         {formatDistanceToNow(new Date(nudge.created_at), { addSuffix: true })}
                       </p>
                     </div>
                   </div>
-                  <button onClick={() => handleSendNudge(nudge.sender_id, nudge.sender_profile?.username || "")} className={`p-2 bg-secondary hover:bg-yellow-500/20 text-yellow-600 ${isPixelTheme ? "" : "rounded-full"}`} title="Nudge back">
-                    <Zap className="w-4 h-4 fill-current" />
-                  </button>
-                </div>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => handleNudgeBack(nudge.id, nudge.sender_id, nudge.sender_profile?.display_name || nudge.sender_profile?.username || "")} className={`p-2 bg-secondary hover:bg-yellow-500/20 text-yellow-600 ${isPixelTheme ? "" : "rounded-full"}`} title="Nudge back">
+                      <Zap className="w-4 h-4 fill-current" />
+                    </button>
+                    <button onClick={() => handleDismissNudge(nudge.id)} className={`p-2 bg-secondary hover:bg-destructive/20 text-muted-foreground hover:text-destructive ${isPixelTheme ? "" : "rounded-full"}`} title="Dismiss">
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                </motion.div>
               ))}
             </div>
           )}

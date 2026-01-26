@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Moon, Sparkles, Cherry, User, Check, Eye, Image, MessageSquare, Activity, Camera, Loader2, Search, AtSign, Bell, Smartphone, BellRing, BellOff, MessageCircle, MessageSquareHeart, LogOut } from "lucide-react";
+import { X, Moon, Sparkles, Cherry, User, Check, Eye, Image, MessageSquare, Activity, Camera, Loader2, Search, AtSign, Bell, Smartphone, BellRing, BellOff, MessageCircle, MessageSquareHeart, LogOut, BookOpen, Lock, KeyRound } from "lucide-react";
 import { PixelStar } from "./PixelIcons";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,8 @@ import PWAInstallTutorial from "./PWAInstallTutorial";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import FeedbackSheet from "./FeedbackSheet";
 import { useNavigate } from "react-router-dom";
+import PinEntryModal from "./PinEntryModal";
+import { useJournalPin } from "@/hooks/useJournalPin";
 
 type Theme = "dark" | "pixel" | "fruit" | "calligraphy";
 type DefaultVisibility = "private" | "friends" | "close_friends";
@@ -78,6 +80,9 @@ const SettingsSheet = ({
   // These custom hooks must also be unconditional
   const { hasUnread, refresh: refreshUnread } = useUnreadUpdates();
   const pushNotifications = usePushNotifications();
+  const journalPin = useJournalPin();
+  const [showJournalPinModal, setShowJournalPinModal] = useState(false);
+  const [journalPinMode, setJournalPinMode] = useState<"setup" | "change">("setup");
 
   useEffect(() => {
     if (isOpen && user) {
@@ -502,6 +507,48 @@ const SettingsSheet = ({
                   )}
                 </div>
 
+                {/* Private Journal PIN Section */}
+                <div className="mt-6">
+                  <h4 className={`font-medium mb-3 flex items-center gap-2 ${isPixelTheme ? "text-[10px]" : "text-sm"}`}>
+                    <BookOpen className={`${isPixelTheme ? "w-3 h-3" : "w-4 h-4"}`} /> Private Journal
+                  </h4>
+                  <div className={`p-4 bg-secondary ${isPixelTheme ? "" : "rounded-xl"}`} style={{ borderRadius }}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 bg-primary/10 flex items-center justify-center ${isPixelTheme ? "" : "rounded-full"}`}>
+                          {journalPin.hasPin ? (
+                            <Lock className={`${isPixelTheme ? "w-4 h-4" : "w-5 h-5"} text-primary`} />
+                          ) : (
+                            <KeyRound className={`${isPixelTheme ? "w-4 h-4" : "w-5 h-5"} text-muted-foreground`} />
+                          )}
+                        </div>
+                        <div>
+                          <p className={`font-medium ${isPixelTheme ? "text-[8px]" : "text-sm"}`}>
+                            {journalPin.hasPin ? "PIN Protected" : "No PIN Set"}
+                          </p>
+                          <p className={`text-muted-foreground ${isPixelTheme ? "text-[6px]" : "text-xs"}`}>
+                            {journalPin.hasPin
+                              ? "Your private journal is secured"
+                              : "Set a PIN to protect your journal"}
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setJournalPinMode(journalPin.hasPin ? "change" : "setup");
+                          setShowJournalPinModal(true);
+                        }}
+                        className={`${isPixelTheme ? "text-[8px]" : ""}`}
+                        style={{ borderRadius }}
+                      >
+                        {journalPin.hasPin ? "Change" : "Set PIN"}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="mt-6">
                   <h4 className={`font-medium mb-3 flex items-center gap-2 ${isPixelTheme ? "text-[10px]" : "text-sm"}`}><Smartphone className={`${isPixelTheme ? "w-3 h-3" : "w-4 h-4"}`} /> Install App</h4>
                   <button onClick={() => setShowPWATutorial(true)} className={`w-full flex items-center justify-between p-4 bg-gradient-to-r from-primary/20 to-primary/10 border-2 border-primary/30 ${isPixelTheme ? "" : "rounded-xl"}`} style={{ borderRadius }}>
@@ -541,6 +588,19 @@ const SettingsSheet = ({
       {imageToCrop && <ImageCropper image={imageToCrop} onCropComplete={handleCropComplete} onCancel={handleCropCancel} isPixelTheme={isPixelTheme} />}
       <PWAInstallTutorial isOpen={showPWATutorial} onClose={() => setShowPWATutorial(false)} isPixelTheme={isPixelTheme} />
       <FeedbackSheet isOpen={showFeedback} onClose={() => setShowFeedback(false)} isPixelTheme={isPixelTheme} />
+      <PinEntryModal
+        isOpen={showJournalPinModal}
+        onClose={() => setShowJournalPinModal(false)}
+        onSuccess={() => {
+          setShowJournalPinModal(false);
+          toast({ title: journalPinMode === "setup" ? "PIN created!" : "PIN changed!" });
+        }}
+        mode={journalPinMode}
+        verifyPin={journalPin.verifyPin}
+        setupPin={journalPin.setupPin}
+        changePin={journalPin.changePin}
+        isPixelTheme={isPixelTheme}
+      />
     </AnimatePresence>
   );
 };

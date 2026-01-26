@@ -1,11 +1,15 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Camera, BookOpen } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { getLocalDateString } from "@/hooks/useTimeWindow";
 import CalendarDayDetail from "./CalendarDayDetail";
-import FriendProfileModal from "./FriendProfileModal"; // 1. Import the Modal
+import FriendProfileModal from "./FriendProfileModal";
+import PinEntryModal from "./PinEntryModal";
+import JournalView from "./JournalView";
+import { useJournalPin } from "@/hooks/useJournalPin";
+import { useJournalEntries, useJournalEntry, JournalEntry } from "@/hooks/useJournalEntry";
 
 interface MoodEntry {
   date: string;
@@ -28,12 +32,30 @@ const getMoodColor = (rating: number): string => {
   return "hsl(210, 80%, 55%)";
 };
 
+type ViewMode = "moods" | "journal";
+
 const CalendarTab = ({ isPixelTheme = false }: CalendarTabProps) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [moods, setMoods] = useState<Record<string, MoodEntry>>({});
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [selectedFriendId, setSelectedFriendId] = useState<string | null>(null); // 2. State for popup
+  const [selectedFriendId, setSelectedFriendId] = useState<string | null>(null);
+
+  // Journal view state
+  const [viewMode, setViewMode] = useState<ViewMode>("moods");
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [isJournalUnlocked, setIsJournalUnlocked] = useState(false);
+  const [selectedJournalDate, setSelectedJournalDate] = useState<string | null>(null);
+  const [pendingJournalDate, setPendingJournalDate] = useState<string | null>(null);
+
   const { user } = useAuth();
+
+  // Journal hooks
+  const journalPin = useJournalPin();
+  const { entries: journalEntries, isLoading: isLoadingJournalEntries } = useJournalEntries(
+    currentDate.getFullYear(),
+    currentDate.getMonth()
+  );
+  const selectedJournalEntry = useJournalEntry(selectedJournalDate || undefined);
 
   useEffect(() => {
     if (user) {
@@ -117,8 +139,86 @@ const CalendarTab = ({ isPixelTheme = false }: CalendarTabProps) => {
   const today = getLocalDateString();
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
+  // Handle view mode change
+  const handleViewModeChange = (mode: ViewMode) => {
+    if (mode === "journal" && !isJournalUnlocked) {
+      if (journalPin.hasPin) {
+        setShowPinModal(true);
+      } else {
+        // No PIN set, user needs to set one first
+        setShowPinModal(true);
+      }
+    } else {
+      setViewMode(mode);
+    }
+  };
+
+  // Handle PIN success
+  const handlePinSuccess = () => {
+    setIsJournalUnlocked(true);
+    setViewMode("journal");
+    if (pendingJournalDate) {
+      setSelectedJournalDate(pendingJournalDate);
+      setPendingJournalDate(null);
+    }
+  };
+
+  // Handle journal day click
+  const handleJournalDayClick = (dateStr: string) => {
+    if (!isJournalUnlocked) {
+      setPendingJournalDate(dateStr);
+      setShowPinModal(true);
+    } else {
+      setSelectedJournalDate(dateStr);
+    }
+  };
+
   return (
     <div className="px-4 py-6 pb-28">
+      {/* View Mode Toggle */}
+      <div className={`flex bg-secondary p-1 mb-4 ${isPixelTheme ? "" : "rounded-full"}`}>
+        <button
+          onClick={() => handleViewModeChange("moods")}
+          className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 relative transition-colors ${
+            viewMode === "moods"
+              ? "text-foreground"
+              : "text-muted-foreground hover:text-foreground"
+          } ${isPixelTheme ? "" : "rounded-full"}`}
+        >
+          {viewMode === "moods" && (
+            <motion.div
+              layoutId="calendarViewIndicator"
+              className={`absolute inset-0 bg-background shadow-sm ${isPixelTheme ? "" : "rounded-full"}`}
+              transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+            />
+          )}
+          <Camera className="w-4 h-4 relative z-10" />
+          <span className={`relative z-10 font-medium ${isPixelTheme ? "text-[10px]" : "text-sm"}`}>
+            Moods
+          </span>
+        </button>
+        <button
+          onClick={() => handleViewModeChange("journal")}
+          className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 relative transition-colors ${
+            viewMode === "journal"
+              ? "text-foreground"
+              : "text-muted-foreground hover:text-foreground"
+          } ${isPixelTheme ? "" : "rounded-full"}`}
+        >
+          {viewMode === "journal" && (
+            <motion.div
+              layoutId="calendarViewIndicator"
+              className={`absolute inset-0 bg-background shadow-sm ${isPixelTheme ? "" : "rounded-full"}`}
+              transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+            />
+          )}
+          <BookOpen className="w-4 h-4 relative z-10" />
+          <span className={`relative z-10 font-medium ${isPixelTheme ? "text-[10px]" : "text-sm"}`}>
+            Journal
+          </span>
+        </button>
+      </div>
+
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <motion.button
@@ -170,32 +270,50 @@ const CalendarTab = ({ isPixelTheme = false }: CalendarTabProps) => {
 
           const dateStr = formatDate(day);
           const mood = moods[dateStr];
+          const journalEntry = journalEntries[dateStr];
           const isToday = dateStr === today;
           const isFuture = dateStr > today;
+
+          // Determine what to show based on view mode
+          const hasContent = viewMode === "moods" ? !!mood : !!journalEntry;
 
           return (
             <motion.button
               key={dateStr}
               whileTap={{ scale: 0.95 }}
-              onClick={() => !isFuture && setSelectedDate(dateStr)}
+              onClick={() => {
+                if (isFuture) return;
+                if (viewMode === "moods") {
+                  setSelectedDate(dateStr);
+                } else {
+                  handleJournalDayClick(dateStr);
+                }
+              }}
               disabled={isFuture}
               className={`aspect-square flex flex-col items-center justify-center touch-manipulation relative ${
                 isFuture ? "opacity-30" : ""
               } ${isPixelTheme ? "" : "rounded-lg"}`}
             >
               {/* Day number */}
-              <span className={`font-medium ${mood ? "text-foreground" : "text-muted-foreground"} ${isPixelTheme ? "text-sm" : "text-base"}`}>
+              <span className={`font-medium ${hasContent ? "text-foreground" : "text-muted-foreground"} ${isPixelTheme ? "text-sm" : "text-base"}`}>
                 {day}
               </span>
-              
+
               {/* Mood indicator dot */}
-              {mood && (
-                <div 
+              {viewMode === "moods" && mood && (
+                <div
                   className={`mt-0.5 ${isPixelTheme ? "w-2 h-2" : "w-2.5 h-2.5 rounded-full"}`}
                   style={{ backgroundColor: getMoodColor(mood.rating) }}
                 />
               )}
-              
+
+              {/* Journal indicator */}
+              {viewMode === "journal" && journalEntry && (
+                <BookOpen
+                  className={`mt-0.5 text-primary ${isPixelTheme ? "w-2.5 h-2.5" : "w-3 h-3"}`}
+                />
+              )}
+
               {/* Today indicator */}
               {isToday && (
                 <div className={`absolute inset-0 border-2 border-primary pointer-events-none ${isPixelTheme ? "" : "rounded-lg"}`} />
@@ -252,6 +370,29 @@ const CalendarTab = ({ isPixelTheme = false }: CalendarTabProps) => {
       <FriendProfileModal
         friendId={selectedFriendId}
         onClose={() => setSelectedFriendId(null)}
+        isPixelTheme={isPixelTheme}
+      />
+
+      {/* PIN Entry Modal for Journal */}
+      <PinEntryModal
+        isOpen={showPinModal}
+        onClose={() => {
+          setShowPinModal(false);
+          setPendingJournalDate(null);
+        }}
+        onSuccess={handlePinSuccess}
+        mode={journalPin.hasPin ? "verify" : "setup"}
+        verifyPin={journalPin.verifyPin}
+        setupPin={journalPin.setupPin}
+        isPixelTheme={isPixelTheme}
+      />
+
+      {/* Journal View Modal */}
+      <JournalView
+        isOpen={!!selectedJournalDate && isJournalUnlocked}
+        entry={selectedJournalEntry.entry}
+        onClose={() => setSelectedJournalDate(null)}
+        canEdit={selectedJournalEntry.canEdit}
         isPixelTheme={isPixelTheme}
       />
     </div>
