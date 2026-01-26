@@ -18,7 +18,12 @@
       "Bash(git merge:*)",
       "Bash(npx vercel:*)",
       "Bash(git config:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(npm run build:*)",
+      "Bash(lsof:*)",
+      "Bash(pkill:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npx supabase:*)"
     ]
   }
 }
