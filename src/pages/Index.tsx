@@ -12,6 +12,7 @@ import PWAInstallTutorial from "@/components/PWAInstallTutorial";
 import NotificationPrompt from "@/components/NotificationPrompt";
 import BetaPrompt from "@/components/BetaPrompt";
 import FitCheckCamera from "@/components/FitCheckCamera";
+import CameraSelectionModal from "@/components/CameraSelectionModal";
 import WhatsNewModal from "@/components/WhatsNewModal";
 import { useAuth } from "@/hooks/useAuth";
 import { PixelSettings } from "@/components/PixelIcons";
@@ -19,6 +20,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useUnreadUpdates } from "@/hooks/useUnreadUpdates";
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 import { useNotificationNavigation } from "@/hooks/useNotificationNavigation";
+import { useTimeWindowStatic } from "@/hooks/useTimeWindowStatic";
+import { useFitCheckStatus } from "@/hooks/useFitCheckStatus";
 
 const CalendarTab = lazy(() => import("@/components/CalendarTab"));
 const StatsTab = lazy(() => import("@/components/StatsTab"));
@@ -44,6 +47,8 @@ const Index = () => {
   const [showNotificationPrompt, setShowNotificationPrompt] = useState(false);
   const [showBetaPrompt, setShowBetaPrompt] = useState(false);
   const [showFitCheck, setShowFitCheck] = useState(false);
+  const [showCameraSelection, setShowCameraSelection] = useState(false);
+  const [showWhatsNew, setShowWhatsNew] = useState(false);
   const [displayName, setDisplayName] = useState<string | null>(null);
   
   const [selectedFriendFromNotification, setSelectedFriendFromNotification] = useState<string | null>(null);
@@ -56,8 +61,24 @@ const Index = () => {
   const navigate = useNavigate();
   const { hasUnread } = useUnreadUpdates();
   const { navigation, clearNavigation } = useNotificationNavigation();
-  
+  const moodWindow = useTimeWindowStatic();
+  const fitCheckStatus = useFitCheckStatus();
+
   useRealtimeNotifications();
+
+  // Determine if FAB should show (any posting window is open)
+  const showCameraFab = moodWindow.isOpen || fitCheckStatus.isActive;
+
+  const handleCameraSelection = (mode: "mood" | "fitcheck") => {
+    setShowCameraSelection(false);
+    if (mode === "fitcheck") {
+      setShowFitCheck(true);
+    } else {
+      // For mood photo, ensure we're on Today tab
+      // The user can use the built-in photo upload there
+      setActiveTab("today");
+    }
+  };
 
   const handleFriendProfileClick = (friendId: string) => {
     setActiveTab("friends");
@@ -163,6 +184,24 @@ const Index = () => {
     }
   };
 
+  // Handle "Try it out" from WhatsNew modal
+  const handleTryFeature = (action: "today" | "stats" | "settings" | "fitcheck") => {
+    switch (action) {
+      case "today":
+        setActiveTab("today");
+        break;
+      case "stats":
+        setActiveTab("stats");
+        break;
+      case "settings":
+        setShowSettings(true);
+        break;
+      case "fitcheck":
+        setShowFitCheck(true);
+        break;
+    }
+  };
+
   useEffect(() => {
     if (user && !showOnboarding && !showInstallPrompt && !showInstallTutorial && !showNotificationPrompt) {
       const isInstalled = window.matchMedia('(display-mode: standalone)').matches;
@@ -217,6 +256,24 @@ const Index = () => {
       setTheme(savedTheme);
     }
   }, []);
+
+  // Show "What's New" modal for version 2.0 features
+  useEffect(() => {
+    if (user && !showOnboarding) {
+      const whatsNewVersion = "2.0"; // Update this when adding new features
+      const whatsNewKey = `moodmemos-whatsnew-${whatsNewVersion}-${user.id}`;
+      const hasSeen = localStorage.getItem(whatsNewKey);
+
+      if (!hasSeen) {
+        // Small delay to let other modals settle
+        const timer = setTimeout(() => {
+          setShowWhatsNew(true);
+          localStorage.setItem(whatsNewKey, "true");
+        }, 1000);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [user, showOnboarding]);
 
   useEffect(() => {
     document.documentElement.classList.remove("theme-pixel", "theme-fruit", "theme-calligraphy", "theme-grunge");
@@ -357,18 +414,20 @@ const Index = () => {
         </AnimatePresence>
       </main>
 
-      {/* Fit Check FAB - shows on Today tab */}
-      {activeTab === "today" && (
+      {/* Camera FAB - shows on Today tab when a posting window is open */}
+      {activeTab === "today" && showCameraFab && (
         <motion.button
           initial={{ scale: 0, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0, opacity: 0 }}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          onClick={() => setShowFitCheck(true)}
-          className={`fixed bottom-24 right-6 z-40 w-14 h-14 bg-primary text-primary-foreground shadow-lg flex items-center justify-center ${
-            isPixelTheme ? "" : "rounded-full"
-          }`}
+          onClick={() => setShowCameraSelection(true)}
+          className={`fixed bottom-24 right-6 z-40 w-14 h-14 shadow-lg flex items-center justify-center ${
+            fitCheckStatus.isActive
+              ? "bg-purple-500 text-white"
+              : "bg-primary text-primary-foreground"
+          } ${isPixelTheme ? "" : "rounded-full"}`}
           style={{ borderRadius: isPixelTheme ? "0" : undefined }}
         >
           <Camera className="w-6 h-6" />
@@ -409,6 +468,21 @@ const Index = () => {
       <NotificationPrompt isOpen={showNotificationPrompt} onClose={handleNotificationPromptClose} isPixelTheme={isPixelTheme} />
       <BetaPrompt isOpen={showBetaPrompt} onClose={() => setShowBetaPrompt(false)} isPixelTheme={isPixelTheme} />
       <FitCheckCamera isOpen={showFitCheck} onClose={() => setShowFitCheck(false)} isPixelTheme={isPixelTheme} />
+      <CameraSelectionModal
+        isOpen={showCameraSelection}
+        onClose={() => setShowCameraSelection(false)}
+        onSelect={handleCameraSelection}
+        moodWindowOpen={moodWindow.isOpen}
+        fitCheckActive={fitCheckStatus.isActive}
+        fitCheckTimeRemaining={fitCheckStatus.timeRemaining}
+        isPixelTheme={isPixelTheme}
+      />
+      <WhatsNewModal
+        isOpen={showWhatsNew}
+        onClose={() => setShowWhatsNew(false)}
+        onTryFeature={handleTryFeature}
+        isPixelTheme={isPixelTheme}
+      />
     </div>
   );
 };

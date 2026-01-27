@@ -87,12 +87,22 @@ export const usePushNotifications = () => {
 
     try {
       console.log("Sending test notification request...");
-      const { data, error } = await supabase.functions.invoke('push-notification', {
-        body: { 
-          record: { user_id: user.id }, 
-          type: 'TEST' 
-        }
-      });
+
+      // 1. Add a test notification to the queue
+      // @ts-ignore - pending_push_notifications table
+      const { error: insertError } = await supabase
+        .from('pending_push_notifications')
+        .insert({
+          user_id: user.id,
+          title: 'Test Notification',
+          body: 'If you see this, push notifications are working!',
+          data: { url: '/' }
+        });
+
+      if (insertError) throw insertError;
+
+      // 2. Call the send-push-notifications function to process the queue
+      const { data, error } = await supabase.functions.invoke('send-push-notifications', {});
 
       if (error) throw error;
       console.log("Test notification sent!", data);

@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Camera, Clock, Trophy, Shirt, Timer, Check, X } from "lucide-react";
+import { Camera, Clock, Trophy, Shirt, Timer, Check, X, Bell } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { format, differenceInSeconds, addMinutes, isAfter, isBefore } from "date-fns";
+import { differenceInSeconds, addMinutes, subMinutes, isAfter, isBefore } from "date-fns";
 
 interface Challenge {
   id: string;
@@ -17,12 +17,21 @@ interface FitCheckChallengeProps {
   onOpenCamera: () => void;
 }
 
+// States:
+// "hidden" - More than 30 min before challenge
+// "teaser" - 30 min to 0 min before challenge (shows "coming soon")
+// "active" - 0 to 15 min after challenge time (the actual window)
+// "missed" - After 15 min window
+// "completed" - User completed it
+
+type ChallengeState = "hidden" | "teaser" | "active" | "missed" | "completed";
+
 const FitCheckChallenge = ({ isPixelTheme = false, onOpenCamera }: FitCheckChallengeProps) => {
   const [challenge, setChallenge] = useState<Challenge | null>(null);
   const [hasCompleted, setHasCompleted] = useState(false);
   const [completedOnTime, setCompletedOnTime] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
-  const [challengeState, setChallengeState] = useState<"upcoming" | "active" | "missed" | "completed">("upcoming");
+  const [challengeState, setChallengeState] = useState<ChallengeState>("hidden");
   const [fitCheckStreak, setFitCheckStreak] = useState(0);
   const { user } = useAuth();
 
@@ -38,6 +47,9 @@ const FitCheckChallenge = ({ isPixelTheme = false, onOpenCamera }: FitCheckChall
   // Update countdown every second
   useEffect(() => {
     if (!challenge) return;
+
+    // Initial update
+    updateChallengeState();
 
     const interval = setInterval(() => {
       updateChallengeState();
@@ -96,46 +108,49 @@ const FitCheckChallenge = ({ isPixelTheme = false, onOpenCamera }: FitCheckChall
 
     const now = new Date();
     const challengeTime = new Date(challenge.challenge_timestamp);
-    const windowEnd = addMinutes(challengeTime, 20);
+    const teaserStart = subMinutes(challengeTime, 30); // 30 min before
+    const windowEnd = addMinutes(challengeTime, 15); // 15 min window
 
-    if (isBefore(now, challengeTime)) {
-      // Challenge hasn't started yet
-      setChallengeState("upcoming");
+    if (isBefore(now, teaserStart)) {
+      // More than 30 min before - hide completely
+      setChallengeState("hidden");
+      setTimeRemaining(null);
+    } else if (isBefore(now, challengeTime)) {
+      // 30 min to 0 min before - show teaser
+      setChallengeState("teaser");
       const secondsUntilStart = differenceInSeconds(challengeTime, now);
       setTimeRemaining(secondsUntilStart);
     } else if (isAfter(now, challengeTime) && isBefore(now, windowEnd)) {
-      // Challenge is active (within 20 min window)
+      // 0 to 15 min - active window
       setChallengeState("active");
       const secondsRemaining = differenceInSeconds(windowEnd, now);
       setTimeRemaining(secondsRemaining);
     } else {
-      // Challenge window has passed
+      // After 15 min window - missed
       setChallengeState("missed");
       setTimeRemaining(0);
     }
   }, [challenge, hasCompleted]);
 
   const formatTime = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
+    const minutes = Math.floor(seconds / 60);
     const secs = seconds % 60;
 
-    if (hours > 0) {
-      return `${hours}h ${minutes}m`;
-    }
     if (minutes > 0) {
       return `${minutes}:${secs.toString().padStart(2, "0")}`;
     }
     return `${secs}s`;
   };
 
-  if (!challenge) return null;
+  // Don't render anything if hidden or no challenge
+  if (!challenge || challengeState === "hidden") return null;
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`p-4 bg-card border border-border ${isPixelTheme ? "" : "rounded-2xl"}`}
+      exit={{ opacity: 0, y: -20 }}
+      className={`p-4 bg-card border-2 border-purple-500/50 ${isPixelTheme ? "" : "rounded-2xl"}`}
       style={{ borderRadius }}
     >
       {/* Header */}
@@ -150,12 +165,9 @@ const FitCheckChallenge = ({ isPixelTheme = false, onOpenCamera }: FitCheckChall
             <Shirt className={`${isPixelTheme ? "w-4 h-4" : "w-5 h-5"} text-purple-500`} />
           </div>
           <div>
-            <h3 className={`font-semibold ${isPixelTheme ? "text-xs" : "text-sm"}`}>
-              Daily Fit Check
+            <h3 className={`font-semibold text-purple-500 ${isPixelTheme ? "text-xs" : "text-sm"}`}>
+              Fit Check!
             </h3>
-            <p className={`text-muted-foreground ${isPixelTheme ? "text-[6px]" : "text-xs"}`}>
-              Today at {format(new Date(challenge.challenge_timestamp), "h:mm a")}
-            </p>
           </div>
         </div>
 
@@ -169,7 +181,7 @@ const FitCheckChallenge = ({ isPixelTheme = false, onOpenCamera }: FitCheckChall
           >
             <Trophy className={`${isPixelTheme ? "w-3 h-3" : "w-4 h-4"} text-purple-500`} />
             <span className={`text-purple-500 font-medium ${isPixelTheme ? "text-[8px]" : "text-xs"}`}>
-              {fitCheckStreak} day streak
+              {fitCheckStreak}
             </span>
           </div>
         )}
@@ -190,11 +202,11 @@ const FitCheckChallenge = ({ isPixelTheme = false, onOpenCamera }: FitCheckChall
           >
             <Check className={`${isPixelTheme ? "w-6 h-6" : "w-8 h-8"} mx-auto mb-2 text-green-500`} />
             <p className={`font-medium text-green-500 ${isPixelTheme ? "text-xs" : "text-sm"}`}>
-              {completedOnTime ? "Completed on time!" : "Completed!"}
+              {completedOnTime ? "Nailed it!" : "Completed!"}
             </p>
             {completedOnTime && (
               <p className={`text-green-500/70 ${isPixelTheme ? "text-[8px]" : "text-xs"}`}>
-                You earned your purple shirt badge today!
+                Purple shirt badge earned!
               </p>
             )}
           </motion.div>
@@ -205,34 +217,29 @@ const FitCheckChallenge = ({ isPixelTheme = false, onOpenCamera }: FitCheckChall
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
           >
-            {/* Active countdown */}
+            {/* Active countdown - urgent! */}
             <div
-              className={`p-4 bg-purple-500/20 border border-purple-500/30 mb-3 ${
-                isPixelTheme ? "" : "rounded-xl"
-              }`}
+              className={`p-4 bg-purple-500 mb-3 ${isPixelTheme ? "" : "rounded-xl"}`}
               style={{ borderRadius }}
             >
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between text-white">
                 <div>
-                  <p className={`text-purple-500 font-medium ${isPixelTheme ? "text-xs" : "text-sm"}`}>
-                    Time's ticking!
+                  <p className={`font-bold ${isPixelTheme ? "text-xs" : "text-sm"}`}>
+                    GO GO GO!
                   </p>
-                  <p className={`text-purple-500/70 ${isPixelTheme ? "text-[8px]" : "text-xs"}`}>
-                    Post your fit check now
+                  <p className={`opacity-80 ${isPixelTheme ? "text-[8px]" : "text-xs"}`}>
+                    Post your fit now!
                   </p>
                 </div>
                 <div className="text-right">
                   <motion.p
                     key={timeRemaining}
-                    initial={{ scale: 1.1 }}
+                    initial={{ scale: 1.2 }}
                     animate={{ scale: 1 }}
-                    className={`font-bold text-purple-500 ${isPixelTheme ? "text-lg" : "text-2xl"}`}
+                    className={`font-bold ${isPixelTheme ? "text-xl" : "text-3xl"}`}
                   >
                     {formatTime(timeRemaining || 0)}
                   </motion.p>
-                  <p className={`text-purple-500/70 ${isPixelTheme ? "text-[6px]" : "text-xs"}`}>
-                    remaining
-                  </p>
                 </div>
               </div>
             </div>
@@ -241,13 +248,13 @@ const FitCheckChallenge = ({ isPixelTheme = false, onOpenCamera }: FitCheckChall
             <motion.button
               whileTap={{ scale: 0.98 }}
               onClick={onOpenCamera}
-              className={`w-full flex items-center justify-center gap-2 py-3 bg-purple-500 text-white font-medium ${
+              className={`w-full flex items-center justify-center gap-2 py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold ${
                 isPixelTheme ? "text-xs" : "text-sm rounded-xl"
               }`}
               style={{ borderRadius }}
             >
               <Camera className="w-5 h-5" />
-              Take Fit Check Photo
+              Take Photo
             </motion.button>
           </motion.div>
         ) : challengeState === "missed" ? (
@@ -256,54 +263,45 @@ const FitCheckChallenge = ({ isPixelTheme = false, onOpenCamera }: FitCheckChall
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className={`p-4 bg-muted text-center ${isPixelTheme ? "" : "rounded-xl"}`}
+            className={`p-4 bg-muted/50 text-center ${isPixelTheme ? "" : "rounded-xl"}`}
             style={{ borderRadius }}
           >
-            <X className={`${isPixelTheme ? "w-6 h-6" : "w-8 h-8"} mx-auto mb-2 text-muted-foreground`} />
-            <p className={`text-muted-foreground ${isPixelTheme ? "text-xs" : "text-sm"}`}>
-              You missed today's challenge
-            </p>
-            <p className={`text-muted-foreground/70 ${isPixelTheme ? "text-[8px]" : "text-xs"}`}>
-              Don't worry, there's always tomorrow!
+            <X className={`${isPixelTheme ? "w-5 h-5" : "w-6 h-6"} mx-auto mb-2 text-muted-foreground`} />
+            <p className={`text-muted-foreground ${isPixelTheme ? "text-[10px]" : "text-xs"}`}>
+              Window closed. Tomorrow's another day!
             </p>
           </motion.div>
-        ) : (
+        ) : challengeState === "teaser" ? (
           <motion.div
-            key="upcoming"
+            key="teaser"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className={`p-4 bg-secondary ${isPixelTheme ? "" : "rounded-xl"}`}
+            className={`p-4 bg-purple-500/10 border border-purple-500/20 ${
+              isPixelTheme ? "" : "rounded-xl"
+            }`}
             style={{ borderRadius }}
           >
             <div className="flex items-center justify-between">
-              <div>
-                <p className={`font-medium ${isPixelTheme ? "text-xs" : "text-sm"}`}>
-                  Challenge starts in
-                </p>
-                <p className={`text-muted-foreground ${isPixelTheme ? "text-[8px]" : "text-xs"}`}>
-                  Be ready to snap a photo!
-                </p>
+              <div className="flex items-center gap-2">
+                <Bell className={`${isPixelTheme ? "w-4 h-4" : "w-5 h-5"} text-purple-500`} />
+                <div>
+                  <p className={`font-medium text-purple-500 ${isPixelTheme ? "text-xs" : "text-sm"}`}>
+                    Coming soon...
+                  </p>
+                  <p className={`text-purple-500/70 ${isPixelTheme ? "text-[8px]" : "text-xs"}`}>
+                    Be ready to show your fit!
+                  </p>
+                </div>
               </div>
               <div className="text-right">
-                <p className={`font-bold ${isPixelTheme ? "text-lg" : "text-2xl"}`}>
+                <p className={`font-bold text-purple-500 ${isPixelTheme ? "text-lg" : "text-xl"}`}>
                   {formatTime(timeRemaining || 0)}
-                </p>
-                <p className={`text-muted-foreground ${isPixelTheme ? "text-[6px]" : "text-xs"}`}>
-                  until challenge
                 </p>
               </div>
             </div>
-
-            {/* Info */}
-            <div className={`mt-3 p-2 bg-card border border-border ${isPixelTheme ? "" : "rounded-lg"}`} style={{ borderRadius }}>
-              <p className={`text-muted-foreground ${isPixelTheme ? "text-[6px]" : "text-[10px]"}`}>
-                <Timer className="w-3 h-3 inline mr-1" />
-                You'll have 20 minutes to post your fit check and earn a purple shirt badge!
-              </p>
-            </div>
           </motion.div>
-        )}
+        ) : null}
       </AnimatePresence>
     </motion.div>
   );

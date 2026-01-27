@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Camera, X, RotateCcw, Check, Users, Lock } from "lucide-react";
+import { Camera, X, RotateCcw, Check, Users, Lock, ZoomIn, ZoomOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -23,6 +23,9 @@ const FitCheckCamera = ({ isOpen, onClose, onSuccess, isPixelTheme = false }: Fi
   const [caption, setCaption] = useState("");
   const [visibility, setVisibility] = useState<Visibility>("friends");
   const [error, setError] = useState<string | null>(null);
+  const [zoom, setZoom] = useState(1);
+  const [maxZoom, setMaxZoom] = useState(1);
+  const [supportsZoom, setSupportsZoom] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -44,11 +47,15 @@ const FitCheckCamera = ({ isOpen, onClose, onSuccess, isPixelTheme = false }: Fi
   const startCamera = async () => {
     try {
       setError(null);
+      setZoom(1);
+      setSupportsZoom(false);
+      setMaxZoom(1);
+
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: facingMode,
-          width: { ideal: 1080 },
-          height: { ideal: 1920 }
+          width: { ideal: 720 },
+          height: { ideal: 1280 }
         },
         audio: false
       });
@@ -57,9 +64,37 @@ const FitCheckCamera = ({ isOpen, onClose, onSuccess, isPixelTheme = false }: Fi
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
       }
+
+      // Check if zoom is supported
+      const track = stream.getVideoTracks()[0];
+      if (track) {
+        const capabilities = track.getCapabilities?.();
+        if (capabilities?.zoom) {
+          setSupportsZoom(true);
+          setMaxZoom(capabilities.zoom.max || 4);
+          // Set initial zoom to 1
+          await track.applyConstraints({ advanced: [{ zoom: 1 } as any] });
+        }
+      }
     } catch (err) {
       console.error("Camera error:", err);
       setError("Could not access camera. Please check permissions.");
+    }
+  };
+
+  const handleZoom = async (newZoom: number) => {
+    if (!cameraStream || !supportsZoom) return;
+
+    const track = cameraStream.getVideoTracks()[0];
+    if (!track) return;
+
+    const clampedZoom = Math.max(1, Math.min(newZoom, maxZoom));
+    setZoom(clampedZoom);
+
+    try {
+      await track.applyConstraints({ advanced: [{ zoom: clampedZoom } as any] });
+    } catch (err) {
+      console.error("Zoom error:", err);
     }
   };
 
@@ -111,6 +146,7 @@ const FitCheckCamera = ({ isOpen, onClose, onSuccess, isPixelTheme = false }: Fi
 
   const switchCamera = () => {
     stopCamera();
+    setZoom(1);
     setFacingMode(prev => prev === "user" ? "environment" : "user");
   };
 
@@ -208,13 +244,39 @@ const FitCheckCamera = ({ isOpen, onClose, onSuccess, isPixelTheme = false }: Fi
               className="w-full h-full object-contain"
             />
           ) : (
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              muted
-              className={`w-full h-full object-cover ${facingMode === "user" ? "scale-x-[-1]" : ""}`}
-            />
+            <>
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                className={`w-full h-full object-contain bg-black ${facingMode === "user" ? "scale-x-[-1]" : ""}`}
+              />
+              {/* Zoom controls */}
+              {supportsZoom && (
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col gap-2">
+                  <button
+                    onClick={() => handleZoom(zoom + 0.5)}
+                    disabled={zoom >= maxZoom}
+                    className={`p-3 bg-black/50 text-white disabled:opacity-30 ${isPixelTheme ? "" : "rounded-full"}`}
+                    style={{ borderRadius }}
+                  >
+                    <ZoomIn className="w-5 h-5" />
+                  </button>
+                  <div className="text-center text-white text-xs bg-black/50 py-1 px-2 rounded">
+                    {zoom.toFixed(1)}x
+                  </div>
+                  <button
+                    onClick={() => handleZoom(zoom - 0.5)}
+                    disabled={zoom <= 1}
+                    className={`p-3 bg-black/50 text-white disabled:opacity-30 ${isPixelTheme ? "" : "rounded-full"}`}
+                    style={{ borderRadius }}
+                  >
+                    <ZoomOut className="w-5 h-5" />
+                  </button>
+                </div>
+              )}
+            </>
           )}
 
           <canvas ref={canvasRef} className="hidden" />

@@ -2,6 +2,22 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 
+// Simple hash function using Web Crypto API
+async function hashPin(pin: string, salt: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(pin + salt);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// Generate a random salt
+function generateSalt(): string {
+  const array = new Uint8Array(16);
+  crypto.getRandomValues(array);
+  return Array.from(array).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 export const useJournalPin = () => {
   const { user } = useAuth();
   const [hasPin, setHasPin] = useState(false);
@@ -22,8 +38,12 @@ export const useJournalPin = () => {
           .eq('user_id', user.id)
           .single();
 
-        if (error) throw error;
-        setHasPin(!!data?.journal_pin_hash);
+        if (error) {
+          console.error('Error checking PIN:', error);
+          setHasPin(false);
+        } else {
+          setHasPin(!!data?.journal_pin_hash);
+        }
       } catch (error) {
         console.error('Error checking PIN status:', error);
         setHasPin(false);
@@ -40,13 +60,20 @@ export const useJournalPin = () => {
     if (!user) return false;
 
     try {
-      const { data, error } = await supabase.rpc('verify_journal_pin', {
-        p_user_id: user.id,
-        p_pin: pin
-      });
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('journal_pin_hash')
+        .eq('user_id', user.id)
+        .single();
 
-      if (error) throw error;
-      return data === true;
+      if (error || !data?.journal_pin_hash) return false;
+
+      // The stored format is "salt:hash"
+      const [salt, storedHash] = data.journal_pin_hash.split(':');
+      if (!salt || !storedHash) return false;
+
+      const inputHash = await hashPin(pin, salt);
+      return inputHash === storedHash;
     } catch (error) {
       console.error('Error verifying PIN:', error);
       return false;
@@ -58,18 +85,22 @@ export const useJournalPin = () => {
     if (!user) return false;
 
     try {
-      const { data, error } = await supabase.rpc('set_journal_pin', {
-        p_user_id: user.id,
-        p_pin: pin
-      });
+      const salt = generateSalt();
+      const hash = await hashPin(pin, salt);
+      const pinHash = `${salt}:${hash}`;
 
-      if (error) throw error;
+      const { error } = await supabase
+        .from('profiles')
+        .update({ journal_pin_hash: pinHash })
+        .eq('user_id', user.id);
 
-      if (data === true) {
-        setHasPin(true);
-        return true;
+      if (error) {
+        console.error('Error setting PIN:', error);
+        return false;
       }
-      return false;
+
+      setHasPin(true);
+      return true;
     } catch (error) {
       console.error('Error setting PIN:', error);
       return false;
@@ -88,11 +119,35 @@ export const useJournalPin = () => {
     return setupPin(newPin);
   }, [user, verifyPin, setupPin]);
 
+  // Remove PIN
+  const removePin = useCallback(async (): Promise<boolean> => {
+    if (!user) return false;
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ journal_pin_hash: null })
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('Error removing PIN:', error);
+        return false;
+      }
+
+      setHasPin(false);
+      return true;
+    } catch (error) {
+      console.error('Error removing PIN:', error);
+      return false;
+    }
+  }, [user]);
+
   return {
     hasPin,
     isLoading,
     verifyPin,
     setupPin,
-    changePin
+    changePin,
+    removePin
   };
 };
