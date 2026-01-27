@@ -8,16 +8,43 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Helper function to convert base64 to Uint8Array
-function base64ToUint8Array(base64: string): Uint8Array {
-  const padding = '='.repeat((4 - base64.length % 4) % 4);
-  const b64 = (base64 + padding).replace(/\-/g, '+').replace(/_/g, '/');
-  const rawData = atob(b64);
+// Helper function to convert base64url to Uint8Array
+function base64UrlToUint8Array(base64url: string): Uint8Array {
+  const padding = '='.repeat((4 - base64url.length % 4) % 4);
+  const base64 = (base64url + padding).replace(/\-/g, '+').replace(/_/g, '/');
+  const rawData = atob(base64);
   const outputArray = new Uint8Array(rawData.length);
   for (let i = 0; i < rawData.length; ++i) {
     outputArray[i] = rawData.charCodeAt(i);
   }
   return outputArray;
+}
+
+// Helper function to convert Uint8Array to base64url
+function uint8ArrayToBase64Url(array: Uint8Array): string {
+  return btoa(String.fromCharCode(...array))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=/g, '');
+}
+
+// Extract x and y coordinates from uncompressed public key
+function extractPublicKeyCoordinates(publicKeyBase64Url: string): { x: string; y: string } {
+  const publicKeyBytes = base64UrlToUint8Array(publicKeyBase64Url);
+
+  // Uncompressed public key format: 0x04 || x (32 bytes) || y (32 bytes)
+  // Total 65 bytes
+  if (publicKeyBytes.length !== 65 || publicKeyBytes[0] !== 0x04) {
+    throw new Error('Invalid uncompressed public key format');
+  }
+
+  const x = publicKeyBytes.slice(1, 33);
+  const y = publicKeyBytes.slice(33, 65);
+
+  return {
+    x: uint8ArrayToBase64Url(x),
+    y: uint8ArrayToBase64Url(y)
+  };
 }
 
 // Generate VAPID authentication header
@@ -50,13 +77,17 @@ async function generateVAPIDAuthHeader(
   const payloadB64 = btoa(String.fromCharCode(...encoder.encode(JSON.stringify(jwtPayload))))
     .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
 
-  // Import private key for signing from JWK format
-  // The private key is stored as base64url 'd' parameter from JWK
+  // Extract x and y from public key for JWK format
+  const { x, y } = extractPublicKeyCoordinates(vapidPublicKey);
+
+  // Import private key for signing - JWK format requires x, y, and d
   const cryptoKey = await crypto.subtle.importKey(
     'jwk',
     {
       kty: 'EC',
       crv: 'P-256',
+      x: x,
+      y: y,
       d: vapidPrivateKey,
       ext: true
     },
@@ -75,8 +106,7 @@ async function generateVAPIDAuthHeader(
 
   // Convert signature to base64url
   const signatureArray = new Uint8Array(signature);
-  const signatureB64 = btoa(String.fromCharCode(...signatureArray))
-    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+  const signatureB64 = uint8ArrayToBase64Url(signatureArray);
 
   const jwt = `${unsignedToken}.${signatureB64}`;
 
