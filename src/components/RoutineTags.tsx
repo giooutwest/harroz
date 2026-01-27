@@ -1,0 +1,367 @@
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Plus, X, Check } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+
+interface DefaultTag {
+  id: string;
+  name: string;
+  icon: string;
+  sort_order: number;
+}
+
+interface UserTag {
+  id: string;
+  name: string;
+  icon: string;
+  sort_order: number;
+}
+
+interface MoodTag {
+  tag_id: string;
+  tag_type: "default" | "custom";
+}
+
+interface RoutineTagsProps {
+  moodId: string | null;
+  isPixelTheme?: boolean;
+  onTagsChange?: (tags: MoodTag[]) => void;
+}
+
+const RoutineTags = ({ moodId, isPixelTheme = false, onTagsChange }: RoutineTagsProps) => {
+  const [defaultTags, setDefaultTags] = useState<DefaultTag[]>([]);
+  const [userTags, setUserTags] = useState<UserTag[]>([]);
+  const [selectedTags, setSelectedTags] = useState<MoodTag[]>([]);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newTagName, setNewTagName] = useState("");
+  const [newTagIcon, setNewTagIcon] = useState("✨");
+  const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth();
+
+  const borderRadius = isPixelTheme ? "0" : undefined;
+
+  // Common emoji options for custom tags
+  const emojiOptions = ["✨", "🎯", "💪", "📱", "🎮", "🎨", "🎵", "☕", "🍎", "🚶", "🧹", "💼", "🛒", "📞", "✍️", "🎓"];
+
+  useEffect(() => {
+    fetchTags();
+  }, [user]);
+
+  useEffect(() => {
+    if (moodId) {
+      fetchMoodTags();
+    } else {
+      setSelectedTags([]);
+    }
+  }, [moodId]);
+
+  const fetchTags = async () => {
+    setIsLoading(true);
+    try {
+      // Fetch default tags
+      const { data: defaults } = await supabase
+        .from("default_routine_tags")
+        .select("*")
+        .order("sort_order");
+
+      if (defaults) setDefaultTags(defaults);
+
+      // Fetch user's custom tags
+      if (user) {
+        const { data: customs } = await supabase
+          .from("user_routine_tags")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("sort_order");
+
+        if (customs) setUserTags(customs);
+      }
+    } catch (error) {
+      console.error("Error fetching tags:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchMoodTags = async () => {
+    if (!moodId) return;
+
+    const { data } = await supabase
+      .from("mood_routine_tags")
+      .select("tag_id, tag_type")
+      .eq("mood_id", moodId);
+
+    if (data) {
+      setSelectedTags(data);
+    }
+  };
+
+  const toggleTag = async (tagId: string, tagType: "default" | "custom") => {
+    if (!moodId) return;
+
+    const isSelected = selectedTags.some(t => t.tag_id === tagId && t.tag_type === tagType);
+
+    if (isSelected) {
+      // Remove tag
+      await supabase
+        .from("mood_routine_tags")
+        .delete()
+        .eq("mood_id", moodId)
+        .eq("tag_id", tagId)
+        .eq("tag_type", tagType);
+
+      const newTags = selectedTags.filter(t => !(t.tag_id === tagId && t.tag_type === tagType));
+      setSelectedTags(newTags);
+      onTagsChange?.(newTags);
+    } else {
+      // Add tag
+      await supabase
+        .from("mood_routine_tags")
+        .insert({
+          mood_id: moodId,
+          tag_id: tagId,
+          tag_type: tagType
+        });
+
+      const newTags = [...selectedTags, { tag_id: tagId, tag_type: tagType }];
+      setSelectedTags(newTags);
+      onTagsChange?.(newTags);
+    }
+  };
+
+  const handleAddCustomTag = async () => {
+    if (!user || !newTagName.trim()) return;
+
+    const { data, error } = await supabase
+      .from("user_routine_tags")
+      .insert({
+        user_id: user.id,
+        name: newTagName.trim(),
+        icon: newTagIcon,
+        sort_order: userTags.length
+      })
+      .select()
+      .single();
+
+    if (!error && data) {
+      setUserTags([...userTags, data]);
+      setNewTagName("");
+      setNewTagIcon("✨");
+      setShowAddModal(false);
+    }
+  };
+
+  const deleteCustomTag = async (tagId: string) => {
+    await supabase
+      .from("user_routine_tags")
+      .delete()
+      .eq("id", tagId);
+
+    setUserTags(userTags.filter(t => t.id !== tagId));
+    setSelectedTags(selectedTags.filter(t => !(t.tag_id === tagId && t.tag_type === "custom")));
+  };
+
+  const isTagSelected = (tagId: string, tagType: "default" | "custom") => {
+    return selectedTags.some(t => t.tag_id === tagId && t.tag_type === tagType);
+  };
+
+  if (isLoading) return null;
+
+  return (
+    <div className="mt-4">
+      <p className={`text-muted-foreground mb-2 ${isPixelTheme ? "text-[8px]" : "text-xs"}`}>
+        What did you do today?
+      </p>
+
+      <div className="flex flex-wrap gap-2">
+        {/* Default tags */}
+        {defaultTags.map((tag) => (
+          <motion.button
+            key={`default-${tag.id}`}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => toggleTag(tag.id, "default")}
+            disabled={!moodId}
+            className={`flex items-center gap-1.5 px-3 py-1.5 border transition-all ${
+              isTagSelected(tag.id, "default")
+                ? "bg-primary text-primary-foreground border-primary"
+                : "bg-card border-border hover:border-primary/50"
+            } ${!moodId ? "opacity-50 cursor-not-allowed" : ""} ${
+              isPixelTheme ? "" : "rounded-full"
+            }`}
+            style={{ borderRadius }}
+          >
+            <span className={isPixelTheme ? "text-xs" : "text-sm"}>{tag.icon}</span>
+            <span className={isPixelTheme ? "text-[8px]" : "text-xs"}>{tag.name}</span>
+            {isTagSelected(tag.id, "default") && (
+              <Check className={`${isPixelTheme ? "w-2 h-2" : "w-3 h-3"}`} />
+            )}
+          </motion.button>
+        ))}
+
+        {/* User custom tags */}
+        {userTags.map((tag) => (
+          <motion.div
+            key={`custom-${tag.id}`}
+            className="relative group"
+          >
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={() => toggleTag(tag.id, "custom")}
+              disabled={!moodId}
+              className={`flex items-center gap-1.5 px-3 py-1.5 border transition-all ${
+                isTagSelected(tag.id, "custom")
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-card border-border hover:border-primary/50"
+              } ${!moodId ? "opacity-50 cursor-not-allowed" : ""} ${
+                isPixelTheme ? "" : "rounded-full"
+              }`}
+              style={{ borderRadius }}
+            >
+              <span className={isPixelTheme ? "text-xs" : "text-sm"}>{tag.icon}</span>
+              <span className={isPixelTheme ? "text-[8px]" : "text-xs"}>{tag.name}</span>
+              {isTagSelected(tag.id, "custom") && (
+                <Check className={`${isPixelTheme ? "w-2 h-2" : "w-3 h-3"}`} />
+              )}
+            </motion.button>
+            {/* Delete button on hover */}
+            <button
+              onClick={() => deleteCustomTag(tag.id)}
+              className={`absolute -top-1 -right-1 w-4 h-4 bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity ${
+                isPixelTheme ? "" : "rounded-full"
+              }`}
+              style={{ borderRadius }}
+            >
+              <X className="w-2 h-2" />
+            </button>
+          </motion.div>
+        ))}
+
+        {/* Add custom tag button */}
+        <motion.button
+          whileTap={{ scale: 0.95 }}
+          onClick={() => setShowAddModal(true)}
+          className={`flex items-center gap-1.5 px-3 py-1.5 border border-dashed border-border hover:border-primary/50 transition-colors ${
+            isPixelTheme ? "" : "rounded-full"
+          }`}
+          style={{ borderRadius }}
+        >
+          <Plus className={`${isPixelTheme ? "w-3 h-3" : "w-4 h-4"}`} />
+          <span className={isPixelTheme ? "text-[8px]" : "text-xs"}>Add</span>
+        </motion.button>
+      </div>
+
+      {/* Add Custom Tag Modal */}
+      <AnimatePresence>
+        {showAddModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={() => setShowAddModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className={`bg-card border border-border p-6 w-full max-w-sm ${
+                isPixelTheme ? "" : "rounded-2xl"
+              }`}
+              style={{ borderRadius }}
+            >
+              <h3 className={`font-semibold mb-4 ${isPixelTheme ? "text-xs" : "text-lg"}`}>
+                Add Custom Tag
+              </h3>
+
+              {/* Emoji picker */}
+              <div className="mb-4">
+                <p className={`text-muted-foreground mb-2 ${isPixelTheme ? "text-[8px]" : "text-xs"}`}>
+                  Choose an icon
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {emojiOptions.map((emoji) => (
+                    <button
+                      key={emoji}
+                      onClick={() => setNewTagIcon(emoji)}
+                      className={`w-10 h-10 flex items-center justify-center border-2 transition-colors ${
+                        newTagIcon === emoji
+                          ? "border-primary bg-primary/10"
+                          : "border-border hover:border-primary/50"
+                      } ${isPixelTheme ? "" : "rounded-lg"}`}
+                      style={{ borderRadius }}
+                    >
+                      <span className="text-lg">{emoji}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Tag name input */}
+              <div className="mb-4">
+                <p className={`text-muted-foreground mb-2 ${isPixelTheme ? "text-[8px]" : "text-xs"}`}>
+                  Tag name
+                </p>
+                <input
+                  type="text"
+                  value={newTagName}
+                  onChange={(e) => setNewTagName(e.target.value)}
+                  placeholder="e.g., Called mom"
+                  maxLength={20}
+                  className={`w-full px-4 py-2 bg-secondary border border-border focus:border-primary outline-none ${
+                    isPixelTheme ? "text-xs" : "text-sm rounded-lg"
+                  }`}
+                  style={{ borderRadius }}
+                />
+              </div>
+
+              {/* Preview */}
+              <div className="mb-4">
+                <p className={`text-muted-foreground mb-2 ${isPixelTheme ? "text-[8px]" : "text-xs"}`}>
+                  Preview
+                </p>
+                <div
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground ${
+                    isPixelTheme ? "" : "rounded-full"
+                  }`}
+                  style={{ borderRadius }}
+                >
+                  <span>{newTagIcon}</span>
+                  <span className={isPixelTheme ? "text-[8px]" : "text-xs"}>
+                    {newTagName || "Tag name"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowAddModal(false)}
+                  className={`flex-1 px-4 py-2 bg-secondary text-foreground ${
+                    isPixelTheme ? "text-xs" : "text-sm rounded-lg"
+                  }`}
+                  style={{ borderRadius }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleAddCustomTag}
+                  disabled={!newTagName.trim()}
+                  className={`flex-1 px-4 py-2 bg-primary text-primary-foreground disabled:opacity-50 ${
+                    isPixelTheme ? "text-xs" : "text-sm rounded-lg"
+                  }`}
+                  style={{ borderRadius }}
+                >
+                  Add Tag
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+export default RoutineTags;

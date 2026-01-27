@@ -6,6 +6,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Special+Elite&display=swap');
 
 @layer base {
   :root {
@@ -202,6 +203,85 @@
   .theme-calligraphy h3,
   .theme-calligraphy .splash-title {
     font-family: 'Great Vibes', 'Playfair Display', serif;
+  }
+
+  /* Y2K / Grunge theme - typewriter, paper textures, red/black */
+  .theme-grunge {
+    --background: 40 20% 94%;
+    --foreground: 0 0% 8%;
+
+    --card: 40 25% 90%;
+    --card-foreground: 0 0% 8%;
+
+    --popover: 40 25% 90%;
+    --popover-foreground: 0 0% 8%;
+
+    --primary: 0 75% 45%; /* Deep red */
+    --primary-foreground: 40 20% 94%;
+
+    --secondary: 30 15% 85%;
+    --secondary-foreground: 0 0% 8%;
+
+    --muted: 35 18% 88%;
+    --muted-foreground: 30 10% 40%;
+
+    --accent: 0 60% 35%; /* Dark red accent */
+    --accent-foreground: 40 20% 94%;
+
+    --destructive: 0 84% 40%;
+    --destructive-foreground: 40 20% 94%;
+
+    --border: 30 20% 75%;
+    --input: 35 18% 88%;
+    --ring: 0 75% 45%;
+
+    --radius: 0;
+
+    /* Tab bar */
+    --tab-bar: 40 22% 92%;
+    --tab-active: 0 75% 45%;
+    --tab-inactive: 30 10% 50%;
+
+    font-family: 'Special Elite', 'Courier New', monospace;
+  }
+
+  /* Typewriter font for grunge theme */
+  .theme-grunge h1,
+  .theme-grunge h2,
+  .theme-grunge h3,
+  .theme-grunge button,
+  .theme-grunge span,
+  .theme-grunge p,
+  .theme-grunge input,
+  .theme-grunge textarea {
+    font-family: 'Special Elite', 'Courier New', monospace;
+  }
+
+  /* Paper texture background for grunge theme */
+  .theme-grunge::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    z-index: 0;
+    background-image:
+      url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E");
+    opacity: 0.4;
+  }
+
+  .theme-grunge > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Rough edges for cards in grunge theme */
+  .theme-grunge .bg-card {
+    box-shadow:
+      2px 2px 0 hsl(var(--border)),
+      -1px -1px 0 hsl(var(--border));
   }
 }
 

@@ -18,7 +18,7 @@ import { useNavigate } from "react-router-dom";
 import PinEntryModal from "./PinEntryModal";
 import { useJournalPin } from "@/hooks/useJournalPin";
 
-type Theme = "dark" | "pixel" | "fruit" | "calligraphy";
+type Theme = "dark" | "pixel" | "fruit" | "calligraphy" | "grunge";
 type DefaultVisibility = "private" | "friends" | "close_friends";
 
 interface PrivacySettings {
@@ -272,8 +272,9 @@ const SettingsSheet = ({
   const themes = [
     { id: "dark" as Theme, name: "Dark Mode", description: "Minimal & sleek", icon: Moon, bgColor: "bg-black", iconColor: "text-white" },
     { id: "pixel" as Theme, name: "Pixel Art", description: "Colorful & retro", icon: isPixelTheme ? PixelStar : Sparkles, gradient: "linear-gradient(135deg, hsl(280, 80%, 65%), hsl(180, 80%, 60%))", iconColor: "text-white" },
-    { id: "fruit" as Theme, name: "Fruit Fresh", description: "Sweet & pastel", icon: Cherry, gradient: "linear-gradient(135deg, hsl(350, 80%, 80%), hsl(30, 90%, 85%))", iconColor: "text-white" }
-    ,{ id: "calligraphy" as Theme, name: "Calligraphy", description: "White, sleek & script", icon: Sparkles, gradient: "linear-gradient(135deg, rgba(255,245,230,1), rgba(255,250,240,1))", bgColor: "bg-white", iconColor: "text-amber-600" }
+    { id: "fruit" as Theme, name: "Fruit Fresh", description: "Sweet & pastel", icon: Cherry, gradient: "linear-gradient(135deg, hsl(350, 80%, 80%), hsl(30, 90%, 85%))", iconColor: "text-white" },
+    { id: "calligraphy" as Theme, name: "Calligraphy", description: "White, sleek & script", icon: Sparkles, gradient: "linear-gradient(135deg, rgba(255,245,230,1), rgba(255,250,240,1))", bgColor: "bg-white", iconColor: "text-amber-600" },
+    { id: "grunge" as Theme, name: "Y2K Grunge", description: "Typewriter & chaos", icon: Sparkles, gradient: "linear-gradient(135deg, hsl(40, 20%, 90%), hsl(0, 75%, 45%))", iconColor: "text-black" }
   ];
 
   const privacyOptions = [
@@ -420,7 +421,7 @@ const SettingsSheet = ({
 
                 <div>
                   <h4 className={`font-medium mb-3 ${isPixelTheme ? "text-[10px]" : "text-sm"}`}>Choose Theme</h4>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {themes.map((theme) => {
                       const Icon = theme.icon;
                       return (

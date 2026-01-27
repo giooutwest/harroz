@@ -1,16 +1,25 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, ArrowLeft, User, Circle, MessageCirclePlus, X } from "lucide-react";
+import { Send, ArrowLeft, User, Circle, MessageCirclePlus, X, Mic, Check, CheckCheck, Heart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "./ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow, format } from "date-fns";
+import VoiceRecorder from "./VoiceRecorder";
+import VoiceMessage from "./VoiceMessage";
 
 interface MessagesTabProps {
   isPixelTheme?: boolean;
   onFriendClick?: (friendId: string) => void;
+}
+
+interface MessageReaction {
+  id: string;
+  message_id: string;
+  user_id: string;
+  emoji: string;
 }
 
 interface Message {
@@ -20,6 +29,12 @@ interface Message {
   content: string;
   read: boolean;
   created_at: string;
+  message_type?: 'text' | 'voice' | 'image';
+  voice_url?: string | null;
+  voice_duration?: number | null;
+  delivered_at?: string | null;
+  read_at?: string | null;
+  reactions?: MessageReaction[];
 }
 
 interface Conversation {
@@ -53,6 +68,9 @@ const MessagesTab = ({ isPixelTheme = false, onFriendClick }: MessagesTabProps) 
   const [showNewMessageModal, setShowNewMessageModal] = useState(false);
   const [friends, setFriends] = useState<Friend[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isRecording, setIsRecording] = useState(false);
+  const [expandedMessageId, setExpandedMessageId] = useState<string | null>(null);
+  const [lastTapTime, setLastTapTime] = useState<{ [key: string]: number }>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -183,7 +201,44 @@ const MessagesTab = ({ isPixelTheme = false, onFriendClick }: MessagesTabProps) 
       return;
     }
 
-    setMessages(data || []);
+    // Fetch reactions for all messages
+    const messageIds = data?.map(m => m.id) || [];
+    let reactionsMap: { [key: string]: MessageReaction[] } = {};
+
+    if (messageIds.length > 0) {
+      const { data: reactionsData } = await supabase
+        .from('message_reactions')
+        .select('*')
+        .in('message_id', messageIds);
+
+      if (reactionsData) {
+        reactionsData.forEach(r => {
+          if (!reactionsMap[r.message_id]) {
+            reactionsMap[r.message_id] = [];
+          }
+          reactionsMap[r.message_id].push(r);
+        });
+      }
+    }
+
+    // Add reactions to messages and generate signed URLs for voice messages
+    const messagesWithExtras = await Promise.all((data || []).map(async (msg) => {
+      let voiceSignedUrl = null;
+      if (msg.voice_url) {
+        const { data: signedData } = await supabase.storage
+          .from('mood-photos')
+          .createSignedUrl(msg.voice_url, 3600);
+        voiceSignedUrl = signedData?.signedUrl || null;
+      }
+
+      return {
+        ...msg,
+        reactions: reactionsMap[msg.id] || [],
+        voice_url: voiceSignedUrl || msg.voice_url
+      };
+    }));
+
+    setMessages(messagesWithExtras);
   };
 
   const markMessagesAsRead = async (friendId: string) => {
@@ -191,12 +246,110 @@ const MessagesTab = ({ isPixelTheme = false, onFriendClick }: MessagesTabProps) 
 
     await supabase
       .from('messages')
-      .update({ read: true })
+      .update({ read: true, read_at: new Date().toISOString() })
       .eq('sender_id', friendId)
       .eq('receiver_id', user.id)
       .eq('read', false);
 
     fetchConversations();
+  };
+
+  // Handle message tap (single tap shows time, double tap reacts)
+  const handleMessageTap = useCallback((msg: Message) => {
+    const now = Date.now();
+    const lastTap = lastTapTime[msg.id] || 0;
+    const timeDiff = now - lastTap;
+
+    if (timeDiff < 300 && timeDiff > 0) {
+      // Double tap - add reaction
+      handleAddReaction(msg.id, '❤️');
+      setLastTapTime(prev => ({ ...prev, [msg.id]: 0 }));
+    } else {
+      // Single tap - toggle timestamp
+      setExpandedMessageId(prev => prev === msg.id ? null : msg.id);
+      setLastTapTime(prev => ({ ...prev, [msg.id]: now }));
+    }
+  }, [lastTapTime]);
+
+  // Add reaction to message
+  const handleAddReaction = async (messageId: string, emoji: string) => {
+    if (!user) return;
+
+    try {
+      // Check if user already reacted
+      const { data: existing } = await supabase
+        .from('message_reactions')
+        .select('id')
+        .eq('message_id', messageId)
+        .eq('user_id', user.id)
+        .single();
+
+      if (existing) {
+        // Remove reaction if same emoji, or update if different
+        await supabase
+          .from('message_reactions')
+          .delete()
+          .eq('id', existing.id);
+      } else {
+        // Add new reaction
+        await supabase
+          .from('message_reactions')
+          .insert({
+            message_id: messageId,
+            user_id: user.id,
+            emoji
+          });
+      }
+
+      // Refresh messages to show updated reactions
+      if (selectedFriend) {
+        fetchMessages(selectedFriend.id);
+      }
+    } catch (error) {
+      console.error('Error adding reaction:', error);
+    }
+  };
+
+  // Send voice message
+  const handleSendVoice = async (audioBlob: Blob, duration: number) => {
+    if (!user || !selectedFriend) return;
+
+    setSending(true);
+    setIsRecording(false);
+
+    try {
+      // Upload audio to storage
+      const fileName = `${user.id}/voice/${Date.now()}.webm`;
+      const { error: uploadError } = await supabase.storage
+        .from('mood-photos')
+        .upload(fileName, audioBlob, {
+          contentType: 'audio/webm'
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Create message with voice
+      const { error } = await supabase
+        .from('messages')
+        .insert({
+          sender_id: user.id,
+          receiver_id: selectedFriend.id,
+          content: '🎤 Voice message',
+          message_type: 'voice',
+          voice_url: fileName,
+          voice_duration: duration
+        });
+
+      if (error) throw error;
+
+      fetchMessages(selectedFriend.id);
+      fetchConversations();
+    } catch (error) {
+      console.error('Error sending voice:', error);
+      toast({ title: "Failed to send voice message", variant: "destructive" });
+    } finally {
+      setSending(false);
+    }
   };
 
   const handleSendMessage = async () => {
@@ -331,32 +484,107 @@ const MessagesTab = ({ isPixelTheme = false, onFriendClick }: MessagesTabProps) 
           ) : (
             messages.map((msg) => {
               const isMine = msg.sender_id === user?.id;
+              const isExpanded = expandedMessageId === msg.id;
+              const hasReactions = msg.reactions && msg.reactions.length > 0;
+
               return (
                 <motion.div
                   key={msg.id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className={`flex ${isMine ? "justify-end" : "justify-start"}`}
+                  className={`flex flex-col ${isMine ? "items-end" : "items-start"}`}
                 >
-                  <div
-                    className={`max-w-[75%] px-4 py-2 ${
+                  <motion.div
+                    onClick={() => handleMessageTap(msg)}
+                    className={`max-w-[75%] px-4 py-2 relative cursor-pointer select-none ${
                       isMine
                         ? "bg-primary text-primary-foreground"
                         : "bg-card border border-border"
                     } ${isPixelTheme ? "" : "rounded-2xl"}`}
                     style={{ borderRadius }}
+                    whileTap={{ scale: 0.98 }}
                   >
-                    <p className={`break-words ${isPixelTheme ? "text-xs" : "text-sm"}`}>
-                      {msg.content}
-                    </p>
-                    <p
-                      className={`text-[10px] mt-1 ${
-                        isMine ? "text-primary-foreground/70" : "text-muted-foreground"
-                      }`}
-                    >
-                      {formatDistanceToNow(new Date(msg.created_at), { addSuffix: true })}
-                    </p>
-                  </div>
+                    {/* Voice message or text */}
+                    {msg.message_type === 'voice' && msg.voice_url ? (
+                      <VoiceMessage
+                        audioUrl={msg.voice_url}
+                        duration={msg.voice_duration || 0}
+                        isMine={isMine}
+                        isPixelTheme={isPixelTheme}
+                      />
+                    ) : (
+                      <p className={`break-words ${isPixelTheme ? "text-xs" : "text-sm"}`}>
+                        {msg.content}
+                      </p>
+                    )}
+
+                    {/* Reactions badge */}
+                    {hasReactions && (
+                      <div
+                        className={`absolute -bottom-2 ${isMine ? 'left-2' : 'right-2'} flex items-center gap-0.5 px-1.5 py-0.5 bg-card border border-border shadow-sm ${
+                          isPixelTheme ? "" : "rounded-full"
+                        }`}
+                        style={{ borderRadius: isPixelTheme ? "0" : undefined }}
+                      >
+                        {msg.reactions?.map((r, i) => (
+                          <span key={i} className="text-xs">{r.emoji}</span>
+                        ))}
+                      </div>
+                    )}
+                  </motion.div>
+
+                  {/* Timestamp and read status - shown on tap */}
+                  <AnimatePresence>
+                    {isExpanded && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className={`flex items-center gap-2 mt-1 ${
+                          isMine ? "flex-row-reverse" : ""
+                        }`}
+                      >
+                        <span className={`text-[10px] text-muted-foreground`}>
+                          {format(new Date(msg.created_at), 'MMM d, h:mm a')}
+                        </span>
+
+                        {/* Read/Delivered indicator for sent messages */}
+                        {isMine && (
+                          <span className="flex items-center text-[10px] text-muted-foreground">
+                            {msg.read_at ? (
+                              <>
+                                <CheckCheck className="w-3 h-3 mr-0.5 text-primary" />
+                                Read {format(new Date(msg.read_at), 'h:mm a')}
+                              </>
+                            ) : msg.delivered_at ? (
+                              <>
+                                <CheckCheck className="w-3 h-3 mr-0.5" />
+                                Delivered
+                              </>
+                            ) : (
+                              <>
+                                <Check className="w-3 h-3 mr-0.5" />
+                                Sent
+                              </>
+                            )}
+                          </span>
+                        )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Compact read indicator */}
+                  {!isExpanded && isMine && (
+                    <div className="flex items-center mt-0.5">
+                      {msg.read_at ? (
+                        <CheckCheck className="w-3 h-3 text-primary" />
+                      ) : msg.delivered_at ? (
+                        <CheckCheck className="w-3 h-3 text-muted-foreground" />
+                      ) : (
+                        <Check className="w-3 h-3 text-muted-foreground" />
+                      )}
+                    </div>
+                  )}
                 </motion.div>
               );
             })
@@ -366,31 +594,63 @@ const MessagesTab = ({ isPixelTheme = false, onFriendClick }: MessagesTabProps) 
 
         {/* Input */}
         <div className="flex-shrink-0 p-4 border-t border-border bg-card">
-          <div className="flex gap-2">
-            <Input
-              placeholder="Type a message..."
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSendMessage();
-                }
-              }}
-              className={isPixelTheme ? "text-xs" : ""}
-              style={{ borderRadius }}
-            />
-            <button
-              onClick={handleSendMessage}
-              disabled={!newMessage.trim() || sending}
-              className={`p-2 bg-primary text-primary-foreground disabled:opacity-50 ${
-                isPixelTheme ? "" : "rounded-full"
-              }`}
-              style={{ borderRadius }}
-            >
-              <Send className="w-4 h-4" />
-            </button>
-          </div>
+          <AnimatePresence mode="wait">
+            {isRecording ? (
+              <VoiceRecorder
+                key="recorder"
+                onSend={handleSendVoice}
+                onCancel={() => setIsRecording(false)}
+                isPixelTheme={isPixelTheme}
+              />
+            ) : (
+              <motion.div
+                key="input"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex gap-2"
+              >
+                <Input
+                  placeholder="Type a message..."
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSendMessage();
+                    }
+                  }}
+                  className={isPixelTheme ? "text-xs" : ""}
+                  style={{ borderRadius }}
+                />
+
+                {/* Mic button - show when no text */}
+                {!newMessage.trim() && (
+                  <button
+                    onClick={() => setIsRecording(true)}
+                    className={`p-2 bg-secondary text-foreground hover:bg-secondary/80 transition-colors ${
+                      isPixelTheme ? "" : "rounded-full"
+                    }`}
+                    style={{ borderRadius }}
+                  >
+                    <Mic className="w-4 h-4" />
+                  </button>
+                )}
+
+                {/* Send button - show when has text */}
+                <button
+                  onClick={handleSendMessage}
+                  disabled={!newMessage.trim() || sending}
+                  className={`p-2 bg-primary text-primary-foreground disabled:opacity-50 ${
+                    isPixelTheme ? "" : "rounded-full"
+                  } ${!newMessage.trim() ? "hidden" : ""}`}
+                  style={{ borderRadius }}
+                >
+                  <Send className="w-4 h-4" />
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     );

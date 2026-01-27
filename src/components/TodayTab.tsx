@@ -20,6 +20,8 @@ import PinEntryModal from "./PinEntryModal";
 import JournalEditor from "./JournalEditor";
 import { useJournalPin } from "@/hooks/useJournalPin";
 import { useJournalEntry } from "@/hooks/useJournalEntry";
+import RoutineTags from "./RoutineTags";
+import FitCheckChallenge from "./FitCheckChallenge";
 
 const captionSchema = z.string().max(500, "Caption must be 500 characters or less").trim();
 
@@ -130,6 +132,7 @@ const TodayTab = ({ isPixelTheme = false }: TodayTabProps) => {
   const [showPinModal, setShowPinModal] = useState(false);
   const [pinModalMode, setPinModalMode] = useState<"setup" | "verify">("verify");
   const [isJournalUnlocked, setIsJournalUnlocked] = useState(false);
+  const [showFitCheckCamera, setShowFitCheckCamera] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const shareRef = useRef<HTMLDivElement>(null);
@@ -440,6 +443,14 @@ const TodayTab = ({ isPixelTheme = false }: TodayTabProps) => {
             )}
           </AnimatePresence>
           <CountdownTimer isPixelTheme={isPixelTheme} />
+
+          {/* Fit Check Challenge */}
+          <div className="w-full mt-6">
+            <FitCheckChallenge
+              isPixelTheme={isPixelTheme}
+              onOpenCamera={() => setShowFitCheckCamera(true)}
+            />
+          </div>
         </motion.div>
       </div>
     );
@@ -522,7 +533,12 @@ const TodayTab = ({ isPixelTheme = false }: TodayTabProps) => {
               )}
               <input ref={fileInputRef} type="file" accept="image/*" onChange={handlePhotoSelect} className="hidden" />
             </motion.div>
-            <Input type="text" placeholder="Caption (optional)" value={caption} onChange={(e) => setCaption(e.target.value)} maxLength={500} className={`mb-4 ${isPixelTheme ? "text-xs" : ""}`} style={{ borderRadius: isPixelTheme ? "0" : undefined }} />
+            <Input type="text" placeholder="Caption (optional)" value={caption} onChange={(e) => setCaption(e.target.value)} maxLength={500} className={`mb-2 ${isPixelTheme ? "text-xs" : ""}`} style={{ borderRadius: isPixelTheme ? "0" : undefined }} />
+
+            {/* Routine Tags */}
+            <div className="w-full mb-4">
+              <RoutineTags moodId={todaysMoodId} isPixelTheme={isPixelTheme} />
+            </div>
 
             {/* Visibility Selector */}
             <div className="w-full mb-4">

@@ -1,9 +1,9 @@
 import { useState, useEffect, Suspense, lazy } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { LogOut, Settings, Loader2 } from "lucide-react";
+import { LogOut, Settings, Loader2, Camera } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
-import TodayTab from "@/components/TodayTab"; 
+import TodayTab from "@/components/TodayTab";
 import SettingsSheet from "@/components/SettingsSheet";
 import Onboarding from "@/components/Onboarding";
 import UpdateBanner from "@/components/UpdateBanner";
@@ -11,6 +11,8 @@ import InstallPrompt from "@/components/InstallPrompt";
 import PWAInstallTutorial from "@/components/PWAInstallTutorial";
 import NotificationPrompt from "@/components/NotificationPrompt";
 import BetaPrompt from "@/components/BetaPrompt";
+import FitCheckCamera from "@/components/FitCheckCamera";
+import WhatsNewModal from "@/components/WhatsNewModal";
 import { useAuth } from "@/hooks/useAuth";
 import { PixelSettings } from "@/components/PixelIcons";
 import { supabase } from "@/integrations/supabase/client";
@@ -24,7 +26,7 @@ const FriendsTab = lazy(() => import("@/components/FriendsTab"));
 const MessagesTab = lazy(() => import("@/components/MessagesTab"));
 
 type Tab = "today" | "calendar" | "stats" | "friends" | "messages";
-type Theme = "dark" | "pixel" | "fruit" | "calligraphy";
+type Theme = "dark" | "pixel" | "fruit" | "calligraphy" | "grunge";
 
 const TabLoader = () => (
   <div className="flex items-center justify-center h-[50vh]">
@@ -41,6 +43,7 @@ const Index = () => {
   const [showInstallTutorial, setShowInstallTutorial] = useState(false);
   const [showNotificationPrompt, setShowNotificationPrompt] = useState(false);
   const [showBetaPrompt, setShowBetaPrompt] = useState(false);
+  const [showFitCheck, setShowFitCheck] = useState(false);
   const [displayName, setDisplayName] = useState<string | null>(null);
   
   const [selectedFriendFromNotification, setSelectedFriendFromNotification] = useState<string | null>(null);
@@ -216,13 +219,15 @@ const Index = () => {
   }, []);
 
   useEffect(() => {
-    document.documentElement.classList.remove("theme-pixel", "theme-fruit", "theme-calligraphy");
+    document.documentElement.classList.remove("theme-pixel", "theme-fruit", "theme-calligraphy", "theme-grunge");
     if (theme === "pixel") {
       document.documentElement.classList.add("theme-pixel");
     } else if (theme === "fruit") {
       document.documentElement.classList.add("theme-fruit");
     } else if (theme === "calligraphy") {
       document.documentElement.classList.add("theme-calligraphy");
+    } else if (theme === "grunge") {
+      document.documentElement.classList.add("theme-grunge");
     }
     localStorage.setItem("moodmemos-theme", theme);
   }, [theme]);
@@ -352,8 +357,26 @@ const Index = () => {
         </AnimatePresence>
       </main>
 
-      <BottomNav 
-        activeTab={activeTab} 
+      {/* Fit Check FAB - shows on Today tab */}
+      {activeTab === "today" && (
+        <motion.button
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0, opacity: 0 }}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => setShowFitCheck(true)}
+          className={`fixed bottom-24 right-6 z-40 w-14 h-14 bg-primary text-primary-foreground shadow-lg flex items-center justify-center ${
+            isPixelTheme ? "" : "rounded-full"
+          }`}
+          style={{ borderRadius: isPixelTheme ? "0" : undefined }}
+        >
+          <Camera className="w-6 h-6" />
+        </motion.button>
+      )}
+
+      <BottomNav
+        activeTab={activeTab}
         onTabChange={setActiveTab}
         isPixelTheme={isPixelTheme}
       />
@@ -385,6 +408,7 @@ const Index = () => {
       <PWAInstallTutorial isOpen={showInstallTutorial} onClose={handleInstallTutorialClose} isPixelTheme={isPixelTheme} />
       <NotificationPrompt isOpen={showNotificationPrompt} onClose={handleNotificationPromptClose} isPixelTheme={isPixelTheme} />
       <BetaPrompt isOpen={showBetaPrompt} onClose={() => setShowBetaPrompt(false)} isPixelTheme={isPixelTheme} />
+      <FitCheckCamera isOpen={showFitCheck} onClose={() => setShowFitCheck(false)} isPixelTheme={isPixelTheme} />
     </div>
   );
 };

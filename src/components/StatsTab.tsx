@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Flame, Sun, TrendingUp, PieChart, Sparkles, Camera, Edit2, Save, X, User } from "lucide-react";
+import { Flame, Sun, TrendingUp, PieChart, Sparkles, Camera, Edit2, Save, X, User, Clock, Activity } from "lucide-react";
+import OnThisDay from "./OnThisDay";
+import TagActivityChart from "./TagActivityChart";
 import { supabase } from "@/integrations/supabase/client";
 import { PieChart as RechartsPie, Pie, Cell, ResponsiveContainer } from "recharts";
 import { PixelFlame, PixelStar, PixelChart } from "./PixelIcons";
@@ -446,6 +448,26 @@ const StatsTab = ({ isPixelTheme = false }: StatsTabProps) => {
               );
             })}
           </div>
+
+          {/* Time Travel / On This Day */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="mb-8"
+          >
+            <OnThisDay isPixelTheme={isPixelTheme} />
+          </motion.div>
+
+          {/* Activity Insights / Tag Correlation */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+            className="mb-8"
+          >
+            <TagActivityChart isPixelTheme={isPixelTheme} />
+          </motion.div>
 
           {stats.moodDistribution.length > 0 && (
             <motion.div

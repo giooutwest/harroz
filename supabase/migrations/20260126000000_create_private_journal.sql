@@ -1,6 +1,9 @@
 -- Migration: Create Private Journal Feature
 -- This adds a PIN-protected private journal system
 
+-- Enable pgcrypto extension for password hashing
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 -- Add journal PIN hash to profiles table
 ALTER TABLE public.profiles
 ADD COLUMN IF NOT EXISTS journal_pin_hash TEXT DEFAULT NULL;
