@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Users, User } from "lucide-react"; // Icons for 'FRNDS' and 'YOU'
+import { motion } from "framer-motion";
+import { Users, User, ChevronLeft, ChevronRight } from "lucide-react"; 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { getLocalDateString } from "@/hooks/useTimeWindow";
@@ -11,37 +11,30 @@ import JournalView from "./JournalView";
 import { useJournalPin } from "@/hooks/useJournalPin";
 import { useJournalEntries, useJournalEntry } from "@/hooks/useJournalEntry";
 
-// --- COORDINATE MAPPING FOR THE "WINDING PATH" ---
-// These approximate the snake path from your image
-const DAY_POSITIONS = [
-  { left: "10%", top: "12%", rotate: -5 },  // 1
-  { left: "28%", top: "12%", rotate: 2 },   // 2
-  { left: "55%", top: "14%", rotate: 5 },   // 3
-  { left: "75%", top: "20%", rotate: 10 },  // 4
-  { left: "65%", top: "28%", rotate: -2 },  // 5
-  { left: "25%", top: "32%", rotate: -8 },  // 6
-  { left: "10%", top: "40%", rotate: -5 },  // 7
-  { left: "15%", top: "50%", rotate: 5 },   // 8 - Near Moods
-  { left: "75%", top: "48%", rotate: 10 },  // 9 - Near Jrnl
-  { left: "85%", top: "58%", rotate: 5 },   // 10
-  { left: "60%", top: "62%", rotate: -5 },  // 11
-  { left: "40%", top: "68%", rotate: 2 },   // 12
-  { left: "15%", top: "72%", rotate: -10 }, // 13
-  { left: "25%", top: "80%", rotate: 5 },   // 14
-  { left: "55%", top: "78%", rotate: -2 },  // 15
-  { left: "75%", top: "85%", rotate: 8 },   // 16
-  { left: "50%", top: "92%", rotate: 0 },   // 17
-  // ... Loop or extend for 31 days. For this demo, I'll map the rest dynamically or wrap around.
-];
+// --- SNAKE PATH MATH ---
+// This calculates the x/y position for any day index automatically.
+const getSnakePosition = (index: number) => {
+  const rowHeight = 100; // Vertical distance between days
+  const xAmplitude = 120; // How wide the snake curves (left/right)
+  const xOffset = 0; // Center offset
+  
+  // Vertical position (Y)
+  const top = 60 + (index * rowHeight);
 
-// Helper to get position for any day index (0-30)
-const getPosition = (index: number) => {
-  if (index < DAY_POSITIONS.length) return DAY_POSITIONS[index];
-  // Simple fallback logic for days 18-31 to keep winding down
-  const baseTop = 92 + (index - 16) * 8; 
-  const isEvenRow = Math.floor((index - 17) / 4) % 2 === 0;
-  const leftPos = isEvenRow ? 20 + ((index % 4) * 20) : 80 - ((index % 4) * 20);
-  return { left: `${leftPos}%`, top: `${baseTop}%`, rotate: (index % 2 === 0 ? -5 : 5) };
+  // Horizontal position (X) using a Sine wave
+  // This creates a smooth S-curve: Left -> Right -> Left
+  // We use Math.sin to oscillate between -1 and 1
+  const xPeriod = 8; // How many days to complete one full Left-Right-Left cycle
+  const x = xOffset + (Math.sin((index / xPeriod) * Math.PI * 2) * xAmplitude);
+
+  // Rotation follows the curve
+  const rotate = Math.cos((index / xPeriod) * Math.PI * 2) * 15;
+
+  return { 
+    left: `calc(50% + ${x}px)`, 
+    top: `${top}px`, 
+    rotate: rotate 
+  };
 };
 
 interface MoodEntry {
@@ -54,11 +47,11 @@ interface MoodEntry {
 }
 
 const getMoodColor = (rating: number): string => {
-  if (rating <= 2) return "#ef4444"; // Red
-  if (rating <= 4) return "#f97316"; // Orange
-  if (rating <= 6) return "#eab308"; // Yellow
-  if (rating <= 8) return "#84cc16"; // Lime
-  return "#22c55e"; // Green
+  if (rating <= 2) return "#ef4444"; 
+  if (rating <= 4) return "#f97316"; 
+  if (rating <= 6) return "#eab308"; 
+  if (rating <= 8) return "#84cc16"; 
+  return "#22c55e"; 
 };
 
 type ViewMode = "moods" | "journal";
@@ -69,7 +62,6 @@ const CalendarTab = () => {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedFriendId, setSelectedFriendId] = useState<string | null>(null);
 
-  // View & Lock State
   const [viewMode, setViewMode] = useState<ViewMode>("moods");
   const [showPinModal, setShowPinModal] = useState(false);
   const [isJournalUnlocked, setIsJournalUnlocked] = useState(false);
@@ -131,7 +123,11 @@ const CalendarTab = () => {
     return `${year}-${month}-${String(day).padStart(2, '0')}`;
   };
 
-  // --- HANDLERS ---
+  // --- NAVIGATION ---
+  const navigateMonth = (direction: number) => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + direction, 1));
+  };
+
   const handleViewModeChange = (mode: ViewMode) => {
     if (mode === "journal" && !isJournalUnlocked) {
       setShowPinModal(true);
@@ -171,132 +167,160 @@ const CalendarTab = () => {
   const today = getLocalDateString();
 
   return (
-    <div className="relative min-h-screen bg-[#050505] text-white overflow-hidden pb-32">
+    <div className="relative min-h-screen bg-[#050505] text-white overflow-hidden flex flex-col">
       
-      {/* --- BACKGROUND DASHED LINE (SVG) --- */}
-      {/* This draws the winding path behind the numbers */}
-      <svg className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-20" style={{ zIndex: 0 }}>
-        <path 
-          d="M 40 100 Q 100 100 120 150 T 200 200 T 300 300 T 100 400 T 50 500 T 300 600" 
-          fill="none" 
-          stroke="white" 
-          strokeWidth="2" 
-          strokeDasharray="8 8"
-        />
-        {/* Note: A real implementation would generate this path D based on the day coordinates dynamically */}
-      </svg>
+      {/* --- HEADER (Fixed at top) --- */}
+      <div className="relative z-30 px-6 pt-12 pb-4 flex justify-between items-start bg-[#050505]/90 backdrop-blur-md border-b border-white/5">
+        <div className="flex items-center gap-4">
+            {/* Navigation Arrows */}
+            <button onClick={() => navigateMonth(-1)} className="p-2 hover:bg-white/10 rounded-full transition-colors">
+                <ChevronLeft className="w-6 h-6" />
+            </button>
+            
+            <div>
+                <h1 className="text-6xl font-black tracking-tighter leading-none mix-blend-difference">
+                    {monthName}
+                </h1>
+                <h2 
+                    className="text-3xl font-bold tracking-tight text-transparent"
+                    style={{ WebkitTextStroke: "1px rgba(255,255,255,0.5)" }}
+                >
+                    {yearNum}
+                </h2>
+            </div>
 
-      {/* --- HEADER --- */}
-      <div className="relative z-10 px-6 pt-12 flex justify-between items-start">
-        <div>
-          <h1 className="text-8xl font-black tracking-tighter leading-none mix-blend-difference">
-            {monthName}
-          </h1>
-          <h2 
-            className="text-5xl font-bold tracking-tight text-transparent ml-2"
-            style={{ WebkitTextStroke: "1px rgba(255,255,255,0.5)" }}
-          >
-            {yearNum}
-          </h2>
+            <button onClick={() => navigateMonth(1)} className="p-2 hover:bg-white/10 rounded-full transition-colors">
+                <ChevronRight className="w-6 h-6" />
+            </button>
         </div>
         
-        {/* Friends Icon (Top Right) */}
+        {/* Friends Icon */}
         <div className="flex flex-col items-center gap-1 opacity-70">
           <span className="font-handwriting text-xs -rotate-6">FRNDS</span>
           <Users className="w-6 h-6" />
         </div>
       </div>
 
-      {/* --- CENTER TOGGLES (Floating) --- */}
-      <div className="absolute top-[35%] left-0 w-full flex flex-col items-center justify-center gap-4 z-20 pointer-events-none">
-        
-        {/* MOODS BUTTON */}
-        <button 
-          onClick={() => handleViewModeChange("moods")}
-          className={`pointer-events-auto transition-all duration-300 ${viewMode === 'moods' ? 'scale-110 opacity-100' : 'opacity-40 scale-90'}`}
-        >
-          <div className="relative">
-            <span className="absolute inset-0 text-cyan-400 blur-[2px] opacity-70">MOODS</span>
-            <span className="relative text-5xl font-black tracking-widest text-white mix-blend-overlay">MOODS</span>
-            {/* Glitch Effect Bars */}
-            <div className="absolute top-1/2 left-0 w-full h-1 bg-cyan-500/50 -translate-x-1" />
-          </div>
-        </button>
-
-        {/* JRNL BUTTON */}
-        <button 
-          onClick={() => handleViewModeChange("journal")}
-          className={`pointer-events-auto transition-all duration-300 ${viewMode === 'journal' ? 'scale-110 opacity-100' : 'opacity-40 scale-90'}`}
-        >
-          <div className="border-2 border-white px-6 py-2 rotate-[-2deg] backdrop-blur-sm bg-black/30">
-             <span className="text-4xl font-mono font-bold tracking-widest" style={{ textShadow: "0 0 10px white" }}>
-               JRNL
-             </span>
-          </div>
-        </button>
-
-      </div>
-
-      {/* --- DAYS (Winding Path) --- */}
-      <div className="relative w-full h-[150vh] mt-10 z-10">
-        {Array.from({ length: totalDays }).map((_, i) => {
-          const dayNum = i + 1;
-          const pos = getPosition(i);
-          const dateStr = formatDate(dayNum);
-          const mood = moods[dateStr];
-          const hasJournal = !!journalEntries[dateStr];
-          const isToday = dateStr === today;
-          const isFuture = dateStr > today;
-
-          return (
-            <motion.button
-              key={dayNum}
-              onClick={() => handleDayClick(dateStr)}
-              disabled={isFuture}
-              initial={{ opacity: 0, scale: 0 }}
-              animate={{ opacity: isFuture ? 0.3 : 1, scale: 1 }}
-              transition={{ delay: i * 0.03 }}
-              style={{
-                position: "absolute",
-                left: pos.left,
-                top: pos.top,
-                rotate: `${pos.rotate}deg`,
-              }}
-              className="flex flex-col items-center justify-center group"
+      {/* --- SCROLLABLE CONTENT AREA --- */}
+      {/* We use overflow-y-auto here so the snake path can scroll */}
+      <div className="flex-1 relative overflow-y-auto pb-48">
+          
+          {/* --- TOGGLES (Sticky-ish) --- */}
+          <div className="sticky top-4 w-full flex justify-center gap-4 z-20 pointer-events-none mb-10">
+            {/* MOODS BUTTON */}
+            <button 
+            onClick={() => handleViewModeChange("moods")}
+            className={`pointer-events-auto transition-all duration-300 ${viewMode === 'moods' ? 'scale-110 opacity-100' : 'opacity-40 scale-90'}`}
             >
-              <div className={`
-                 relative flex items-center justify-center w-12 h-16
-                 transition-transform duration-200 group-active:scale-95
-              `}>
-                {/* Day Number */}
-                <span className={`text-2xl font-bold ${isToday ? 'text-cyan-400' : 'text-zinc-400'}`}>
-                  {String(dayNum).padStart(2, '0')}
+            <div className="relative">
+                <span className="absolute inset-0 text-cyan-400 blur-[2px] opacity-70">MOODS</span>
+                <span className="relative text-3xl font-black tracking-widest text-white mix-blend-overlay">MOODS</span>
+            </div>
+            </button>
+
+            {/* JRNL BUTTON */}
+            <button 
+            onClick={() => handleViewModeChange("journal")}
+            className={`pointer-events-auto transition-all duration-300 ${viewMode === 'journal' ? 'scale-110 opacity-100' : 'opacity-40 scale-90'}`}
+            >
+            <div className="border border-white px-4 py-1 rotate-[-2deg] backdrop-blur-sm bg-black/30">
+                <span className="text-2xl font-mono font-bold tracking-widest">
+                JRNL
                 </span>
+            </div>
+            </button>
+          </div>
 
-                {/* Mood Background (If exists) */}
-                {viewMode === "moods" && mood && (
-                   <div className="absolute inset-0 -z-10 bg-zinc-800/80 rotate-3 rounded-sm border border-white/10" />
-                )}
+          {/* --- THE SNAKE PATH --- */}
+          {/* Height is calculated dynamically based on days so nothing is cut off */}
+          <div 
+            className="relative w-full" 
+            style={{ height: `${totalDays * 100 + 200}px` }}
+          >
+            {/* Background Path Line */}
+            <svg className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-20" style={{ zIndex: 0 }}>
+                {/* Dynamically draw the line through the centers of our calculated positions */}
+                <path 
+                d={(() => {
+                    let d = `M 50% 60 `; // Start at first day
+                    for (let i = 1; i < totalDays; i++) {
+                        const pos = getSnakePosition(i);
+                        // Convert percentage left/top to SVG coordinates is tricky without fixed width.
+                        // So for the background line, we'll just use a simple repeated pattern or omit it 
+                        // to avoid complexity errors. 
+                        // Instead, let's use a simpler static dashed line down the middle for structure
+                    }
+                    return ""; 
+                })()}
+                fill="none" 
+                stroke="white" 
+                />
+                {/* Simple center guide line instead of complex curve for safety */}
+                <path d={`M 50% 0 V ${totalDays * 100 + 200}`} stroke="white" strokeWidth="1" strokeDasharray="4 4" opacity="0.3" />
+            </svg>
 
-                {/* Journal Indicator (If exists) */}
-                {viewMode === "journal" && hasJournal && (
-                   <div className="absolute -bottom-2 w-full h-[2px] bg-white shadow-[0_0_8px_white]" />
-                )}
-              </div>
-            </motion.button>
-          );
-        })}
+            {Array.from({ length: totalDays }).map((_, i) => {
+            const dayNum = i + 1;
+            const pos = getSnakePosition(i); // Use our new Snake Math
+            const dateStr = formatDate(dayNum);
+            const mood = moods[dateStr];
+            const hasJournal = !!journalEntries[dateStr];
+            const isToday = dateStr === today;
+            const isFuture = dateStr > today;
+
+            return (
+                <motion.button
+                key={dayNum}
+                onClick={() => handleDayClick(dateStr)}
+                disabled={isFuture}
+                initial={{ opacity: 0, scale: 0 }}
+                animate={{ opacity: isFuture ? 0.3 : 1, scale: 1 }}
+                transition={{ delay: i * 0.02 }} // Faster stagger
+                style={{
+                    position: "absolute",
+                    left: pos.left,
+                    top: pos.top,
+                    rotate: `${pos.rotate}deg`,
+                    marginLeft: "-24px", // Center the 48px button
+                }}
+                className="flex flex-col items-center justify-center group z-10"
+                >
+                <div className={`
+                    relative flex items-center justify-center w-12 h-16
+                    transition-transform duration-200 group-active:scale-95
+                `}>
+                    {/* Day Number */}
+                    <span className={`text-2xl font-bold ${isToday ? 'text-cyan-400' : 'text-zinc-400'}`}>
+                    {String(dayNum).padStart(2, '0')}
+                    </span>
+
+                    {/* Mood Background */}
+                    {viewMode === "moods" && mood && (
+                    <div 
+                        className="absolute inset-0 -z-10 rotate-3 rounded-sm border border-white/10 shadow-[0_0_15px_rgba(255,255,255,0.2)]" 
+                        style={{ backgroundColor: getMoodColor(mood.rating) }}
+                    />
+                    )}
+
+                    {/* Journal Indicator */}
+                    {viewMode === "journal" && hasJournal && (
+                    <div className="absolute -bottom-2 w-full h-[2px] bg-white shadow-[0_0_8px_white]" />
+                    )}
+                </div>
+                </motion.button>
+            );
+            })}
+         </div>
+
+         {/* --- FOOTER ICON (At bottom of scroll) --- */}
+        <div className="flex flex-col items-center gap-1 opacity-70 pb-10">
+            <User className="w-8 h-8" />
+            <span className="font-handwriting text-xs -rotate-6">YOU</span>
+        </div>
       </div>
 
-      {/* --- FOOTER ICON --- */}
-      <div className="fixed bottom-24 left-6 flex flex-col items-center gap-1 opacity-70 z-30">
-         <User className="w-8 h-8" />
-         <span className="font-handwriting text-xs -rotate-6">YOU</span>
-      </div>
 
-      {/* --- MODALS (Fixed Props) --- */}
-      {/* Note: I removed isPixelTheme from these calls to fix your error */}
-      
+      {/* --- MODALS --- */}
       <CalendarDayDetail
         isOpen={!!selectedDate}
         onClose={() => setSelectedDate(null)}
