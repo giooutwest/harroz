@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Lock, Heart, MessageCircle } from "lucide-react";
 import { differenceInSeconds, setHours, setMinutes, setSeconds, addDays, isBefore } from "date-fns";
-import FitCheckChallenge from "./FitCheckChallenge";
+import { useNavigate } from "react-router-dom";
 
 interface YesterdayMood {
   id: string;
@@ -26,10 +26,10 @@ const ZineLockedView = ({
   displayName,
   yesterdaysMood,
   onYesterdayClick,
-  onOpenFitCheckCamera,
   isPixelTheme = false
 }: ZineLockedViewProps) => {
   const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 0, seconds: 0 });
+  const navigate = useNavigate();
 
   // Calculate time until 9 PM
   useEffect(() => {
@@ -59,131 +59,259 @@ const ZineLockedView = ({
 
   // Don't render zine style for pixel theme
   if (isPixelTheme) {
-    return null; // Let TodayTab handle pixel theme
+    return null;
   }
 
   return (
-    <div className="relative flex flex-col h-[calc(100vh-140px)] w-full max-w-md mx-auto px-4 py-2 overflow-hidden bg-background">
+    <div className="relative flex flex-col min-h-[calc(100vh-80px)] w-full max-w-md mx-auto px-4 pt-2 pb-8 overflow-hidden bg-background">
       {/* Noise overlay */}
-      <div className="fixed inset-0 z-0 pointer-events-none opacity-[0.15] noise-overlay mix-blend-overlay" />
+      <div className="fixed inset-0 z-0 pointer-events-none opacity-[0.08] noise-overlay mix-blend-overlay" />
 
-      {/* Header with ROZ title */}
-      <header className="relative w-full h-[18vh] z-10">
-        <h1 className="absolute -top-4 -left-4 text-[8rem] leading-[0.8] font-display text-foreground tracking-tighter opacity-100 select-none">
+      {/* Header section */}
+      <header className="relative w-full z-10 mb-2">
+        {/* ROZ title - large and bold */}
+        <h1
+          className="text-[7rem] leading-[0.85] font-display text-foreground tracking-[-0.04em] select-none"
+          style={{ fontFamily: "'Abril Fatface', serif" }}
+        >
           ROZ
         </h1>
-        <div className="absolute bottom-4 left-2 w-full">
-          <span className="absolute top-1 left-0 font-serif-zine text-4xl font-bold text-muted-foreground/30 blur-sm">
+
+        {/* Greeting with shadow effect */}
+        <div className="relative -mt-2 ml-1">
+          <span
+            className="absolute top-[2px] left-[2px] text-3xl font-bold text-muted-foreground/20"
+            style={{ fontFamily: "'Playfair Display', serif" }}
+          >
             Hi, {displayName || "there"}!
           </span>
-          <span className="relative font-serif-zine text-4xl font-bold text-foreground">
+          <span
+            className="relative text-3xl font-bold text-foreground"
+            style={{ fontFamily: "'Playfair Display', serif" }}
+          >
             Hi, {displayName || "there"}!
           </span>
         </div>
+
+        {/* Lock button - glass effect */}
+        <motion.div
+          className="absolute top-4 right-0"
+          whileTap={{ scale: 0.95 }}
+        >
+          <div className="relative w-14 h-14 rounded-full bg-gradient-to-br from-white/20 to-white/5 backdrop-blur-md border border-white/20 flex items-center justify-center shadow-xl">
+            <Lock className="w-5 h-5 text-foreground/60" />
+            {/* Glass reflection */}
+            <div className="absolute top-1 left-2 w-4 h-4 rounded-full bg-white/20 blur-sm" />
+          </div>
+        </motion.div>
       </header>
 
-      {/* Main content */}
-      <main className="relative flex-grow flex flex-col items-center justify-center -mt-4 z-10">
-        {/* Countdown section */}
-        <div className="w-full flex flex-col items-start mb-8 px-2 transform -rotate-1">
-          <div className="font-mono-zine text-[10px] tracking-[0.3em] text-red-500 mb-1 font-bold uppercase">
-            Until 21:00 Opening
-          </div>
-          <div className="flex items-baseline space-x-1">
-            <span className="font-mono-zine text-6xl font-bold text-foreground tracking-tighter leading-none glitch-text">
-              {formatTime(timeLeft.hours)}:{formatTime(timeLeft.minutes)}:{formatTime(timeLeft.seconds)}
-            </span>
-            <span className="font-mono-zine text-xl text-foreground/40 animate-pulse">_</span>
-          </div>
-          <div className="w-full h-[1px] jagged-line text-foreground/20 mt-2" />
-        </div>
-
-        {/* Lock button */}
-        <motion.button
-          whileTap={{ scale: 0.95 }}
-          className="absolute top-0 right-0 group"
+      {/* Countdown section */}
+      <div className="relative z-10 mt-1 mb-6">
+        <div
+          className="text-[10px] tracking-[0.2em] text-[#C5A059] mb-1 uppercase"
+          style={{ fontFamily: "'Space Mono', monospace" }}
         >
-          <div className="relative w-14 h-14 rounded-full bg-foreground/10 backdrop-blur-md border border-foreground/30 flex items-center justify-center shadow-lg">
-            <Lock className="w-5 h-5 text-foreground opacity-80" />
-            <div className="absolute inset-0 rounded-full border border-foreground/20 blur-[2px]" />
-          </div>
-        </motion.button>
-
-        {/* Yesterday's mood polaroid card */}
-        {yesterdaysMood && (
-          <motion.div
-            initial={{ opacity: 0, y: 20, rotate: -2 }}
-            animate={{ opacity: 1, y: 0, rotate: -2 }}
-            whileHover={{ rotate: 0, scale: 1.02 }}
-            transition={{ duration: 0.5 }}
-            className="relative cursor-pointer group"
-            onClick={onYesterdayClick}
-          >
-            {/* Decorative squiggle */}
-            <div className="absolute -top-6 -left-6 z-20 w-24 h-24 pointer-events-none opacity-30">
-              <svg className="w-full h-full stroke-foreground fill-none stroke-2" viewBox="0 0 100 100">
-                <path d="M10,50 Q30,10 50,50 T90,50 M20,60 Q40,20 60,60 T100,60" />
-              </svg>
-            </div>
-
-            {/* Polaroid frame */}
-            <div className="bg-white p-3 pt-4 pb-10 shadow-2xl relative w-[16rem]">
-              <div className="font-mono-zine text-[10px] text-black mb-2 flex justify-between uppercase tracking-widest">
-                <span>Yesterday's Mood</span>
-                <span>{yesterdaysMood.rating}/10</span>
-              </div>
-
-              <div className="relative overflow-hidden bg-gray-200 aspect-[4/5]">
-                {yesterdaysMood.photo_url ? (
-                  <img
-                    src={yesterdaysMood.photo_url}
-                    alt="Yesterday's mood"
-                    className="w-full h-full object-cover grayscale-[0.3] contrast-110 sepia-[0.1]"
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none';
-                    }}
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gray-300">
-                    <span className="text-6xl font-display text-gray-500">{yesterdaysMood.rating}</span>
-                  </div>
-                )}
-                {/* Overlay text */}
-                <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/10 transition-colors">
-                  <h2 className="text-4xl font-display text-white tracking-widest uppercase drop-shadow-xl transform scale-y-110 mix-blend-overlay opacity-90 group-hover:scale-110 transition-transform duration-300">
-                    Journal
-                  </h2>
-                </div>
-              </div>
-
-              {/* Likes/comments */}
-              <div className="absolute bottom-2 right-3">
-                <div className="font-mono-zine text-[9px] text-black/70 flex items-center gap-2">
-                  <span className="flex items-center gap-1">
-                    <Heart className="w-3 h-3" />
-                    {yesterdaysMood.likes_count}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <MessageCircle className="w-3 h-3" />
-                    {yesterdaysMood.comments_count}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        )}
-
-        {/* Fit Check Challenge */}
-        <div className="w-full mt-6 px-2">
-          <FitCheckChallenge
-            isPixelTheme={false}
-            onOpenCamera={onOpenFitCheckCamera}
-          />
+          Until 21:00 Opening
         </div>
-      </main>
+        <div className="relative">
+          {/* Glitch layers */}
+          <span
+            className="absolute top-0 left-0 text-[4rem] font-bold tracking-tight leading-none text-[#D93025] opacity-80"
+            style={{
+              fontFamily: "'Space Mono', monospace",
+              transform: 'translate(-2px, 0)',
+              clipPath: 'inset(0 0 50% 0)'
+            }}
+          >
+            {formatTime(timeLeft.hours)}:{formatTime(timeLeft.minutes)}:{formatTime(timeLeft.seconds)}
+          </span>
+          <span
+            className="absolute top-0 left-0 text-[4rem] font-bold tracking-tight leading-none text-[#C5A059] opacity-80"
+            style={{
+              fontFamily: "'Space Mono', monospace",
+              transform: 'translate(2px, 0)',
+              clipPath: 'inset(50% 0 0 0)'
+            }}
+          >
+            {formatTime(timeLeft.hours)}:{formatTime(timeLeft.minutes)}:{formatTime(timeLeft.seconds)}
+          </span>
+          {/* Main text */}
+          <span
+            className="relative text-[4rem] font-bold tracking-tight leading-none text-foreground"
+            style={{ fontFamily: "'Space Mono', monospace" }}
+          >
+            {formatTime(timeLeft.hours)}:{formatTime(timeLeft.minutes)}:{formatTime(timeLeft.seconds)}
+          </span>
+        </div>
+      </div>
 
-      {/* Scattered navigation - hidden for now since we have bottom nav */}
-      {/* This could be enabled as an alternative navigation style */}
+      {/* Yesterday's mood polaroid */}
+      {yesterdaysMood && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="relative z-10 flex justify-center"
+          onClick={onYesterdayClick}
+        >
+          {/* Decorative squiggle */}
+          <div className="absolute -top-8 -left-2 z-20 w-20 h-20 pointer-events-none opacity-20">
+            <svg className="w-full h-full stroke-foreground fill-none" strokeWidth="1.5" viewBox="0 0 100 100">
+              <path d="M20,50 Q35,20 50,50 T80,50" />
+              <path d="M25,60 Q40,30 55,60 T85,60" />
+            </svg>
+          </div>
+
+          {/* Polaroid frame */}
+          <div
+            className="bg-[#f5f5f0] p-3 pt-3 pb-8 shadow-2xl cursor-pointer transform hover:rotate-0 transition-transform duration-300"
+            style={{
+              width: '280px',
+              transform: 'rotate(-1deg)',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+            }}
+          >
+            {/* Header */}
+            <div
+              className="text-[10px] text-black/80 mb-2 flex justify-between uppercase tracking-[0.15em]"
+              style={{ fontFamily: "'Space Mono', monospace" }}
+            >
+              <span>Yesterday's Mood</span>
+              <span>{yesterdaysMood.rating}/10</span>
+            </div>
+
+            {/* Photo container */}
+            <div className="relative overflow-hidden bg-[#d4d4c8] aspect-square">
+              {yesterdaysMood.photo_url ? (
+                <img
+                  src={yesterdaysMood.photo_url}
+                  alt="Yesterday's mood"
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-[#d4d4c8]">
+                  <span
+                    className="text-7xl text-black/20"
+                    style={{ fontFamily: "'Abril Fatface', serif" }}
+                  >
+                    {yesterdaysMood.rating}
+                  </span>
+                </div>
+              )}
+
+              {/* JOURNAL overlay text */}
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <h2
+                  className="text-5xl tracking-[0.3em] uppercase text-[#C5A059]/70 mix-blend-multiply"
+                  style={{
+                    fontFamily: "'Playfair Display', serif",
+                    fontWeight: 400,
+                    textShadow: '2px 2px 4px rgba(0,0,0,0.1)'
+                  }}
+                >
+                  Journal
+                </h2>
+              </div>
+            </div>
+
+            {/* Likes/comments footer */}
+            <div
+              className="absolute bottom-2 left-3 right-3 flex justify-center"
+            >
+              <span
+                className="text-[9px] text-black/60 uppercase tracking-[0.1em]"
+                style={{ fontFamily: "'Space Mono', monospace" }}
+              >
+                {yesterdaysMood.likes_count} Likes / {yesterdaysMood.comments_count} Comments
+              </span>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
+      {/* No yesterday's mood placeholder */}
+      {!yesterdaysMood && (
+        <div className="relative z-10 flex justify-center">
+          <div
+            className="bg-[#f5f5f0] p-3 pt-3 pb-8 shadow-2xl"
+            style={{
+              width: '280px',
+              transform: 'rotate(-1deg)',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+            }}
+          >
+            <div
+              className="text-[10px] text-black/80 mb-2 uppercase tracking-[0.15em]"
+              style={{ fontFamily: "'Space Mono', monospace" }}
+            >
+              Yesterday's Mood
+            </div>
+            <div className="relative overflow-hidden bg-[#d4d4c8] aspect-square flex items-center justify-center">
+              <span
+                className="text-sm text-black/40 uppercase tracking-widest"
+                style={{ fontFamily: "'Space Mono', monospace" }}
+              >
+                No entry
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Scattered navigation */}
+      <nav className="relative z-10 mt-auto pt-8">
+        {/* Calendar button */}
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <button
+            onClick={() => navigate('/?tab=calendar')}
+            className="bg-black text-white px-4 py-2 text-xs uppercase tracking-[0.15em]"
+            style={{ fontFamily: "'Space Mono', monospace" }}
+          >
+            Calendar
+          </button>
+
+          {/* Friends - cursive */}
+          <button
+            onClick={() => navigate('/?tab=friends')}
+            className="text-2xl text-foreground/80 hover:text-foreground transition-colors"
+            style={{ fontFamily: "'Great Vibes', cursive" }}
+          >
+            Friends
+          </button>
+        </div>
+
+        <div className="flex flex-wrap items-end justify-between gap-4 mt-4">
+          {/* Today - bold serif */}
+          <span
+            className="text-4xl font-bold text-foreground"
+            style={{ fontFamily: "'Playfair Display', serif" }}
+          >
+            Today
+          </span>
+
+          {/* You - italic */}
+          <button
+            onClick={() => navigate('/?tab=profile')}
+            className="text-3xl italic text-[#C5A059] hover:opacity-80 transition-opacity"
+            style={{ fontFamily: "'Playfair Display', serif" }}
+          >
+            You
+          </button>
+
+          {/* Messages - red tape style */}
+          <button
+            onClick={() => navigate('/?tab=messages')}
+            className="bg-[#C62828] text-white px-3 py-1.5 text-[10px] uppercase tracking-[0.1em] transform rotate-[-2deg] shadow-md"
+            style={{ fontFamily: "'Space Mono', monospace" }}
+          >
+            Messages
+          </button>
+        </div>
+      </nav>
     </div>
   );
 };
