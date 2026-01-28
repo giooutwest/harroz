@@ -1,10 +1,9 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sun, Calendar, BarChart3, Camera, ChevronRight, Sparkles, Smartphone, Bell } from "lucide-react";
+import { Sun, Calendar, Camera, ChevronRight, Sparkles, Smartphone, Bell } from "lucide-react";
 
 interface OnboardingProps {
   onComplete: () => void;
-  isPixelTheme?: boolean;
 }
 
 const steps = [
@@ -46,7 +45,7 @@ const steps = [
   },
 ];
 
-const Onboarding = ({ onComplete, isPixelTheme = false }: OnboardingProps) => {
+const Onboarding = ({ onComplete }: OnboardingProps) => {
   const [currentStep, setCurrentStep] = useState(0);
 
   const handleNext = () => {
@@ -72,24 +71,24 @@ const Onboarding = ({ onComplete, isPixelTheme = false }: OnboardingProps) => {
       exit={{ opacity: 0 }}
       className="fixed inset-0 bg-background z-50 flex flex-col items-center justify-center px-6"
     >
-      {/* Skip button - Moved down to top-14 to clear iPhone Notch */}
+      {/* Skip button */}
       {!isLastStep && (
         <motion.button
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           onClick={handleSkip}
-          className={`absolute top-14 right-6 text-muted-foreground hover:text-foreground transition-colors ${isPixelTheme ? "text-xs" : "text-sm"}`}
+          className="absolute top-14 right-6 text-muted-foreground hover:text-foreground transition-colors text-sm"
         >
           Skip
         </motion.button>
       )}
 
-      {/* Progress dots - Moved down to top-14 */}
+      {/* Progress dots */}
       <div className="absolute top-14 left-1/2 -translate-x-1/2 flex gap-2">
         {steps.map((_, index) => (
           <motion.div
             key={index}
-            className={`h-1.5 transition-all ${isPixelTheme ? "" : "rounded-full"}`}
+            className="h-1.5 transition-all rounded-full"
             style={{
               width: index === currentStep ? 24 : 8,
               backgroundColor: index <= currentStep ? step.color : "hsl(var(--muted))",
@@ -112,8 +111,8 @@ const Onboarding = ({ onComplete, isPixelTheme = false }: OnboardingProps) => {
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: "spring", stiffness: 200, delay: 0.1 }}
-            className={`w-28 h-28 flex items-center justify-center mb-8 ${isPixelTheme ? "pixel-border" : "rounded-full"}`}
-            style={{ 
+            className="w-28 h-28 flex items-center justify-center mb-8 rounded-full"
+            style={{
               backgroundColor: step.color,
               boxShadow: `0 0 60px ${step.color}40`,
             }}
@@ -126,7 +125,7 @@ const Onboarding = ({ onComplete, isPixelTheme = false }: OnboardingProps) => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className={`font-bold mb-4 ${isPixelTheme ? "text-base" : "text-2xl"}`}
+            className="font-bold mb-4 text-2xl"
           >
             {step.title}
           </motion.h1>
@@ -136,22 +135,21 @@ const Onboarding = ({ onComplete, isPixelTheme = false }: OnboardingProps) => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className={`text-muted-foreground leading-relaxed ${isPixelTheme ? "text-xs" : "text-base"}`}
+            className="text-muted-foreground leading-relaxed text-base"
           >
             {step.description}
           </motion.p>
         </motion.div>
       </AnimatePresence>
 
-      {/* Next button - Moved up to bottom-16 to clear Home Indicator */}
+      {/* Next button */}
       <motion.button
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
         onClick={handleNext}
         whileTap={{ scale: 0.95 }}
-        className={`absolute bottom-16 w-[calc(100%-3rem)] max-w-sm py-4 bg-primary text-primary-foreground font-semibold flex items-center justify-center gap-2 ${isPixelTheme ? "text-sm" : "text-lg rounded-2xl"}`}
-        style={{ borderRadius: isPixelTheme ? 0 : undefined }}
+        className="absolute bottom-16 w-[calc(100%-3rem)] max-w-sm py-4 bg-primary text-primary-foreground font-semibold flex items-center justify-center gap-2 text-lg rounded-2xl"
       >
         {isLastStep ? "Let's Go!" : "Next"}
         {!isLastStep && <ChevronRight className="w-5 h-5" />}

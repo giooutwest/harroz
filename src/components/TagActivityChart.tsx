@@ -24,7 +24,6 @@ interface DayActivity {
 }
 
 interface TagActivityChartProps {
-  isPixelTheme?: boolean;
 }
 
 const getMoodColor = (rating: number): string => {
@@ -35,15 +34,13 @@ const getMoodColor = (rating: number): string => {
   return "hsl(210, 80%, 55%)";
 };
 
-const TagActivityChart = ({ isPixelTheme = false }: TagActivityChartProps) => {
+const TagActivityChart = ({}: TagActivityChartProps) => {
   const [tagStats, setTagStats] = useState<TagWithMood[]>([]);
   const [weekActivity, setWeekActivity] = useState<DayActivity[]>([]);
   const [activeView, setActiveView] = useState<"correlation" | "weekly">("correlation");
   const [isLoading, setIsLoading] = useState(true);
   const [hasData, setHasData] = useState(false);
   const { user } = useAuth();
-
-  const borderRadius = isPixelTheme ? "0" : undefined;
 
   useEffect(() => {
     if (user) {
@@ -179,7 +176,7 @@ const TagActivityChart = ({ isPixelTheme = false }: TagActivityChartProps) => {
 
   if (isLoading) {
     return (
-      <div className={`p-4 bg-card border border-border ${isPixelTheme ? "" : "rounded-2xl"}`} style={{ borderRadius }}>
+      <div className="p-4 bg-card border border-border rounded-2xl">
         <div className="animate-pulse">
           <div className="h-4 bg-secondary rounded w-1/3 mb-4"></div>
           <div className="h-40 bg-secondary rounded"></div>
@@ -190,10 +187,10 @@ const TagActivityChart = ({ isPixelTheme = false }: TagActivityChartProps) => {
 
   if (!hasData) {
     return (
-      <div className={`p-4 bg-card border border-border text-center ${isPixelTheme ? "" : "rounded-2xl"}`} style={{ borderRadius }}>
-        <Activity className={`${isPixelTheme ? "w-8 h-8" : "w-12 h-12"} mx-auto mb-3 text-muted-foreground`} />
-        <h3 className={`font-semibold mb-1 ${isPixelTheme ? "text-xs" : "text-sm"}`}>Activity Insights</h3>
-        <p className={`text-muted-foreground ${isPixelTheme ? "text-[8px]" : "text-xs"}`}>
+      <div className="p-4 bg-card border border-border text-center rounded-2xl">
+        <Activity className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
+        <h3 className="font-semibold mb-1 text-sm">Activity Insights</h3>
+        <p className="text-muted-foreground text-xs">
           Start tagging your activities to see how they affect your mood!
         </p>
       </div>
@@ -210,22 +207,21 @@ const TagActivityChart = ({ isPixelTheme = false }: TagActivityChartProps) => {
   }));
 
   return (
-    <div className={`p-4 bg-card border border-border ${isPixelTheme ? "" : "rounded-2xl"}`} style={{ borderRadius }}>
+    <div className="p-4 bg-card border border-border rounded-2xl">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <Activity className={`${isPixelTheme ? "w-4 h-4" : "w-5 h-5"} text-primary`} />
-          <h3 className={`font-semibold ${isPixelTheme ? "text-xs" : "text-sm"}`}>Activity Insights</h3>
+          <Activity className="w-5 h-5 text-primary" />
+          <h3 className="font-semibold text-sm">Activity Insights</h3>
         </div>
 
         {/* View Toggle */}
-        <div className="flex bg-secondary p-0.5" style={{ borderRadius }}>
+        <div className="flex bg-secondary p-0.5">
           <button
             onClick={() => setActiveView("correlation")}
             className={`px-2 py-1 transition-colors ${
               activeView === "correlation" ? "bg-primary text-primary-foreground" : ""
-            } ${isPixelTheme ? "text-[8px]" : "text-xs"}`}
-            style={{ borderRadius }}
+            } text-xs`}
           >
             Mood Impact
           </button>
@@ -233,8 +229,7 @@ const TagActivityChart = ({ isPixelTheme = false }: TagActivityChartProps) => {
             onClick={() => setActiveView("weekly")}
             className={`px-2 py-1 transition-colors ${
               activeView === "weekly" ? "bg-primary text-primary-foreground" : ""
-            } ${isPixelTheme ? "text-[8px]" : "text-xs"}`}
-            style={{ borderRadius }}
+            } text-xs`}
           >
             This Week
           </button>
@@ -259,11 +254,11 @@ const TagActivityChart = ({ isPixelTheme = false }: TagActivityChartProps) => {
                     if (active && payload && payload.length) {
                       const data = payload[0].payload;
                       return (
-                        <div className={`bg-card border border-border p-2 shadow-lg ${isPixelTheme ? "" : "rounded-lg"}`}>
-                          <p className={`font-medium ${isPixelTheme ? "text-[8px]" : "text-xs"}`}>
+                        <div className="bg-card border border-border p-2 shadow-lg rounded-lg">
+                          <p className="font-medium text-xs">
                             {data.name} {data.fullName}
                           </p>
-                          <p className={`text-muted-foreground ${isPixelTheme ? "text-[6px]" : "text-[10px]"}`}>
+                          <p className="text-muted-foreground text-[10px]">
                             {data.count} times • Avg mood: {data.avgMood}
                           </p>
                         </div>
@@ -272,7 +267,7 @@ const TagActivityChart = ({ isPixelTheme = false }: TagActivityChartProps) => {
                     return null;
                   }}
                 />
-                <Bar dataKey="count" radius={isPixelTheme ? 0 : [4, 4, 0, 0]}>
+                <Bar dataKey="count" radius={[4, 4, 0, 0]}>
                   {chartData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
@@ -283,7 +278,7 @@ const TagActivityChart = ({ isPixelTheme = false }: TagActivityChartProps) => {
 
           {/* Tag correlation list */}
           <div className="space-y-2">
-            <p className={`text-muted-foreground ${isPixelTheme ? "text-[6px]" : "text-[10px]"}`}>
+            <p className="text-muted-foreground text-[10px]">
               How activities affect your mood:
             </p>
             {tagStats.slice(0, 5).map((tag) => (
@@ -291,23 +286,20 @@ const TagActivityChart = ({ isPixelTheme = false }: TagActivityChartProps) => {
                 key={tag.id}
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
-                className={`flex items-center justify-between p-2 bg-secondary/50 ${
-                  isPixelTheme ? "" : "rounded-lg"
-                }`}
-                style={{ borderRadius }}
+                className="flex items-center justify-between p-2 bg-secondary/50 rounded-lg"
               >
                 <div className="flex items-center gap-2">
-                  <span className={isPixelTheme ? "text-sm" : "text-base"}>{tag.icon}</span>
-                  <span className={`font-medium ${isPixelTheme ? "text-[8px]" : "text-xs"}`}>
+                  <span className="text-base">{tag.icon}</span>
+                  <span className="font-medium text-xs">
                     {tag.name}
                   </span>
-                  <span className={`text-muted-foreground ${isPixelTheme ? "text-[6px]" : "text-[10px]"}`}>
+                  <span className="text-muted-foreground text-[10px]">
                     ({tag.count}x)
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span
-                    className={`font-bold ${isPixelTheme ? "text-[8px]" : "text-xs"}`}
+                    className="font-bold text-xs"
                     style={{ color: getMoodColor(tag.avgMood) }}
                   >
                     {tag.avgMood}
@@ -329,12 +321,9 @@ const TagActivityChart = ({ isPixelTheme = false }: TagActivityChartProps) => {
           {/* Insight */}
           {tagStats.length > 0 && tagStats[0].moodTrend === "up" && (
             <div
-              className={`mt-3 p-2 bg-green-500/10 border border-green-500/20 ${
-                isPixelTheme ? "" : "rounded-lg"
-              }`}
-              style={{ borderRadius }}
+              className="mt-3 p-2 bg-green-500/10 border border-green-500/20 rounded-lg"
             >
-              <p className={`text-green-600 ${isPixelTheme ? "text-[8px]" : "text-xs"}`}>
+              <p className="text-green-600 text-xs">
                 💡 You tend to feel better on days you {tagStats[0].name.toLowerCase()}!
               </p>
             </div>
@@ -352,15 +341,14 @@ const TagActivityChart = ({ isPixelTheme = false }: TagActivityChartProps) => {
                 transition={{ delay: index * 0.05 }}
                 className="flex flex-col items-center"
               >
-                <span className={`text-muted-foreground mb-1 ${isPixelTheme ? "text-[6px]" : "text-[10px]"}`}>
+                <span className="text-muted-foreground mb-1 text-[10px]">
                   {day.dayName}
                 </span>
                 <div
                   className={`w-full aspect-square flex flex-col items-center justify-center p-1 ${
                     day.mood ? "" : "bg-secondary/30"
-                  } ${isPixelTheme ? "" : "rounded-lg"}`}
+                  } rounded-lg`}
                   style={{
-                    borderRadius,
                     backgroundColor: day.mood ? getMoodColor(day.mood) + "20" : undefined,
                     borderWidth: 2,
                     borderColor: day.mood ? getMoodColor(day.mood) : "transparent"
@@ -368,7 +356,7 @@ const TagActivityChart = ({ isPixelTheme = false }: TagActivityChartProps) => {
                 >
                   {day.mood ? (
                     <>
-                      <span className={`font-bold ${isPixelTheme ? "text-[8px]" : "text-xs"}`}>
+                      <span className="font-bold text-xs">
                         {day.mood}
                       </span>
                       <div className="flex flex-wrap justify-center gap-0.5 mt-0.5">
@@ -381,7 +369,7 @@ const TagActivityChart = ({ isPixelTheme = false }: TagActivityChartProps) => {
                       </div>
                     </>
                   ) : (
-                    <span className={`text-muted-foreground ${isPixelTheme ? "text-[6px]" : "text-[8px]"}`}>
+                    <span className="text-muted-foreground text-[8px]">
                       -
                     </span>
                   )}
@@ -399,8 +387,7 @@ const TagActivityChart = ({ isPixelTheme = false }: TagActivityChartProps) => {
               .map((tag, i) => (
                 <span
                   key={i}
-                  className={`px-2 py-0.5 bg-secondary ${isPixelTheme ? "text-[6px]" : "text-[10px]"}`}
-                  style={{ borderRadius }}
+                  className="px-2 py-0.5 bg-secondary text-[10px]"
                 >
                   {tag.icon} {tag.name}
                 </span>

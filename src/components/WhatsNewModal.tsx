@@ -8,7 +8,6 @@ import {
   Activity,
   Clock,
   Palette,
-  Camera,
   Shirt,
   CheckCircle2
 } from "lucide-react";
@@ -27,7 +26,6 @@ interface WhatsNewModalProps {
   isOpen: boolean;
   onClose: () => void;
   onTryFeature: (action: "today" | "stats" | "settings" | "fitcheck") => void;
-  isPixelTheme?: boolean;
 }
 
 const features: Feature[] = [
@@ -78,11 +76,9 @@ const features: Feature[] = [
   }
 ];
 
-const WhatsNewModal = ({ isOpen, onClose, onTryFeature, isPixelTheme = false }: WhatsNewModalProps) => {
+const WhatsNewModal = ({ isOpen, onClose, onTryFeature }: WhatsNewModalProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(0);
-
-  const borderRadius = isPixelTheme ? "0" : undefined;
 
   const currentFeature = features[currentIndex];
   const isLastFeature = currentIndex === features.length - 1;
@@ -142,22 +138,18 @@ const WhatsNewModal = ({ isOpen, onClose, onTryFeature, isPixelTheme = false }: 
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
           onClick={(e) => e.stopPropagation()}
-          className={`bg-card border border-border w-full max-w-md overflow-hidden shadow-2xl ${
-            isPixelTheme ? "" : "rounded-3xl"
-          }`}
-          style={{ borderRadius }}
+          className="bg-card border border-border w-full max-w-md overflow-hidden shadow-2xl rounded-3xl"
         >
           {/* Header */}
           <div className="relative p-4 border-b border-border">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Sparkles className={`${isPixelTheme ? "w-4 h-4" : "w-5 h-5"} text-primary`} />
-                <h2 className={`font-bold ${isPixelTheme ? "text-sm" : "text-lg"}`}>What's New</h2>
+                <Sparkles className="w-5 h-5 text-primary" />
+                <h2 className="font-bold text-lg">What's New</h2>
               </div>
               <button
                 onClick={handleSkip}
-                className={`p-2 hover:bg-secondary transition-colors ${isPixelTheme ? "" : "rounded-full"}`}
-                style={{ borderRadius }}
+                className="p-2 hover:bg-secondary transition-colors rounded-full"
               >
                 <X className="w-5 h-5 text-muted-foreground" />
               </button>
@@ -172,12 +164,11 @@ const WhatsNewModal = ({ isOpen, onClose, onTryFeature, isPixelTheme = false }: 
                     setDirection(index > currentIndex ? 1 : -1);
                     setCurrentIndex(index);
                   }}
-                  className={`w-2 h-2 transition-all ${
+                  className={`w-2 h-2 transition-all rounded-full ${
                     index === currentIndex
                       ? "bg-primary w-6"
                       : "bg-muted-foreground/30 hover:bg-muted-foreground/50"
-                  } ${isPixelTheme ? "" : "rounded-full"}`}
-                  style={{ borderRadius }}
+                  }`}
                 />
               ))}
             </div>
@@ -202,11 +193,8 @@ const WhatsNewModal = ({ isOpen, onClose, onTryFeature, isPixelTheme = false }: 
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     transition={{ delay: 0.2, type: "spring" }}
-                    className={`w-20 h-20 flex items-center justify-center mb-3 ${
-                      isPixelTheme ? "" : "rounded-2xl"
-                    }`}
+                    className="w-20 h-20 flex items-center justify-center mb-3 rounded-2xl"
                     style={{
-                      borderRadius,
                       backgroundColor: currentFeature.color + "20",
                       border: `2px solid ${currentFeature.color}`
                     }}
@@ -232,7 +220,7 @@ const WhatsNewModal = ({ isOpen, onClose, onTryFeature, isPixelTheme = false }: 
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.2 }}
-                    className={`font-bold mb-2 ${isPixelTheme ? "text-sm" : "text-xl"}`}
+                    className="font-bold mb-2 text-xl"
                   >
                     {currentFeature.title}
                   </motion.h3>
@@ -240,9 +228,7 @@ const WhatsNewModal = ({ isOpen, onClose, onTryFeature, isPixelTheme = false }: 
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3 }}
-                    className={`text-muted-foreground leading-relaxed ${
-                      isPixelTheme ? "text-[10px]" : "text-sm"
-                    }`}
+                    className="text-muted-foreground leading-relaxed text-sm"
                   >
                     {currentFeature.description}
                   </motion.p>
@@ -254,11 +240,8 @@ const WhatsNewModal = ({ isOpen, onClose, onTryFeature, isPixelTheme = false }: 
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.4 }}
                   onClick={handleTryIt}
-                  className={`w-full py-3 font-semibold flex items-center justify-center gap-2 ${
-                    isPixelTheme ? "text-xs" : "text-sm rounded-xl"
-                  }`}
+                  className="w-full py-3 font-semibold flex items-center justify-center gap-2 text-sm rounded-xl"
                   style={{
-                    borderRadius,
                     backgroundColor: currentFeature.color,
                     color: "white"
                   }}
@@ -276,26 +259,22 @@ const WhatsNewModal = ({ isOpen, onClose, onTryFeature, isPixelTheme = false }: 
             <button
               onClick={goToPrev}
               disabled={isFirstFeature}
-              className={`flex items-center gap-1 px-3 py-2 transition-colors disabled:opacity-30 ${
-                isPixelTheme ? "text-xs" : "text-sm rounded-lg"
-              } ${!isFirstFeature ? "hover:bg-secondary" : ""}`}
-              style={{ borderRadius }}
+              className={`flex items-center gap-1 px-3 py-2 transition-colors disabled:opacity-30 text-sm rounded-lg ${
+                !isFirstFeature ? "hover:bg-secondary" : ""
+              }`}
             >
               <ChevronLeft className="w-4 h-4" />
               Back
             </button>
 
-            <span className={`text-muted-foreground ${isPixelTheme ? "text-[8px]" : "text-xs"}`}>
+            <span className="text-muted-foreground text-xs">
               {currentIndex + 1} of {features.length}
             </span>
 
             {isLastFeature ? (
               <button
                 onClick={handleSkip}
-                className={`flex items-center gap-1 px-4 py-2 bg-primary text-primary-foreground font-medium ${
-                  isPixelTheme ? "text-xs" : "text-sm rounded-lg"
-                }`}
-                style={{ borderRadius }}
+                className="flex items-center gap-1 px-4 py-2 bg-primary text-primary-foreground font-medium text-sm rounded-lg"
               >
                 Done
                 <Sparkles className="w-4 h-4" />
@@ -303,10 +282,7 @@ const WhatsNewModal = ({ isOpen, onClose, onTryFeature, isPixelTheme = false }: 
             ) : (
               <button
                 onClick={goToNext}
-                className={`flex items-center gap-1 px-3 py-2 hover:bg-secondary transition-colors ${
-                  isPixelTheme ? "text-xs" : "text-sm rounded-lg"
-                }`}
-                style={{ borderRadius }}
+                className="flex items-center gap-1 px-3 py-2 hover:bg-secondary transition-colors text-sm rounded-lg"
               >
                 Next
                 <ChevronRight className="w-4 h-4" />

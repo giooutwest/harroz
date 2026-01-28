@@ -12,7 +12,6 @@ interface MoodEngagementSheetProps {
   onClose: () => void;
   moodId: string;
   moodOwnerId: string;
-  isPixelTheme?: boolean;
   photoUrl?: string | null;
   caption?: string | null;
   rating?: number;
@@ -38,7 +37,7 @@ interface LikeUser {
   user_id: string;
   display_name: string | null;
   avatar_url: string | null;
-  reaction_type: string | null; // NEW: Store the emoji type
+  reaction_type: string | null;
 }
 
 const REACTIONS_MAP: Record<string, string> = {
@@ -58,38 +57,34 @@ const getMoodColor = (rating: number): string => {
 };
 
 // Memoized comment component
-const CommentItem = memo(({ 
-  comment, 
-  isReply, 
-  isPixelTheme, 
-  userId, 
-  onReply, 
-  onDelete, 
+const CommentItem = memo(({
+  comment,
+  isReply,
+  userId,
+  onReply,
+  onDelete,
   onLike,
   isHighlighted
-}: { 
-  comment: Comment; 
-  isReply: boolean; 
-  isPixelTheme: boolean; 
+}: {
+  comment: Comment;
+  isReply: boolean;
   userId?: string;
   onReply: (id: string, name: string) => void;
   onDelete: (id: string) => void;
   onLike: (id: string, liked: boolean) => void;
   isHighlighted: boolean;
 }) => (
-  <div 
+  <div
     id={`comment-${comment.id}`}
     className={`flex gap-2 transition-all duration-500 ${isReply ? "ml-6 pl-2 border-l-2 border-border" : ""} ${
       isHighlighted ? "ring-2 ring-primary ring-offset-2 ring-offset-background rounded-lg p-2 bg-primary/5" : ""
     }`}
   >
-    <div className={`w-8 h-8 bg-secondary flex items-center justify-center flex-shrink-0 overflow-hidden ${
-      isPixelTheme ? "" : "rounded-full"
-    }`}>
+    <div className="w-8 h-8 bg-secondary flex items-center justify-center flex-shrink-0 overflow-hidden rounded-full">
       {comment.user_profile?.avatar_url ? (
-        <img 
-          src={comment.user_profile.avatar_url} 
-          alt="" 
+        <img
+          src={comment.user_profile.avatar_url}
+          alt=""
           loading="lazy"
           className="w-full h-full object-cover"
         />
@@ -99,16 +94,16 @@ const CommentItem = memo(({
     </div>
     <div className="flex-1 min-w-0">
       <div className="flex items-center gap-2 flex-wrap">
-        <span className={`font-medium ${isPixelTheme ? "text-[10px]" : "text-sm"}`}>
+        <span className="font-medium text-sm">
           {comment.user_profile?.display_name || "User"}
         </span>
-        <span className={`text-muted-foreground ${isPixelTheme ? "text-[8px]" : "text-xs"}`}>
+        <span className="text-muted-foreground text-xs">
           {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
         </span>
         {!isReply && (
           <button
             onClick={() => onReply(comment.id, comment.user_profile?.display_name || "User")}
-            className={`text-muted-foreground hover:text-primary transition-colors flex items-center gap-0.5 ${isPixelTheme ? "text-[8px]" : "text-xs"}`}
+            className="text-muted-foreground hover:text-primary transition-colors flex items-center gap-0.5 text-xs"
           >
             <Reply className="w-3 h-3" />
             Reply
@@ -123,12 +118,12 @@ const CommentItem = memo(({
           </button>
         )}
       </div>
-      <p className={`break-words mt-1 ${isPixelTheme ? "text-[10px]" : "text-sm"}`}>
+      <p className="break-words mt-1 text-sm">
         {comment.content}
       </p>
       <button
         onClick={() => onLike(comment.id, comment.user_liked)}
-        className={`flex items-center gap-1 mt-1 text-muted-foreground hover:text-red-500 transition-colors ${isPixelTheme ? "text-[8px]" : "text-xs"}`}
+        className="flex items-center gap-1 mt-1 text-muted-foreground hover:text-red-500 transition-colors text-xs"
       >
         <Heart className={`w-3 h-3 ${comment.user_liked ? "fill-red-500 text-red-500" : ""}`} />
         {comment.likes_count > 0 && <span>{comment.likes_count}</span>}
@@ -140,7 +135,6 @@ const CommentItem = memo(({
               key={reply.id}
               comment={reply}
               isReply={true}
-              isPixelTheme={isPixelTheme}
               userId={userId}
               onReply={onReply}
               onDelete={onDelete}
@@ -156,12 +150,11 @@ const CommentItem = memo(({
 
 CommentItem.displayName = "CommentItem";
 
-const MoodEngagementSheet = ({ 
-  isOpen, 
-  onClose, 
-  moodId, 
+const MoodEngagementSheet = ({
+  isOpen,
+  onClose,
+  moodId,
   moodOwnerId,
-  isPixelTheme = false,
   photoUrl,
   caption,
   rating = 5,
@@ -202,7 +195,7 @@ const MoodEngagementSheet = ({
   const fetchComments = useCallback(async () => {
     if (!user) return;
     setLoading(true);
-    
+
     const [commentsRes, likesRes] = await Promise.all([
       supabase
         .from('mood_comments')
@@ -221,7 +214,7 @@ const MoodEngagementSheet = ({
     if (data && data.length > 0) {
       const userIds = [...new Set(data.map(c => c.user_id))];
       const commentIds = data.map(c => c.id);
-      
+
       const [profilesRes, countsRes] = await Promise.all([
         supabase
           .from('profiles')
@@ -232,16 +225,16 @@ const MoodEngagementSheet = ({
           .select('comment_id')
           .in('comment_id', commentIds)
       ]);
-      
+
       const profileMap = new Map(
         (profilesRes.data || []).map(p => [p.user_id, p])
       );
-      
+
       const likeCounts = new Map<string, number>();
       (countsRes.data || []).forEach(l => {
         likeCounts.set(l.comment_id, (likeCounts.get(l.comment_id) || 0) + 1);
       });
-      
+
       const allComments: Comment[] = data.map(comment => ({
         ...comment,
         user_profile: profileMap.get(comment.user_id) || null,
@@ -249,10 +242,10 @@ const MoodEngagementSheet = ({
         likes_count: likeCounts.get(comment.id) || 0,
         user_liked: userLikes.has(comment.id)
       }));
-      
+
       const topLevel: Comment[] = [];
       const repliesMap = new Map<string, Comment[]>();
-      
+
       allComments.forEach(comment => {
         if (comment.parent_id) {
           const existing = repliesMap.get(comment.parent_id) || [];
@@ -262,11 +255,11 @@ const MoodEngagementSheet = ({
           topLevel.push(comment);
         }
       });
-      
+
       topLevel.forEach(comment => {
         comment.replies = repliesMap.get(comment.id) || [];
       });
-      
+
       setComments(topLevel);
     } else {
       setComments([]);
@@ -275,7 +268,6 @@ const MoodEngagementSheet = ({
   }, [moodId, user]);
 
   const fetchLikes = useCallback(async () => {
-    // Select all fields and cast to any to get reaction_type
     const { data: likesData } = await supabase
       .from('mood_likes')
       .select('*')
@@ -288,7 +280,7 @@ const MoodEngagementSheet = ({
         .from('profiles')
         .select('user_id, display_name, avatar_url')
         .in('user_id', userIds);
-      
+
       const mergedLikes = (profiles || []).map(profile => {
         const likeInfo = likes.find(l => l.user_id === profile.user_id);
         return {
@@ -305,7 +297,7 @@ const MoodEngagementSheet = ({
 
   const handleCommentLike = useCallback(async (commentId: string, isLiked: boolean) => {
     if (!user) return;
-    
+
     setComments(prev => {
       const updateComment = (c: Comment): Comment => ({
         ...c,
@@ -340,17 +332,17 @@ const MoodEngagementSheet = ({
     }
 
     setSubmittingComment(true);
-    
+
     const insertData: { mood_id: string; user_id: string; content: string; parent_id?: string } = {
       mood_id: moodId,
       user_id: user.id,
       content
     };
-    
+
     if (replyingTo) {
       insertData.parent_id = replyingTo.commentId;
     }
-    
+
     const { error } = await supabase
       .from('mood_comments')
       .insert(insertData);
@@ -397,8 +389,6 @@ const MoodEngagementSheet = ({
     setNewComment("");
   }, []);
 
-  const borderRadius = isPixelTheme ? "0" : undefined;
-
   return (
     <AnimatePresence>
       {isOpen && (
@@ -415,31 +405,27 @@ const MoodEngagementSheet = ({
             exit={{ y: "100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
             onClick={(e) => e.stopPropagation()}
-            className={`bg-card border-t border-border w-full max-w-lg flex flex-col h-[90dvh] ${
-              isPixelTheme ? "" : "rounded-t-3xl"
-            }`}
+            className="bg-card border-t border-border w-full max-w-lg flex flex-col h-[90dvh] rounded-t-3xl"
           >
             <div className="flex items-center justify-between p-4 border-b border-border flex-shrink-0">
-              <h3 className={`font-semibold ${isPixelTheme ? "text-xs" : "text-lg"}`}>
+              <h3 className="font-semibold text-lg">
                 Mood Details
               </h3>
-              <button 
+              <button
                 onClick={onClose}
-                className={`p-2 bg-secondary touch-manipulation hover:bg-muted transition-colors ${
-                  isPixelTheme ? "" : "rounded-full"
-                }`}
+                className="p-2 bg-secondary touch-manipulation hover:bg-muted transition-colors rounded-full"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <div ref={scrollContainerRef} className="flex-1 overflow-y-auto min-h-0 bg-background/50 overscroll-contain">
-              
+
               {photoUrl && (
                 <div className="w-full bg-secondary/20">
-                  <img 
-                    src={photoUrl} 
-                    alt="Mood" 
+                  <img
+                    src={photoUrl}
+                    alt="Mood"
                     loading="lazy"
                     className="w-full h-auto max-h-[60vh] object-contain mx-auto"
                   />
@@ -448,15 +434,15 @@ const MoodEngagementSheet = ({
 
               <div className="p-4 pb-2">
                 <div className="flex items-center gap-2 mb-2">
-                  <span 
-                    className={`px-3 py-1 text-white font-medium ${isPixelTheme ? "text-[10px]" : "text-xs rounded-full"}`}
-                    style={{ backgroundColor: getMoodColor(rating), borderRadius }}
+                  <span
+                    className="px-3 py-1 text-white font-medium text-xs rounded-full"
+                    style={{ backgroundColor: getMoodColor(rating) }}
                   >
                     {rating}/10
                   </span>
                 </div>
                 {caption && (
-                  <p className={`text-foreground/90 ${isPixelTheme ? "text-xs" : "text-sm"}`}>
+                  <p className="text-foreground/90 text-sm">
                     {caption}
                   </p>
                 )}
@@ -466,26 +452,26 @@ const MoodEngagementSheet = ({
                 <button
                   onClick={() => setActiveTab("comments")}
                   className={`flex-1 py-3 flex items-center justify-center gap-2 transition-colors ${
-                    activeTab === "comments" 
-                      ? "text-primary border-b-2 border-primary bg-primary/5" 
+                    activeTab === "comments"
+                      ? "text-primary border-b-2 border-primary bg-primary/5"
                       : "text-muted-foreground hover:bg-secondary/50"
                   }`}
                 >
                   <MessageCircle className="w-4 h-4" />
-                  <span className={isPixelTheme ? "text-[10px]" : "text-sm"}>
+                  <span className="text-sm">
                     Comments ({comments.length})
                   </span>
                 </button>
                 <button
                   onClick={() => setActiveTab("likes")}
                   className={`flex-1 py-3 flex items-center justify-center gap-2 transition-colors ${
-                    activeTab === "likes" 
-                      ? "text-red-500 border-b-2 border-red-500 bg-red-500/5" 
+                    activeTab === "likes"
+                      ? "text-red-500 border-b-2 border-red-500 bg-red-500/5"
                       : "text-muted-foreground hover:bg-secondary/50"
                   }`}
                 >
                   <Heart className={`w-4 h-4 ${activeTab === "likes" ? "fill-current" : ""}`} />
-                  <span className={isPixelTheme ? "text-[10px]" : "text-sm"}>
+                  <span className="text-sm">
                     Reactions ({likes.length})
                   </span>
                 </button>
@@ -503,7 +489,7 @@ const MoodEngagementSheet = ({
                 ) : activeTab === "comments" ? (
                   <div className="space-y-4">
                     {comments.length === 0 ? (
-                      <p className={`text-muted-foreground text-center py-8 ${isPixelTheme ? "text-[10px]" : "text-sm"}`}>
+                      <p className="text-muted-foreground text-center py-8 text-sm">
                         No comments yet. Be the first!
                       </p>
                     ) : (
@@ -512,7 +498,6 @@ const MoodEngagementSheet = ({
                           key={comment.id}
                           comment={comment}
                           isReply={false}
-                          isPixelTheme={isPixelTheme}
                           userId={user?.id}
                           onReply={handleReply}
                           onDelete={handleDeleteComment}
@@ -525,19 +510,17 @@ const MoodEngagementSheet = ({
                 ) : (
                   <div className="space-y-3">
                     {likes.length === 0 ? (
-                      <p className={`text-muted-foreground text-center py-8 ${isPixelTheme ? "text-[10px]" : "text-sm"}`}>
+                      <p className="text-muted-foreground text-center py-8 text-sm">
                         No reactions yet.
                       </p>
                     ) : (
                       likes.map((likeUser) => (
                         <div key={likeUser.user_id} className="flex items-center gap-3 p-2 rounded-lg bg-card border border-border/50">
-                          <div className={`w-10 h-10 bg-secondary flex items-center justify-center overflow-hidden ${
-                            isPixelTheme ? "" : "rounded-full"
-                          }`}>
+                          <div className="w-10 h-10 bg-secondary flex items-center justify-center overflow-hidden rounded-full">
                             {likeUser.avatar_url ? (
-                              <img 
-                                src={likeUser.avatar_url} 
-                                alt="" 
+                              <img
+                                src={likeUser.avatar_url}
+                                alt=""
                                 loading="lazy"
                                 className="w-full h-full object-cover"
                               />
@@ -545,11 +528,10 @@ const MoodEngagementSheet = ({
                               <User className="w-5 h-5 text-muted-foreground" />
                             )}
                           </div>
-                          <span className={`font-medium ${isPixelTheme ? "text-xs" : ""}`}>
+                          <span className="font-medium">
                             {likeUser.display_name || "Friend"}
                           </span>
-                          
-                          {/* SHOW THE EMOJI INSTEAD OF GENERIC HEART */}
+
                           <span className="ml-auto text-xl">
                             {REACTIONS_MAP[likeUser.reaction_type || 'heart'] || '❤️'}
                           </span>
@@ -565,7 +547,7 @@ const MoodEngagementSheet = ({
               <div className="flex-shrink-0 border-t border-border bg-card p-3 pb-safe shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
                 {replyingTo && (
                   <div className="px-1 py-2 mb-2 flex items-center justify-between text-muted-foreground bg-secondary/30 rounded-lg">
-                    <span className={`flex items-center gap-1 ml-2 ${isPixelTheme ? "text-[8px]" : "text-xs"}`}>
+                    <span className="flex items-center gap-1 ml-2 text-xs">
                       <CornerDownRight className="w-3 h-3" />
                       Replying to {replyingTo.userName}
                     </span>
@@ -583,8 +565,7 @@ const MoodEngagementSheet = ({
                     value={newComment}
                     onChange={(e) => setNewComment(e.target.value)}
                     maxLength={500}
-                    className={`flex-1 ${isPixelTheme ? "text-xs" : ""}`}
-                    style={{ borderRadius }}
+                    className="flex-1"
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && !e.shiftKey) {
                         e.preventDefault();
@@ -595,10 +576,7 @@ const MoodEngagementSheet = ({
                   <button
                     onClick={handleSubmitComment}
                     disabled={!newComment.trim() || submittingComment}
-                    className={`p-2 bg-primary text-primary-foreground disabled:opacity-50 flex-shrink-0 ${
-                      isPixelTheme ? "" : "rounded-full"
-                    }`}
-                    style={{ borderRadius }}
+                    className="p-2 bg-primary text-primary-foreground disabled:opacity-50 flex-shrink-0 rounded-full"
                   >
                     <Send className="w-4 h-4" />
                   </button>

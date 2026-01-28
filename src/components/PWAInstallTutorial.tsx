@@ -5,7 +5,6 @@ import { X, Share, Plus, MoreVertical, ArrowDown, Smartphone, CheckCircle2 } fro
 interface PWAInstallTutorialProps {
   isOpen: boolean;
   onClose: () => void;
-  isPixelTheme?: boolean;
 }
 
 type DeviceType = "ios" | "android" | "desktop" | "unknown";
@@ -18,7 +17,7 @@ const detectDevice = (): DeviceType => {
   return "unknown";
 };
 
-const PWAInstallTutorial = ({ isOpen, onClose, isPixelTheme = false }: PWAInstallTutorialProps) => {
+const PWAInstallTutorial = ({ isOpen, onClose }: PWAInstallTutorialProps) => {
   const [device, setDevice] = useState<DeviceType>("unknown");
   const [currentStep, setCurrentStep] = useState(0);
   const [isInstalled, setIsInstalled] = useState(false);
@@ -84,8 +83,6 @@ const PWAInstallTutorial = ({ isOpen, onClose, isPixelTheme = false }: PWAInstal
     }
   };
 
-  const borderRadius = isPixelTheme ? "0" : undefined;
-
   if (isInstalled) {
     return (
       <AnimatePresence>
@@ -102,33 +99,25 @@ const PWAInstallTutorial = ({ isOpen, onClose, isPixelTheme = false }: PWAInstal
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className={`bg-card border border-border p-6 max-w-sm w-full text-center ${
-                isPixelTheme ? "" : "rounded-3xl"
-              }`}
-              style={{ borderRadius }}
+              className="bg-card border border-border p-6 max-w-sm w-full text-center rounded-3xl"
             >
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ type: "spring", delay: 0.2 }}
-                className={`w-20 h-20 mx-auto mb-4 bg-green-500/20 flex items-center justify-center ${
-                  isPixelTheme ? "" : "rounded-full"
-                }`}
+                className="w-20 h-20 mx-auto mb-4 bg-green-500/20 flex items-center justify-center rounded-full"
               >
                 <CheckCircle2 className="w-10 h-10 text-green-500" />
               </motion.div>
-              <h2 className={`font-bold mb-2 ${isPixelTheme ? "text-sm" : "text-xl"}`}>
+              <h2 className="font-bold mb-2 text-xl">
                 Already Installed! 🎉
               </h2>
-              <p className={`text-muted-foreground mb-4 ${isPixelTheme ? "text-xs" : ""}`}>
+              <p className="text-muted-foreground mb-4">
                 Roz is already on your home screen. You're all set!
               </p>
               <button
                 onClick={onClose}
-                className={`w-full py-3 bg-primary text-primary-foreground font-semibold ${
-                  isPixelTheme ? "text-sm" : "rounded-xl"
-                }`}
-                style={{ borderRadius }}
+                className="w-full py-3 bg-primary text-primary-foreground font-semibold rounded-xl"
               >
                 Got it!
               </button>
@@ -155,33 +144,25 @@ const PWAInstallTutorial = ({ isOpen, onClose, isPixelTheme = false }: PWAInstal
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className={`bg-card border border-border p-6 max-w-sm w-full text-center ${
-                isPixelTheme ? "" : "rounded-3xl"
-              }`}
-              style={{ borderRadius }}
+              className="bg-card border border-border p-6 max-w-sm w-full text-center rounded-3xl"
             >
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ type: "spring", delay: 0.2 }}
-                className={`w-20 h-20 mx-auto mb-4 bg-primary/20 flex items-center justify-center ${
-                  isPixelTheme ? "" : "rounded-full"
-                }`}
+                className="w-20 h-20 mx-auto mb-4 bg-primary/20 flex items-center justify-center rounded-full"
               >
                 <Smartphone className="w-10 h-10 text-primary" />
               </motion.div>
-              <h2 className={`font-bold mb-2 ${isPixelTheme ? "text-sm" : "text-xl"}`}>
+              <h2 className="font-bold mb-2 text-xl">
                 Best on Mobile! 📱
               </h2>
-              <p className={`text-muted-foreground mb-4 ${isPixelTheme ? "text-xs" : ""}`}>
+              <p className="text-muted-foreground mb-4">
                 Visit Roz on your phone's browser to install it as an app on your home screen.
               </p>
               <button
                 onClick={onClose}
-                className={`w-full py-3 bg-primary text-primary-foreground font-semibold ${
-                  isPixelTheme ? "text-sm" : "rounded-xl"
-                }`}
-                style={{ borderRadius }}
+                className="w-full py-3 bg-primary text-primary-foreground font-semibold rounded-xl"
               >
                 Got it!
               </button>
@@ -204,9 +185,7 @@ const PWAInstallTutorial = ({ isOpen, onClose, isPixelTheme = false }: PWAInstal
           {/* Close button */}
           <button
             onClick={onClose}
-            className={`absolute top-4 right-4 p-2 bg-secondary z-10 ${
-              isPixelTheme ? "" : "rounded-full"
-            }`}
+            className="absolute top-4 right-4 p-2 bg-secondary z-10 rounded-full"
           >
             <X className="w-5 h-5" />
           </button>
@@ -225,7 +204,7 @@ const PWAInstallTutorial = ({ isOpen, onClose, isPixelTheme = false }: PWAInstal
                   transition={{ repeat: Infinity, duration: 1.2 }}
                   className="flex flex-col items-center"
                 >
-                  <span className={`text-primary font-bold mb-2 px-3 py-1 bg-primary/20 backdrop-blur ${isPixelTheme ? "text-[10px]" : "text-sm rounded-full"}`}>
+                  <span className="text-primary font-bold mb-2 px-3 py-1 bg-primary/20 backdrop-blur text-sm rounded-full">
                     Tap Share below ↓
                   </span>
                   <ArrowDown className="w-8 h-8 text-primary" />
@@ -245,7 +224,7 @@ const PWAInstallTutorial = ({ isOpen, onClose, isPixelTheme = false }: PWAInstal
                   className="flex flex-col items-center"
                 >
                   <ArrowDown className="w-8 h-8 text-primary rotate-180" />
-                  <span className={`text-primary font-bold mt-2 px-3 py-1 bg-primary/20 backdrop-blur ${isPixelTheme ? "text-[10px]" : "text-sm rounded-full"}`}>
+                  <span className="text-primary font-bold mt-2 px-3 py-1 bg-primary/20 backdrop-blur text-sm rounded-full">
                     ↑ Tap menu above
                   </span>
                 </motion.div>
@@ -258,11 +237,11 @@ const PWAInstallTutorial = ({ isOpen, onClose, isPixelTheme = false }: PWAInstal
             {steps.map((_, index) => (
               <motion.div
                 key={index}
-                className={`h-1.5 transition-all ${isPixelTheme ? "" : "rounded-full"}`}
+                className="h-1.5 transition-all rounded-full"
                 style={{
                   width: index === currentStep ? 24 : 8,
-                  backgroundColor: index <= currentStep 
-                    ? "hsl(var(--primary))" 
+                  backgroundColor: index <= currentStep
+                    ? "hsl(var(--primary))"
                     : "hsl(var(--muted))",
                 }}
               />
@@ -281,7 +260,7 @@ const PWAInstallTutorial = ({ isOpen, onClose, isPixelTheme = false }: PWAInstal
                 className="flex flex-col items-center text-center max-w-sm"
               >
                 {/* Step indicator */}
-                <p className={`text-muted-foreground mb-4 ${isPixelTheme ? "text-[8px]" : "text-xs"}`}>
+                <p className="text-muted-foreground mb-4 text-xs">
                   Step {currentStep + 1} of {steps.length}
                 </p>
 
@@ -291,17 +270,13 @@ const PWAInstallTutorial = ({ isOpen, onClose, isPixelTheme = false }: PWAInstal
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     transition={{ type: "spring", stiffness: 200 }}
-                    className={`w-24 h-24 flex items-center justify-center bg-primary ${
-                      isPixelTheme ? "" : "rounded-3xl"
-                    }`}
+                    className="w-24 h-24 flex items-center justify-center bg-primary rounded-3xl"
                     style={{
                       boxShadow: "0 0 60px hsl(var(--primary) / 0.4)",
-                      borderRadius,
                     }}
                   >
                     <step.icon className="w-12 h-12 text-primary-foreground" />
                   </motion.div>
-
                 </div>
 
                 {/* Title */}
@@ -309,7 +284,7 @@ const PWAInstallTutorial = ({ isOpen, onClose, isPixelTheme = false }: PWAInstal
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 }}
-                  className={`font-bold mb-3 ${isPixelTheme ? "text-sm" : "text-2xl"}`}
+                  className="font-bold mb-3 text-2xl"
                 >
                   {step.title}
                 </motion.h1>
@@ -319,9 +294,7 @@ const PWAInstallTutorial = ({ isOpen, onClose, isPixelTheme = false }: PWAInstal
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.3 }}
-                  className={`text-muted-foreground leading-relaxed ${
-                    isPixelTheme ? "text-xs" : "text-base"
-                  }`}
+                  className="text-muted-foreground leading-relaxed text-base"
                 >
                   {step.description}
                 </motion.p>
@@ -332,11 +305,10 @@ const PWAInstallTutorial = ({ isOpen, onClose, isPixelTheme = false }: PWAInstal
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.5 }}
-                    className={`mt-6 p-4 bg-secondary ${isPixelTheme ? "" : "rounded-2xl"}`}
-                    style={{ borderRadius }}
+                    className="mt-6 p-4 bg-secondary rounded-2xl"
                   >
-                    <p className={`text-muted-foreground ${isPixelTheme ? "text-[8px]" : "text-xs"}`}>
-                      💡 Make sure you're using <span className="text-foreground font-medium">Safari</span> — 
+                    <p className="text-muted-foreground text-xs">
+                      💡 Make sure you're using <span className="text-foreground font-medium">Safari</span> —
                       this won't work in Chrome or other browsers on iPhone
                     </p>
                   </motion.div>
@@ -353,10 +325,7 @@ const PWAInstallTutorial = ({ isOpen, onClose, isPixelTheme = false }: PWAInstal
               transition={{ delay: 0.4 }}
               onClick={handleNext}
               whileTap={{ scale: 0.95 }}
-              className={`w-full py-4 bg-primary text-primary-foreground font-semibold ${
-                isPixelTheme ? "text-sm" : "text-lg rounded-2xl"
-              }`}
-              style={{ borderRadius }}
+              className="w-full py-4 bg-primary text-primary-foreground font-semibold text-lg rounded-2xl"
             >
               {currentStep === steps.length - 1 ? "Done! 🎉" : "Next"}
             </motion.button>

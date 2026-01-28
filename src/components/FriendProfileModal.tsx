@@ -1,15 +1,14 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, User, Star, Calendar, Activity, Flame, MessageCircle } from "lucide-react"; // 🔥 Added Flame
+import { X, User, Star, Calendar, Activity, Flame, MessageCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { formatDistanceToNow } from "date-fns";
-import { Badge } from "@/components/ui/badge"; // Added Badge component
+import { Badge } from "@/components/ui/badge";
 
 interface FriendProfileModalProps {
   friendId: string | null;
   onClose: () => void;
-  isPixelTheme?: boolean;
   onMessage?: (friendId: string, friendName: string, friendAvatar: string | null) => void;
 }
 
@@ -18,7 +17,7 @@ interface FriendProfile {
   display_name: string | null;
   username: string | null;
   avatar_url: string | null;
-  current_streak: number | null; // 🔥 Added Streak
+  current_streak: number | null;
 }
 
 interface RecentMood {
@@ -44,7 +43,7 @@ const getMoodEmoji = (rating: number): string => {
   return "☀️";
 };
 
-const FriendProfileModal = ({ friendId, onClose, isPixelTheme = false, onMessage }: FriendProfileModalProps) => {
+const FriendProfileModal = ({ friendId, onClose, onMessage }: FriendProfileModalProps) => {
   const [profile, setProfile] = useState<FriendProfile | null>(null);
   const [recentMoods, setRecentMoods] = useState<RecentMood[]>([]);
   const [isCloseFriend, setIsCloseFriend] = useState(false);
@@ -65,7 +64,7 @@ const FriendProfileModal = ({ friendId, onClose, isPixelTheme = false, onMessage
     // Fetch profile (Now includes current_streak)
     const { data: profileData } = await supabase
       .from('profiles')
-      .select('user_id, display_name, username, avatar_url, current_streak') // 🔥 Added current_streak
+      .select('user_id, display_name, username, avatar_url, current_streak')
       .eq('user_id', friendId)
       .maybeSingle();
 
@@ -112,8 +111,6 @@ const FriendProfileModal = ({ friendId, onClose, isPixelTheme = false, onMessage
     setLoading(false);
   };
 
-  const borderRadius = isPixelTheme ? "0" : undefined;
-
   if (!friendId) return null;
 
   return (
@@ -130,20 +127,16 @@ const FriendProfileModal = ({ friendId, onClose, isPixelTheme = false, onMessage
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
           onClick={(e) => e.stopPropagation()}
-          className={`bg-card border border-border p-6 w-full max-w-sm max-h-[80vh] overflow-y-auto ${
-            isPixelTheme ? "" : "rounded-3xl"
-          }`}
-          style={{ borderRadius }}
+          className="bg-card border border-border p-6 w-full max-w-sm max-h-[80vh] overflow-y-auto rounded-3xl"
         >
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
-            <h3 className={`font-semibold ${isPixelTheme ? "text-xs" : "text-lg"}`}>
+            <h3 className="font-semibold text-lg">
               Profile
             </h3>
-            <button 
+            <button
               onClick={onClose}
-              className={`p-2 bg-secondary touch-manipulation ${isPixelTheme ? "" : "rounded-full"}`}
-              style={{ borderRadius }}
+              className="p-2 bg-secondary touch-manipulation rounded-full"
             >
               <X className="w-5 h-5" />
             </button>
@@ -161,43 +154,38 @@ const FriendProfileModal = ({ friendId, onClose, isPixelTheme = false, onMessage
             <div className="space-y-6">
               {/* Avatar & Name */}
               <div className="flex flex-col items-center text-center">
-                <div 
-                  className={`w-24 h-24 bg-secondary flex items-center justify-center overflow-hidden mb-3 ${
-                    isPixelTheme ? "" : "rounded-full"
-                  }`}
-                  style={{ borderRadius }}
-                >
+                <div className="w-24 h-24 bg-secondary flex items-center justify-center overflow-hidden mb-3 rounded-full">
                   {profile.avatar_url ? (
-                    <img 
-                      src={profile.avatar_url} 
-                      alt="" 
+                    <img
+                      src={profile.avatar_url}
+                      alt=""
                       className="w-full h-full object-cover"
                     />
                   ) : (
                     <User className="w-10 h-10 text-muted-foreground" />
                   )}
                 </div>
-                
-                <h4 className={`font-bold flex items-center gap-2 ${isPixelTheme ? "text-sm" : "text-xl"}`}>
+
+                <h4 className="font-bold flex items-center gap-2 text-xl">
                   {profile.display_name || "Unknown"}
                 </h4>
-                
-                {/* 🔥 Streak Badge */}
+
+                {/* Streak Badge */}
                 {profile.current_streak && profile.current_streak > 0 ? (
                   <Badge variant="secondary" className="mt-2 bg-orange-50 text-orange-600 border-orange-100 gap-1.5 px-2 py-0.5">
                     <Flame className="w-3 h-3 fill-orange-500" />
                     <span className="font-bold">{profile.current_streak} Day Streak</span>
                   </Badge>
                 ) : null}
-                
+
                 {profile.username && (
-                  <p className={`text-muted-foreground mt-1 ${isPixelTheme ? "text-[8px]" : "text-sm"}`}>
+                  <p className="text-muted-foreground mt-1 text-sm">
                     @{profile.username}
                   </p>
                 )}
 
                 {isCloseFriend && (
-                  <div className={`flex items-center gap-1 text-primary mt-2 ${isPixelTheme ? "text-[8px]" : "text-sm"}`}>
+                  <div className="flex items-center gap-1 text-primary mt-2 text-sm">
                     <Star className="w-4 h-4 fill-current" />
                     Close Friend
                   </div>
@@ -210,10 +198,7 @@ const FriendProfileModal = ({ friendId, onClose, isPixelTheme = false, onMessage
                       onMessage(profile.user_id, profile.display_name || profile.username || 'Friend', profile.avatar_url);
                       onClose();
                     }}
-                    className={`mt-3 w-full py-2 px-4 bg-primary text-primary-foreground font-medium flex items-center justify-center gap-2 ${
-                      isPixelTheme ? "text-xs" : "rounded-xl"
-                    }`}
-                    style={{ borderRadius }}
+                    className="mt-3 w-full py-2 px-4 bg-primary text-primary-foreground font-medium flex items-center justify-center gap-2 rounded-xl"
                   >
                     <MessageCircle className="w-4 h-4" />
                     Send Message
@@ -222,10 +207,10 @@ const FriendProfileModal = ({ friendId, onClose, isPixelTheme = false, onMessage
               </div>
 
               {/* Stats */}
-              <div className={`bg-secondary p-4 ${isPixelTheme ? "" : "rounded-xl"}`} style={{ borderRadius }}>
+              <div className="bg-secondary p-4 rounded-xl">
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Calendar className="w-4 h-4" />
-                  <span className={`${isPixelTheme ? "text-[8px]" : "text-sm"}`}>
+                  <span className="text-sm">
                     Friends since {friendshipDate ? formatDistanceToNow(new Date(friendshipDate), { addSuffix: false }) : "recently"}
                   </span>
                 </div>
@@ -233,43 +218,42 @@ const FriendProfileModal = ({ friendId, onClose, isPixelTheme = false, onMessage
 
               {/* Recent Moods */}
               <div>
-                <h5 className={`font-medium mb-3 flex items-center gap-2 ${isPixelTheme ? "text-[10px]" : "text-sm"}`}>
+                <h5 className="font-medium mb-3 flex items-center gap-2 text-sm">
                   <Activity className="w-4 h-4" />
                   Recent Moods
                 </h5>
-                
+
                 {recentMoods.length === 0 ? (
-                  <p className={`text-muted-foreground text-center py-4 ${isPixelTheme ? "text-[8px]" : "text-sm"}`}>
+                  <p className="text-muted-foreground text-center py-4 text-sm">
                     No shared moods yet
                   </p>
                 ) : (
                   <div className="space-y-2">
                     {recentMoods.map((mood) => (
-                      <div 
+                      <div
                         key={mood.id}
-                        className={`bg-secondary p-3 flex items-center gap-3 ${isPixelTheme ? "" : "rounded-xl"}`}
-                        style={{ borderRadius }}
+                        className="bg-secondary p-3 flex items-center gap-3 rounded-xl"
                       >
-                        <div 
-                          className={`w-8 h-8 flex items-center justify-center ${isPixelTheme ? "" : "rounded-full"}`}
+                        <div
+                          className="w-8 h-8 flex items-center justify-center rounded-full"
                           style={{ backgroundColor: getMoodColor(mood.rating) }}
                         >
                           <span className="text-sm">{getMoodEmoji(mood.rating)}</span>
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <span 
-                              className={`font-bold ${isPixelTheme ? "text-[8px]" : "text-sm"}`}
+                            <span
+                              className="font-bold text-sm"
                               style={{ color: getMoodColor(mood.rating) }}
                             >
                               {mood.rating}/10
                             </span>
-                            <span className={`text-muted-foreground ${isPixelTheme ? "text-[6px]" : "text-xs"}`}>
+                            <span className="text-muted-foreground text-xs">
                               {formatDistanceToNow(new Date(mood.created_at), { addSuffix: true })}
                             </span>
                           </div>
                           {mood.caption && (
-                            <p className={`text-muted-foreground truncate ${isPixelTheme ? "text-[6px]" : "text-xs"}`}>
+                            <p className="text-muted-foreground truncate text-xs">
                               {mood.caption}
                             </p>
                           )}

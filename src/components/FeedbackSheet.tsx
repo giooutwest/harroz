@@ -10,12 +10,11 @@ import { supabase } from "@/integrations/supabase/client";
 interface FeedbackSheetProps {
   isOpen: boolean;
   onClose: () => void;
-  isPixelTheme?: boolean;
 }
 
 type FeedbackType = "general" | "bug" | "feature";
 
-const FeedbackSheet = ({ isOpen, onClose, isPixelTheme }: FeedbackSheetProps) => {
+const FeedbackSheet = ({ isOpen, onClose }: FeedbackSheetProps) => {
   const [feedbackType, setFeedbackType] = useState<FeedbackType>("general");
   const [message, setMessage] = useState("");
   const [rating, setRating] = useState(0);
@@ -80,8 +79,6 @@ const FeedbackSheet = ({ isOpen, onClose, isPixelTheme }: FeedbackSheetProps) =>
     }
   };
 
-  const borderRadius = isPixelTheme ? "0" : undefined;
-
   return (
     <AnimatePresence>
       {isOpen && (
@@ -98,16 +95,13 @@ const FeedbackSheet = ({ isOpen, onClose, isPixelTheme }: FeedbackSheetProps) =>
             exit={{ scale: 0.9, opacity: 0, y: 20 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
             onClick={(e) => e.stopPropagation()}
-            className={`
-              w-full max-w-md bg-card border border-border p-6 shadow-2xl
-              ${isPixelTheme ? "font-mono" : "rounded-2xl"}
-            `}
+            className="w-full max-w-md bg-card border border-border p-6 shadow-2xl rounded-2xl"
           >
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-2">
                 <MessageSquareHeart className="w-5 h-5 text-primary" />
-                <h3 className={`font-semibold ${isPixelTheme ? "text-sm" : "text-lg"}`}>
+                <h3 className="font-semibold text-lg">
                   Send Feedback
                 </h3>
               </div>
@@ -121,7 +115,7 @@ const FeedbackSheet = ({ isOpen, onClose, isPixelTheme }: FeedbackSheetProps) =>
 
             {/* Feedback Type */}
             <div className="mb-4">
-              <label className={`text-muted-foreground mb-2 block ${isPixelTheme ? "text-[8px]" : "text-xs"}`}>
+              <label className="text-muted-foreground mb-2 block text-xs">
                 What kind of feedback?
               </label>
               <div className="flex gap-2">
@@ -130,17 +124,15 @@ const FeedbackSheet = ({ isOpen, onClose, isPixelTheme }: FeedbackSheetProps) =>
                     key={id}
                     onClick={() => setFeedbackType(id)}
                     className={`
-                      flex-1 flex flex-col items-center gap-1 p-3 border transition-all
-                      ${feedbackType === id 
-                        ? "bg-primary/20 border-primary text-primary" 
+                      flex-1 flex flex-col items-center gap-1 p-3 border transition-all rounded-xl
+                      ${feedbackType === id
+                        ? "bg-primary/20 border-primary text-primary"
                         : "bg-secondary border-transparent text-muted-foreground hover:text-foreground"
                       }
-                      ${isPixelTheme ? "" : "rounded-xl"}
                     `}
-                    style={{ borderRadius }}
                   >
-                    <Icon className={`${isPixelTheme ? "w-3 h-3" : "w-4 h-4"}`} />
-                    <span className={`${isPixelTheme ? "text-[6px]" : "text-xs"}`}>{label}</span>
+                    <Icon className="w-4 h-4" />
+                    <span className="text-xs">{label}</span>
                   </button>
                 ))}
               </div>
@@ -148,7 +140,7 @@ const FeedbackSheet = ({ isOpen, onClose, isPixelTheme }: FeedbackSheetProps) =>
 
             {/* Rating */}
             <div className="mb-4">
-              <label className={`text-muted-foreground mb-2 block ${isPixelTheme ? "text-[8px]" : "text-xs"}`}>
+              <label className="text-muted-foreground mb-2 block text-xs">
                 How are you enjoying the app? (optional)
               </label>
               <div className="flex justify-center gap-2">
@@ -160,8 +152,8 @@ const FeedbackSheet = ({ isOpen, onClose, isPixelTheme }: FeedbackSheetProps) =>
                   >
                     <Star
                       className={`w-6 h-6 transition-colors ${
-                        star <= rating 
-                          ? "fill-yellow-400 text-yellow-400" 
+                        star <= rating
+                          ? "fill-yellow-400 text-yellow-400"
                           : "text-muted-foreground"
                       }`}
                     />
@@ -172,12 +164,12 @@ const FeedbackSheet = ({ isOpen, onClose, isPixelTheme }: FeedbackSheetProps) =>
 
             {/* Message */}
             <div className="mb-6">
-              <label className={`text-muted-foreground mb-2 block ${isPixelTheme ? "text-[8px]" : "text-xs"}`}>
+              <label className="text-muted-foreground mb-2 block text-xs">
                 Your feedback
               </label>
               <Textarea
                 placeholder={
-                  feedbackType === "bug" 
+                  feedbackType === "bug"
                     ? "Describe the bug you encountered..."
                     : feedbackType === "feature"
                     ? "What feature would you like to see?"
@@ -186,8 +178,7 @@ const FeedbackSheet = ({ isOpen, onClose, isPixelTheme }: FeedbackSheetProps) =>
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 rows={4}
-                className={`resize-none ${isPixelTheme ? "text-xs" : ""}`}
-                style={{ borderRadius }}
+                className="resize-none"
               />
             </div>
 
@@ -195,8 +186,7 @@ const FeedbackSheet = ({ isOpen, onClose, isPixelTheme }: FeedbackSheetProps) =>
             <Button
               onClick={handleSubmit}
               disabled={isSubmitting || !message.trim()}
-              className={`w-full ${isPixelTheme ? "text-xs" : ""}`}
-              style={{ borderRadius }}
+              className="w-full"
             >
               {isSubmitting ? (
                 "Sending..."
@@ -215,4 +205,3 @@ const FeedbackSheet = ({ isOpen, onClose, isPixelTheme }: FeedbackSheetProps) =>
 };
 
 export default FeedbackSheet;
- 

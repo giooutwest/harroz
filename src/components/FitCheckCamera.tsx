@@ -11,10 +11,9 @@ interface FitCheckCameraProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: () => void;
-  isPixelTheme?: boolean;
 }
 
-const FitCheckCamera = ({ isOpen, onClose, onSuccess, isPixelTheme = false }: FitCheckCameraProps) => {
+const FitCheckCamera = ({ isOpen, onClose, onSuccess }: FitCheckCameraProps) => {
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [isCapturing, setIsCapturing] = useState(false);
@@ -31,8 +30,6 @@ const FitCheckCamera = ({ isOpen, onClose, onSuccess, isPixelTheme = false }: Fi
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { user } = useAuth();
   const { toast } = useToast();
-
-  const borderRadius = isPixelTheme ? "0" : undefined;
 
   // Start camera when modal opens
   useEffect(() => {
@@ -222,7 +219,7 @@ const FitCheckCamera = ({ isOpen, onClose, onSuccess, isPixelTheme = false }: Fi
           >
             <X className="w-6 h-6" />
           </button>
-          <h2 className={`font-bold text-white ${isPixelTheme ? "text-sm" : "text-lg"}`}>
+          <h2 className="font-bold text-white text-lg">
             Fit Check
           </h2>
           <div className="w-10" /> {/* Spacer */}
@@ -258,8 +255,7 @@ const FitCheckCamera = ({ isOpen, onClose, onSuccess, isPixelTheme = false }: Fi
                   <button
                     onClick={() => handleZoom(zoom + 0.5)}
                     disabled={zoom >= maxZoom}
-                    className={`p-3 bg-black/50 text-white disabled:opacity-30 ${isPixelTheme ? "" : "rounded-full"}`}
-                    style={{ borderRadius }}
+                    className="p-3 bg-black/50 text-white disabled:opacity-30 rounded-full"
                   >
                     <ZoomIn className="w-5 h-5" />
                   </button>
@@ -269,8 +265,7 @@ const FitCheckCamera = ({ isOpen, onClose, onSuccess, isPixelTheme = false }: Fi
                   <button
                     onClick={() => handleZoom(zoom - 0.5)}
                     disabled={zoom <= 1}
-                    className={`p-3 bg-black/50 text-white disabled:opacity-30 ${isPixelTheme ? "" : "rounded-full"}`}
-                    style={{ borderRadius }}
+                    className="p-3 bg-black/50 text-white disabled:opacity-30 rounded-full"
                   >
                     <ZoomOut className="w-5 h-5" />
                   </button>
@@ -297,10 +292,7 @@ const FitCheckCamera = ({ isOpen, onClose, onSuccess, isPixelTheme = false }: Fi
                 value={caption}
                 onChange={(e) => setCaption(e.target.value)}
                 maxLength={200}
-                className={`w-full px-4 py-3 bg-white/10 text-white placeholder-white/50 border border-white/20 focus:outline-none focus:border-white/40 ${
-                  isPixelTheme ? "text-xs" : "text-sm rounded-xl"
-                }`}
-                style={{ borderRadius }}
+                className="w-full px-4 py-3 bg-white/10 text-white placeholder-white/50 border border-white/20 focus:outline-none focus:border-white/40 text-sm rounded-xl"
               />
 
               {/* Visibility selector */}
@@ -316,11 +308,10 @@ const FitCheckCamera = ({ isOpen, onClose, onSuccess, isPixelTheme = false }: Fi
                       visibility === value
                         ? "bg-white text-black border-white"
                         : "bg-transparent text-white border-white/30"
-                    } ${isPixelTheme ? "" : "rounded-full"}`}
-                    style={{ borderRadius }}
+                    } rounded-full`}
                   >
                     <Icon className="w-4 h-4" />
-                    <span className={isPixelTheme ? "text-[10px]" : "text-xs"}>{label}</span>
+                    <span className="text-xs">{label}</span>
                   </button>
                 ))}
               </div>
@@ -329,21 +320,15 @@ const FitCheckCamera = ({ isOpen, onClose, onSuccess, isPixelTheme = false }: Fi
               <div className="flex gap-3">
                 <button
                   onClick={retakePhoto}
-                  className={`flex-1 flex items-center justify-center gap-2 py-3 bg-white/10 text-white border border-white/30 ${
-                    isPixelTheme ? "" : "rounded-xl"
-                  }`}
-                  style={{ borderRadius }}
+                  className="flex-1 flex items-center justify-center gap-2 py-3 bg-white/10 text-white border border-white/30 rounded-xl"
                 >
                   <RotateCcw className="w-5 h-5" />
-                  <span className={isPixelTheme ? "text-xs" : ""}>Retake</span>
+                  <span>Retake</span>
                 </button>
                 <button
                   onClick={handleSave}
                   disabled={isSaving}
-                  className={`flex-1 flex items-center justify-center gap-2 py-3 bg-white text-black font-medium disabled:opacity-50 ${
-                    isPixelTheme ? "" : "rounded-xl"
-                  }`}
-                  style={{ borderRadius }}
+                  className="flex-1 flex items-center justify-center gap-2 py-3 bg-white text-black font-medium disabled:opacity-50 rounded-xl"
                 >
                   {isSaving ? (
                     <motion.div
@@ -354,7 +339,7 @@ const FitCheckCamera = ({ isOpen, onClose, onSuccess, isPixelTheme = false }: Fi
                   ) : (
                     <>
                       <Check className="w-5 h-5" />
-                      <span className={isPixelTheme ? "text-xs" : ""}>Post</span>
+                      <span>Post</span>
                     </>
                   )}
                 </button>
@@ -365,8 +350,7 @@ const FitCheckCamera = ({ isOpen, onClose, onSuccess, isPixelTheme = false }: Fi
               {/* Switch camera */}
               <button
                 onClick={switchCamera}
-                className={`p-4 bg-white/10 text-white ${isPixelTheme ? "" : "rounded-full"}`}
-                style={{ borderRadius }}
+                className="p-4 bg-white/10 text-white rounded-full"
               >
                 <RotateCcw className="w-6 h-6" />
               </button>
@@ -376,9 +360,8 @@ const FitCheckCamera = ({ isOpen, onClose, onSuccess, isPixelTheme = false }: Fi
                 onClick={capturePhoto}
                 disabled={isCapturing || !cameraStream}
                 whileTap={{ scale: 0.9 }}
-                className={`w-20 h-20 bg-white disabled:opacity-50 ${isPixelTheme ? "" : "rounded-full"}`}
+                className="w-20 h-20 bg-white disabled:opacity-50 rounded-full"
                 style={{
-                  borderRadius: isPixelTheme ? "0" : "9999px",
                   boxShadow: "0 0 0 4px rgba(255,255,255,0.3)"
                 }}
               />

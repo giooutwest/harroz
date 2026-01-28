@@ -15,7 +15,6 @@ interface PastMood {
 }
 
 interface OnThisDayProps {
-  isPixelTheme?: boolean;
 }
 
 const moodLabels: { [key: number]: string } = {
@@ -31,15 +30,13 @@ const moodLabels: { [key: number]: string } = {
   10: "Amazing"
 };
 
-const OnThisDay = ({ isPixelTheme = false }: OnThisDayProps) => {
+const OnThisDay = ({}: OnThisDayProps) => {
   const [activeView, setActiveView] = useState<"month" | "week">("month");
   const [oneMonthAgo, setOneMonthAgo] = useState<PastMood | null>(null);
   const [lastWeekMoods, setLastWeekMoods] = useState<PastMood[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [hasEnoughData, setHasEnoughData] = useState(false);
   const { user } = useAuth();
-
-  const borderRadius = isPixelTheme ? "0" : undefined;
 
   useEffect(() => {
     if (user) {
@@ -162,7 +159,7 @@ const OnThisDay = ({ isPixelTheme = false }: OnThisDayProps) => {
 
   if (isLoading) {
     return (
-      <div className={`p-4 bg-card border border-border ${isPixelTheme ? "" : "rounded-2xl"}`} style={{ borderRadius }}>
+      <div className="p-4 bg-card border border-border rounded-2xl">
         <div className="animate-pulse">
           <div className="h-4 bg-secondary rounded w-1/3 mb-4"></div>
           <div className="h-20 bg-secondary rounded"></div>
@@ -173,10 +170,10 @@ const OnThisDay = ({ isPixelTheme = false }: OnThisDayProps) => {
 
   if (!hasEnoughData) {
     return (
-      <div className={`p-4 bg-card border border-border text-center ${isPixelTheme ? "" : "rounded-2xl"}`} style={{ borderRadius }}>
-        <Clock className={`${isPixelTheme ? "w-8 h-8" : "w-12 h-12"} mx-auto mb-3 text-muted-foreground`} />
-        <h3 className={`font-semibold mb-1 ${isPixelTheme ? "text-xs" : "text-sm"}`}>Time Travel</h3>
-        <p className={`text-muted-foreground ${isPixelTheme ? "text-[8px]" : "text-xs"}`}>
+      <div className="p-4 bg-card border border-border text-center rounded-2xl">
+        <Clock className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
+        <h3 className="font-semibold mb-1 text-sm">Time Travel</h3>
+        <p className="text-muted-foreground text-xs">
           Keep logging your moods! Once you have a month of data, you'll see your journey here.
         </p>
       </div>
@@ -184,22 +181,21 @@ const OnThisDay = ({ isPixelTheme = false }: OnThisDayProps) => {
   }
 
   return (
-    <div className={`p-4 bg-card border border-border ${isPixelTheme ? "" : "rounded-2xl"}`} style={{ borderRadius }}>
+    <div className="p-4 bg-card border border-border rounded-2xl">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <Clock className={`${isPixelTheme ? "w-4 h-4" : "w-5 h-5"} text-primary`} />
-          <h3 className={`font-semibold ${isPixelTheme ? "text-xs" : "text-sm"}`}>Time Travel</h3>
+          <Clock className="w-5 h-5 text-primary" />
+          <h3 className="font-semibold text-sm">Time Travel</h3>
         </div>
 
         {/* View Toggle */}
-        <div className="flex bg-secondary p-0.5" style={{ borderRadius }}>
+        <div className="flex bg-secondary p-0.5">
           <button
             onClick={() => setActiveView("month")}
             className={`px-3 py-1 transition-colors ${
               activeView === "month" ? "bg-primary text-primary-foreground" : ""
-            } ${isPixelTheme ? "text-[8px]" : "text-xs"}`}
-            style={{ borderRadius }}
+            } text-xs`}
           >
             1 Month
           </button>
@@ -207,8 +203,7 @@ const OnThisDay = ({ isPixelTheme = false }: OnThisDayProps) => {
             onClick={() => setActiveView("week")}
             className={`px-3 py-1 transition-colors ${
               activeView === "week" ? "bg-primary text-primary-foreground" : ""
-            } ${isPixelTheme ? "text-[8px]" : "text-xs"}`}
-            style={{ borderRadius }}
+            } text-xs`}
           >
             Last Week
           </button>
@@ -225,26 +220,23 @@ const OnThisDay = ({ isPixelTheme = false }: OnThisDayProps) => {
           >
             {oneMonthAgo ? (
               <div>
-                <p className={`text-muted-foreground mb-3 ${isPixelTheme ? "text-[8px]" : "text-xs"}`}>
+                <p className="text-muted-foreground mb-3 text-xs">
                   On this day, {format(new Date(oneMonthAgo.created_at), "MMMM d, yyyy")}
                 </p>
 
-                <div className={`p-4 bg-secondary ${isPixelTheme ? "" : "rounded-xl"}`} style={{ borderRadius }}>
+                <div className="p-4 bg-secondary rounded-xl">
                   {/* Mood rating */}
                   <div className="flex items-center gap-3 mb-3">
                     <div
-                      className={`w-10 h-10 ${getMoodColor(oneMonthAgo.mood_rating)} flex items-center justify-center text-white font-bold ${
-                        isPixelTheme ? "" : "rounded-full"
-                      }`}
-                      style={{ borderRadius }}
+                      className={`w-10 h-10 ${getMoodColor(oneMonthAgo.mood_rating)} flex items-center justify-center text-white font-bold rounded-full`}
                     >
                       {oneMonthAgo.mood_rating}
                     </div>
                     <div>
-                      <p className={`font-medium ${isPixelTheme ? "text-xs" : "text-sm"}`}>
+                      <p className="font-medium text-sm">
                         {moodLabels[oneMonthAgo.mood_rating]}
                       </p>
-                      <p className={`text-muted-foreground ${isPixelTheme ? "text-[8px]" : "text-xs"}`}>
+                      <p className="text-muted-foreground text-xs">
                         {format(new Date(oneMonthAgo.created_at), "h:mm a")}
                       </p>
                     </div>
@@ -252,7 +244,7 @@ const OnThisDay = ({ isPixelTheme = false }: OnThisDayProps) => {
 
                   {/* Journal entry */}
                   {oneMonthAgo.journal_entry && (
-                    <p className={`text-muted-foreground italic mb-3 ${isPixelTheme ? "text-[8px]" : "text-xs"}`}>
+                    <p className="text-muted-foreground italic mb-3 text-xs">
                       "{oneMonthAgo.journal_entry}"
                     </p>
                   )}
@@ -263,8 +255,7 @@ const OnThisDay = ({ isPixelTheme = false }: OnThisDayProps) => {
                       {oneMonthAgo.tags.map((tag, i) => (
                         <span
                           key={i}
-                          className={`px-2 py-0.5 bg-primary/10 text-primary ${isPixelTheme ? "text-[6px]" : "text-[10px]"}`}
-                          style={{ borderRadius }}
+                          className="px-2 py-0.5 bg-primary/10 text-primary text-[10px]"
                         >
                           {tag.icon} {tag.name}
                         </span>
@@ -274,8 +265,8 @@ const OnThisDay = ({ isPixelTheme = false }: OnThisDayProps) => {
                 </div>
 
                 {/* Reflection prompt */}
-                <div className={`mt-3 p-3 bg-primary/10 border border-primary/20 ${isPixelTheme ? "" : "rounded-lg"}`} style={{ borderRadius }}>
-                  <p className={`text-primary ${isPixelTheme ? "text-[8px]" : "text-xs"}`}>
+                <div className="mt-3 p-3 bg-primary/10 border border-primary/20 rounded-lg">
+                  <p className="text-primary text-xs">
                     <Sparkles className="w-3 h-3 inline mr-1" />
                     How far have you come since then?
                   </p>
@@ -283,8 +274,8 @@ const OnThisDay = ({ isPixelTheme = false }: OnThisDayProps) => {
               </div>
             ) : (
               <div className="text-center py-4">
-                <Calendar className={`${isPixelTheme ? "w-6 h-6" : "w-8 h-8"} mx-auto mb-2 text-muted-foreground`} />
-                <p className={`text-muted-foreground ${isPixelTheme ? "text-[8px]" : "text-xs"}`}>
+                <Calendar className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+                <p className="text-muted-foreground text-xs">
                   No entry from this day last month
                 </p>
               </div>
@@ -299,19 +290,19 @@ const OnThisDay = ({ isPixelTheme = false }: OnThisDayProps) => {
           >
             {lastWeekMoods.length > 0 ? (
               <div>
-                <p className={`text-muted-foreground mb-3 ${isPixelTheme ? "text-[8px]" : "text-xs"}`}>
+                <p className="text-muted-foreground mb-3 text-xs">
                   Your week of {format(subWeeks(new Date(), 1), "MMM d")} - {format(endOfWeek(subWeeks(new Date(), 1)), "MMM d")}
                 </p>
 
                 {/* Week summary */}
-                <div className={`p-4 bg-secondary mb-3 ${isPixelTheme ? "" : "rounded-xl"}`} style={{ borderRadius }}>
+                <div className="p-4 bg-secondary mb-3 rounded-xl">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className={`text-muted-foreground ${isPixelTheme ? "text-[6px]" : "text-xs"}`}>Average Mood</p>
-                      <p className={`font-bold ${isPixelTheme ? "text-lg" : "text-2xl"}`}>
+                      <p className="text-muted-foreground text-xs">Average Mood</p>
+                      <p className="font-bold text-2xl">
                         {getAverageRating(lastWeekMoods)}/10
                       </p>
-                      <p className={`${isPixelTheme ? "text-[8px]" : "text-xs"}`}>
+                      <p className="text-xs">
                         {moodLabels[getAverageRating(lastWeekMoods)]}
                       </p>
                     </div>
@@ -319,10 +310,7 @@ const OnThisDay = ({ isPixelTheme = false }: OnThisDayProps) => {
                       {lastWeekMoods.map((mood, i) => (
                         <div
                           key={i}
-                          className={`w-6 h-6 ${getMoodColor(mood.mood_rating)} flex items-center justify-center text-white text-[8px] font-bold ${
-                            isPixelTheme ? "" : "rounded"
-                          }`}
-                          style={{ borderRadius }}
+                          className={`w-6 h-6 ${getMoodColor(mood.mood_rating)} flex items-center justify-center text-white text-[8px] font-bold rounded`}
                           title={format(new Date(mood.created_at), "EEEE")}
                         >
                           {mood.mood_rating}
@@ -344,16 +332,15 @@ const OnThisDay = ({ isPixelTheme = false }: OnThisDayProps) => {
 
                   if (topTags.length > 0) {
                     return (
-                      <div className={`p-3 bg-secondary/50 ${isPixelTheme ? "" : "rounded-lg"}`} style={{ borderRadius }}>
-                        <p className={`text-muted-foreground mb-2 ${isPixelTheme ? "text-[6px]" : "text-[10px]"}`}>
+                      <div className="p-3 bg-secondary/50 rounded-lg">
+                        <p className="text-muted-foreground mb-2 text-[10px]">
                           Most logged activities
                         </p>
                         <div className="flex flex-wrap gap-2">
                           {topTags.map((tag, i) => (
                             <span
                               key={i}
-                              className={`px-2 py-1 bg-primary/10 text-primary ${isPixelTheme ? "text-[8px]" : "text-xs"}`}
-                              style={{ borderRadius }}
+                              className="px-2 py-1 bg-primary/10 text-primary text-xs"
                             >
                               {tag.icon} {tag.name} ({tag.count}x)
                             </span>
@@ -367,8 +354,8 @@ const OnThisDay = ({ isPixelTheme = false }: OnThisDayProps) => {
               </div>
             ) : (
               <div className="text-center py-4">
-                <Calendar className={`${isPixelTheme ? "w-6 h-6" : "w-8 h-8"} mx-auto mb-2 text-muted-foreground`} />
-                <p className={`text-muted-foreground ${isPixelTheme ? "text-[8px]" : "text-xs"}`}>
+                <Calendar className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+                <p className="text-muted-foreground text-xs">
                   No entries from last week
                 </p>
               </div>

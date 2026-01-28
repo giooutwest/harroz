@@ -7,14 +7,13 @@ import { toast } from "sonner";
 interface NotificationPromptProps {
   isOpen: boolean;
   onClose: () => void;
-  isPixelTheme?: boolean;
 }
 
-const NotificationPrompt = ({ isOpen, onClose, isPixelTheme }: NotificationPromptProps) => {
-  const { 
-    isSupported, 
+const NotificationPrompt = ({ isOpen, onClose }: NotificationPromptProps) => {
+  const {
+    isSupported,
     subscribeToPush,
-    sendTestNotification 
+    sendTestNotification
   } = usePushNotifications();
 
   const handleEnable = async () => {
@@ -26,7 +25,7 @@ const NotificationPrompt = ({ isOpen, onClose, isPixelTheme }: NotificationPromp
 
     // subscribeToPush handles both permission request and subscription
     const success = await subscribeToPush();
-    
+
     if (success) {
       toast.success("Notifications enabled! You'll get daily reminders at 9 PM 🔔");
       // Send a test notification
@@ -34,7 +33,7 @@ const NotificationPrompt = ({ isOpen, onClose, isPixelTheme }: NotificationPromp
         sendTestNotification();
       }, 1000);
     }
-    
+
     onClose();
   };
 
@@ -52,10 +51,7 @@ const NotificationPrompt = ({ isOpen, onClose, isPixelTheme }: NotificationPromp
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.9, opacity: 0, y: 20 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className={`
-              relative w-full max-w-sm bg-card border border-border rounded-2xl p-6 shadow-2xl
-              ${isPixelTheme ? "font-mono" : ""}
-            `}
+            className="relative w-full max-w-sm bg-card border border-border rounded-2xl p-6 shadow-2xl"
           >
             {/* Close button */}
             <button
@@ -73,19 +69,16 @@ const NotificationPrompt = ({ isOpen, onClose, isPixelTheme }: NotificationPromp
               className="flex justify-center mb-4"
             >
               <div className="relative">
-                <div className={`
-                  w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center
-                  ${isPixelTheme ? "rounded-none" : ""}
-                `}>
-                  <Bell className={`w-8 h-8 text-primary ${isPixelTheme ? "" : ""}`} />
+                <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center">
+                  <Bell className="w-8 h-8 text-primary" />
                 </div>
                 <motion.div
-                  animate={{ 
+                  animate={{
                     scale: [1, 1.2, 1],
                     rotate: [0, 10, -10, 0]
                   }}
-                  transition={{ 
-                    repeat: Infinity, 
+                  transition={{
+                    repeat: Infinity,
                     duration: 2,
                     repeatDelay: 1
                   }}
@@ -98,10 +91,10 @@ const NotificationPrompt = ({ isOpen, onClose, isPixelTheme }: NotificationPromp
 
             {/* Content */}
             <div className="text-center mb-6">
-              <h3 className={`font-bold mb-2 ${isPixelTheme ? "text-base" : "text-lg"}`}>
+              <h3 className="font-bold mb-2 text-lg">
                 Stay Connected! 🔔
               </h3>
-              <p className={`text-muted-foreground ${isPixelTheme ? "text-xs" : "text-sm"}`}>
+              <p className="text-muted-foreground text-sm">
                 Get notified when friends interact with your moods or send you friend requests.
               </p>
             </div>
@@ -118,10 +111,7 @@ const NotificationPrompt = ({ isOpen, onClose, isPixelTheme }: NotificationPromp
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.2 + index * 0.1 }}
-                  className={`
-                    flex items-center gap-2 text-muted-foreground
-                    ${isPixelTheme ? "text-xs" : "text-sm"}
-                  `}
+                  className="flex items-center gap-2 text-muted-foreground text-sm"
                 >
                   <span className="text-primary">✓</span>
                   {feature}
@@ -133,7 +123,7 @@ const NotificationPrompt = ({ isOpen, onClose, isPixelTheme }: NotificationPromp
             <div className="space-y-2">
               <Button
                 onClick={handleEnable}
-                className={`w-full ${isPixelTheme ? "rounded-none text-xs" : ""}`}
+                className="w-full"
               >
                 <Bell className="w-4 h-4 mr-2" />
                 Enable Notifications
@@ -141,7 +131,7 @@ const NotificationPrompt = ({ isOpen, onClose, isPixelTheme }: NotificationPromp
               <Button
                 variant="ghost"
                 onClick={onClose}
-                className={`w-full text-muted-foreground ${isPixelTheme ? "rounded-none text-xs" : ""}`}
+                className="w-full text-muted-foreground"
               >
                 Maybe Later
               </Button>

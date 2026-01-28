@@ -13,7 +13,6 @@ interface Challenge {
 }
 
 interface FitCheckChallengeProps {
-  isPixelTheme?: boolean;
   onOpenCamera: () => void;
 }
 
@@ -26,7 +25,7 @@ interface FitCheckChallengeProps {
 
 type ChallengeState = "hidden" | "teaser" | "active" | "missed" | "completed";
 
-const FitCheckChallenge = ({ isPixelTheme = false, onOpenCamera }: FitCheckChallengeProps) => {
+const FitCheckChallenge = ({ onOpenCamera }: FitCheckChallengeProps) => {
   const [challenge, setChallenge] = useState<Challenge | null>(null);
   const [hasCompleted, setHasCompleted] = useState(false);
   const [completedOnTime, setCompletedOnTime] = useState(false);
@@ -34,8 +33,6 @@ const FitCheckChallenge = ({ isPixelTheme = false, onOpenCamera }: FitCheckChall
   const [challengeState, setChallengeState] = useState<ChallengeState>("hidden");
   const [fitCheckStreak, setFitCheckStreak] = useState(0);
   const { user } = useAuth();
-
-  const borderRadius = isPixelTheme ? "0" : undefined;
 
   useEffect(() => {
     if (user) {
@@ -150,22 +147,18 @@ const FitCheckChallenge = ({ isPixelTheme = false, onOpenCamera }: FitCheckChall
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className={`p-4 bg-card border-2 border-purple-500/50 ${isPixelTheme ? "" : "rounded-2xl"}`}
-      style={{ borderRadius }}
+      className="p-4 bg-card border-2 border-purple-500/50 rounded-2xl"
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <div
-            className={`w-8 h-8 bg-purple-500/20 flex items-center justify-center ${
-              isPixelTheme ? "" : "rounded-full"
-            }`}
-            style={{ borderRadius }}
+            className="w-8 h-8 bg-purple-500/20 flex items-center justify-center rounded-full"
           >
-            <Shirt className={`${isPixelTheme ? "w-4 h-4" : "w-5 h-5"} text-purple-500`} />
+            <Shirt className="w-5 h-5 text-purple-500" />
           </div>
           <div>
-            <h3 className={`font-semibold text-purple-500 ${isPixelTheme ? "text-xs" : "text-sm"}`}>
+            <h3 className="font-semibold text-purple-500 text-sm">
               Fit Check!
             </h3>
           </div>
@@ -174,13 +167,10 @@ const FitCheckChallenge = ({ isPixelTheme = false, onOpenCamera }: FitCheckChall
         {/* Streak badge */}
         {fitCheckStreak > 0 && (
           <div
-            className={`flex items-center gap-1 px-2 py-1 bg-purple-500/20 ${
-              isPixelTheme ? "" : "rounded-full"
-            }`}
-            style={{ borderRadius }}
+            className="flex items-center gap-1 px-2 py-1 bg-purple-500/20 rounded-full"
           >
-            <Trophy className={`${isPixelTheme ? "w-3 h-3" : "w-4 h-4"} text-purple-500`} />
-            <span className={`text-purple-500 font-medium ${isPixelTheme ? "text-[8px]" : "text-xs"}`}>
+            <Trophy className="w-4 h-4 text-purple-500" />
+            <span className="text-purple-500 font-medium text-xs">
               {fitCheckStreak}
             </span>
           </div>
@@ -195,17 +185,14 @@ const FitCheckChallenge = ({ isPixelTheme = false, onOpenCamera }: FitCheckChall
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className={`p-4 bg-green-500/10 border border-green-500/30 text-center ${
-              isPixelTheme ? "" : "rounded-xl"
-            }`}
-            style={{ borderRadius }}
+            className="p-4 bg-green-500/10 border border-green-500/30 text-center rounded-xl"
           >
-            <Check className={`${isPixelTheme ? "w-6 h-6" : "w-8 h-8"} mx-auto mb-2 text-green-500`} />
-            <p className={`font-medium text-green-500 ${isPixelTheme ? "text-xs" : "text-sm"}`}>
+            <Check className="w-8 h-8 mx-auto mb-2 text-green-500" />
+            <p className="font-medium text-green-500 text-sm">
               {completedOnTime ? "Nailed it!" : "Completed!"}
             </p>
             {completedOnTime && (
-              <p className={`text-green-500/70 ${isPixelTheme ? "text-[8px]" : "text-xs"}`}>
+              <p className="text-green-500/70 text-xs">
                 Purple shirt badge earned!
               </p>
             )}
@@ -219,15 +206,14 @@ const FitCheckChallenge = ({ isPixelTheme = false, onOpenCamera }: FitCheckChall
           >
             {/* Active countdown - urgent! */}
             <div
-              className={`p-4 bg-purple-500 mb-3 ${isPixelTheme ? "" : "rounded-xl"}`}
-              style={{ borderRadius }}
+              className="p-4 bg-purple-500 mb-3 rounded-xl"
             >
               <div className="flex items-center justify-between text-white">
                 <div>
-                  <p className={`font-bold ${isPixelTheme ? "text-xs" : "text-sm"}`}>
+                  <p className="font-bold text-sm">
                     GO GO GO!
                   </p>
-                  <p className={`opacity-80 ${isPixelTheme ? "text-[8px]" : "text-xs"}`}>
+                  <p className="opacity-80 text-xs">
                     Post your fit now!
                   </p>
                 </div>
@@ -236,7 +222,7 @@ const FitCheckChallenge = ({ isPixelTheme = false, onOpenCamera }: FitCheckChall
                     key={timeRemaining}
                     initial={{ scale: 1.2 }}
                     animate={{ scale: 1 }}
-                    className={`font-bold ${isPixelTheme ? "text-xl" : "text-3xl"}`}
+                    className="font-bold text-3xl"
                   >
                     {formatTime(timeRemaining || 0)}
                   </motion.p>
@@ -248,10 +234,7 @@ const FitCheckChallenge = ({ isPixelTheme = false, onOpenCamera }: FitCheckChall
             <motion.button
               whileTap={{ scale: 0.98 }}
               onClick={onOpenCamera}
-              className={`w-full flex items-center justify-center gap-2 py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold ${
-                isPixelTheme ? "text-xs" : "text-sm rounded-xl"
-              }`}
-              style={{ borderRadius }}
+              className="w-full flex items-center justify-center gap-2 py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold text-sm rounded-xl"
             >
               <Camera className="w-5 h-5" />
               Take Photo
@@ -263,11 +246,10 @@ const FitCheckChallenge = ({ isPixelTheme = false, onOpenCamera }: FitCheckChall
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className={`p-4 bg-muted/50 text-center ${isPixelTheme ? "" : "rounded-xl"}`}
-            style={{ borderRadius }}
+            className="p-4 bg-muted/50 text-center rounded-xl"
           >
-            <X className={`${isPixelTheme ? "w-5 h-5" : "w-6 h-6"} mx-auto mb-2 text-muted-foreground`} />
-            <p className={`text-muted-foreground ${isPixelTheme ? "text-[10px]" : "text-xs"}`}>
+            <X className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />
+            <p className="text-muted-foreground text-xs">
               Window closed. Tomorrow's another day!
             </p>
           </motion.div>
@@ -277,25 +259,22 @@ const FitCheckChallenge = ({ isPixelTheme = false, onOpenCamera }: FitCheckChall
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className={`p-4 bg-purple-500/10 border border-purple-500/20 ${
-              isPixelTheme ? "" : "rounded-xl"
-            }`}
-            style={{ borderRadius }}
+            className="p-4 bg-purple-500/10 border border-purple-500/20 rounded-xl"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Bell className={`${isPixelTheme ? "w-4 h-4" : "w-5 h-5"} text-purple-500`} />
+                <Bell className="w-5 h-5 text-purple-500" />
                 <div>
-                  <p className={`font-medium text-purple-500 ${isPixelTheme ? "text-xs" : "text-sm"}`}>
+                  <p className="font-medium text-purple-500 text-sm">
                     Coming soon...
                   </p>
-                  <p className={`text-purple-500/70 ${isPixelTheme ? "text-[8px]" : "text-xs"}`}>
+                  <p className="text-purple-500/70 text-xs">
                     Be ready to show your fit!
                   </p>
                 </div>
               </div>
               <div className="text-right">
-                <p className={`font-bold text-purple-500 ${isPixelTheme ? "text-lg" : "text-xl"}`}>
+                <p className="font-bold text-purple-500 text-xl">
                   {formatTime(timeRemaining || 0)}
                 </p>
               </div>

@@ -5,10 +5,9 @@ interface PhotoViewerModalProps {
   photoUrl: string | null;
   caption?: string | null;
   onClose: () => void;
-  isPixelTheme?: boolean;
 }
 
-const PhotoViewerModal = ({ photoUrl, caption, onClose, isPixelTheme = false }: PhotoViewerModalProps) => {
+const PhotoViewerModal = ({ photoUrl, caption, onClose }: PhotoViewerModalProps) => {
   if (!photoUrl) return null;
 
   return (
@@ -23,9 +22,7 @@ const PhotoViewerModal = ({ photoUrl, caption, onClose, isPixelTheme = false }: 
         {/* Close button */}
         <button
           onClick={onClose}
-          className={`absolute top-4 right-4 p-2 bg-white/10 backdrop-blur-sm text-white hover:bg-white/20 transition-colors z-10 ${
-            isPixelTheme ? "" : "rounded-full"
-          }`}
+          className="absolute top-4 right-4 p-2 bg-white/10 backdrop-blur-sm text-white hover:bg-white/20 transition-colors z-10 rounded-full"
         >
           <X className="w-6 h-6" />
         </button>
@@ -41,20 +38,18 @@ const PhotoViewerModal = ({ photoUrl, caption, onClose, isPixelTheme = false }: 
           <img
             src={photoUrl}
             alt="Full view"
-            className={`max-w-full max-h-[75vh] object-contain ${isPixelTheme ? "" : "rounded-lg"}`}
+            className="max-w-full max-h-[75vh] object-contain rounded-lg"
           />
-          
+
           {/* Caption overlay */}
           {caption && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className={`mt-4 px-6 py-3 bg-white/10 backdrop-blur-md max-w-md text-center ${
-                isPixelTheme ? "" : "rounded-2xl"
-              }`}
+              className="mt-4 px-6 py-3 bg-white/10 backdrop-blur-md max-w-md text-center rounded-2xl"
             >
-              <p className={`text-white ${isPixelTheme ? "text-xs" : "text-sm"}`}>
+              <p className="text-white text-sm">
                 "{caption}"
               </p>
             </motion.div>

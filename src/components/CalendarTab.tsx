@@ -21,7 +21,7 @@ interface MoodEntry {
 }
 
 interface CalendarTabProps {
-  isPixelTheme?: boolean;
+  // Props can be extended here
 }
 
 const getMoodColor = (rating: number): string => {
@@ -34,7 +34,7 @@ const getMoodColor = (rating: number): string => {
 
 type ViewMode = "moods" | "journal";
 
-const CalendarTab = ({ isPixelTheme = false }: CalendarTabProps) => {
+const CalendarTab = ({}: CalendarTabProps) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [moods, setMoods] = useState<Record<string, MoodEntry>>({});
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -176,24 +176,24 @@ const CalendarTab = ({ isPixelTheme = false }: CalendarTabProps) => {
   return (
     <div className="px-4 py-6 pb-28">
       {/* View Mode Toggle */}
-      <div className={`flex bg-secondary p-1 mb-4 ${isPixelTheme ? "" : "rounded-full"}`}>
+      <div className="flex bg-secondary p-1 mb-4 rounded-full">
         <button
           onClick={() => handleViewModeChange("moods")}
           className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 relative transition-colors ${
             viewMode === "moods"
               ? "text-foreground"
               : "text-muted-foreground hover:text-foreground"
-          } ${isPixelTheme ? "" : "rounded-full"}`}
+          } rounded-full`}
         >
           {viewMode === "moods" && (
             <motion.div
               layoutId="calendarViewIndicator"
-              className={`absolute inset-0 bg-background shadow-sm ${isPixelTheme ? "" : "rounded-full"}`}
+              className="absolute inset-0 bg-background shadow-sm rounded-full"
               transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
             />
           )}
           <Camera className="w-4 h-4 relative z-10" />
-          <span className={`relative z-10 font-medium ${isPixelTheme ? "text-[10px]" : "text-sm"}`}>
+          <span className="relative z-10 font-medium text-sm">
             Moods
           </span>
         </button>
@@ -203,17 +203,17 @@ const CalendarTab = ({ isPixelTheme = false }: CalendarTabProps) => {
             viewMode === "journal"
               ? "text-foreground"
               : "text-muted-foreground hover:text-foreground"
-          } ${isPixelTheme ? "" : "rounded-full"}`}
+          } rounded-full`}
         >
           {viewMode === "journal" && (
             <motion.div
               layoutId="calendarViewIndicator"
-              className={`absolute inset-0 bg-background shadow-sm ${isPixelTheme ? "" : "rounded-full"}`}
+              className="absolute inset-0 bg-background shadow-sm rounded-full"
               transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
             />
           )}
           <BookOpen className="w-4 h-4 relative z-10" />
-          <span className={`relative z-10 font-medium ${isPixelTheme ? "text-[10px]" : "text-sm"}`}>
+          <span className="relative z-10 font-medium text-sm">
             Journal
           </span>
         </button>
@@ -224,33 +224,33 @@ const CalendarTab = ({ isPixelTheme = false }: CalendarTabProps) => {
         <motion.button
           whileTap={{ scale: 0.9 }}
           onClick={() => navigateMonth(-1)}
-          className={`p-2 hover:bg-secondary/80 transition-colors touch-manipulation ${isPixelTheme ? "bg-secondary" : "rounded-full bg-secondary"}`}
+          className="p-2 hover:bg-secondary/80 transition-colors touch-manipulation rounded-full bg-secondary"
         >
-          <ChevronLeft className={`${isPixelTheme ? "w-4 h-4" : "w-5 h-5"}`} />
+          <ChevronLeft className="w-5 h-5" />
         </motion.button>
-        
-        <motion.h2 
+
+        <motion.h2
           key={monthYear}
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className={`font-bold ${isPixelTheme ? "text-sm" : "text-lg"}`}
+          className="font-bold text-lg"
         >
           {monthYear}
         </motion.h2>
-        
+
         <motion.button
           whileTap={{ scale: 0.9 }}
           onClick={() => navigateMonth(1)}
-          className={`p-2 hover:bg-secondary/80 transition-colors touch-manipulation ${isPixelTheme ? "bg-secondary" : "rounded-full bg-secondary"}`}
+          className="p-2 hover:bg-secondary/80 transition-colors touch-manipulation rounded-full bg-secondary"
         >
-          <ChevronRight className={`${isPixelTheme ? "w-4 h-4" : "w-5 h-5"}`} />
+          <ChevronRight className="w-5 h-5" />
         </motion.button>
       </div>
 
       {/* Weekday headers */}
       <div className="grid grid-cols-7 mb-1">
         {weekDays.map((day, i) => (
-          <div key={`${day}-${i}`} className={`text-center text-muted-foreground font-medium py-1 ${isPixelTheme ? "text-[10px]" : "text-xs"}`}>
+          <div key={`${day}-${i}`} className="text-center text-muted-foreground font-medium py-1 text-xs">
             {day}
           </div>
         ))}
@@ -292,17 +292,17 @@ const CalendarTab = ({ isPixelTheme = false }: CalendarTabProps) => {
               disabled={isFuture}
               className={`aspect-square flex flex-col items-center justify-center touch-manipulation relative ${
                 isFuture ? "opacity-30" : ""
-              } ${isPixelTheme ? "" : "rounded-lg"}`}
+              } rounded-lg`}
             >
               {/* Day number */}
-              <span className={`font-medium ${hasContent ? "text-foreground" : "text-muted-foreground"} ${isPixelTheme ? "text-sm" : "text-base"}`}>
+              <span className={`font-medium ${hasContent ? "text-foreground" : "text-muted-foreground"} text-base`}>
                 {day}
               </span>
 
               {/* Mood indicator dot */}
               {viewMode === "moods" && mood && (
                 <div
-                  className={`mt-0.5 ${isPixelTheme ? "w-2 h-2" : "w-2.5 h-2.5 rounded-full"}`}
+                  className="mt-0.5 w-2.5 h-2.5 rounded-full"
                   style={{ backgroundColor: getMoodColor(mood.rating) }}
                 />
               )}
@@ -310,13 +310,13 @@ const CalendarTab = ({ isPixelTheme = false }: CalendarTabProps) => {
               {/* Journal indicator */}
               {viewMode === "journal" && journalEntry && (
                 <BookOpen
-                  className={`mt-0.5 text-primary ${isPixelTheme ? "w-2.5 h-2.5" : "w-3 h-3"}`}
+                  className="mt-0.5 text-primary w-3 h-3"
                 />
               )}
 
               {/* Today indicator */}
               {isToday && (
-                <div className={`absolute inset-0 border-2 border-primary pointer-events-none ${isPixelTheme ? "" : "rounded-lg"}`} />
+                <div className="absolute inset-0 border-2 border-primary pointer-events-none rounded-lg" />
               )}
             </motion.button>
           );

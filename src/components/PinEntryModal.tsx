@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Lock, Check, AlertCircle } from "lucide-react";
+import { X, Lock, AlertCircle } from "lucide-react";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 
 interface PinEntryModalProps {
@@ -11,7 +11,6 @@ interface PinEntryModalProps {
   verifyPin?: (pin: string) => Promise<boolean>;
   setupPin?: (pin: string) => Promise<boolean>;
   changePin?: (oldPin: string, newPin: string) => Promise<boolean>;
-  isPixelTheme?: boolean;
 }
 
 type Step = "enter" | "confirm" | "old" | "new" | "confirmNew";
@@ -24,7 +23,6 @@ const PinEntryModal = ({
   verifyPin,
   setupPin,
   changePin,
-  isPixelTheme = false
 }: PinEntryModalProps) => {
   const [pin, setPin] = useState("");
   const [confirmPin, setConfirmPin] = useState("");
@@ -238,26 +236,26 @@ const PinEntryModal = ({
           animate={{ scale: 1, opacity: 1, x: shake ? [0, -10, 10, -10, 10, 0] : 0 }}
           exit={{ scale: 0.9, opacity: 0 }}
           transition={{ duration: shake ? 0.4 : 0.2 }}
-          className={`bg-card border border-border w-full max-w-sm p-6 ${isPixelTheme ? "" : "rounded-2xl"}`}
+          className="bg-card border border-border w-full max-w-sm p-6 rounded-2xl"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Close button */}
           <button
             onClick={onClose}
-            className={`absolute top-4 right-4 p-2 text-muted-foreground hover:text-foreground transition-colors ${isPixelTheme ? "" : "rounded-full"}`}
+            className="absolute top-4 right-4 p-2 text-muted-foreground hover:text-foreground transition-colors rounded-full"
           >
             <X className="w-5 h-5" />
           </button>
 
           {/* Header */}
           <div className="text-center mb-8">
-            <div className={`w-16 h-16 mx-auto mb-4 bg-primary/10 flex items-center justify-center ${isPixelTheme ? "" : "rounded-full"}`}>
+            <div className="w-16 h-16 mx-auto mb-4 bg-primary/10 flex items-center justify-center rounded-full">
               <Lock className="w-8 h-8 text-primary" />
             </div>
-            <h2 className={`font-bold mb-2 ${isPixelTheme ? "text-sm" : "text-xl"}`}>
+            <h2 className="font-bold mb-2 text-xl">
               {getTitle()}
             </h2>
-            <p className={`text-muted-foreground ${isPixelTheme ? "text-[10px]" : "text-sm"}`}>
+            <p className="text-muted-foreground text-sm">
               {getSubtitle()}
             </p>
           </div>
@@ -272,10 +270,10 @@ const PinEntryModal = ({
               autoFocus
             >
               <InputOTPGroup>
-                <InputOTPSlot index={0} className={`w-14 h-14 text-2xl ${isPixelTheme ? "rounded-none" : ""}`} />
-                <InputOTPSlot index={1} className={`w-14 h-14 text-2xl ${isPixelTheme ? "rounded-none" : ""}`} />
-                <InputOTPSlot index={2} className={`w-14 h-14 text-2xl ${isPixelTheme ? "rounded-none" : ""}`} />
-                <InputOTPSlot index={3} className={`w-14 h-14 text-2xl ${isPixelTheme ? "rounded-none" : ""}`} />
+                <InputOTPSlot index={0} className="w-14 h-14 text-2xl" />
+                <InputOTPSlot index={1} className="w-14 h-14 text-2xl" />
+                <InputOTPSlot index={2} className="w-14 h-14 text-2xl" />
+                <InputOTPSlot index={3} className="w-14 h-14 text-2xl" />
               </InputOTPGroup>
             </InputOTP>
           </div>
@@ -288,7 +286,7 @@ const PinEntryModal = ({
               className="flex items-center justify-center gap-2 text-destructive mb-4"
             >
               <AlertCircle className="w-4 h-4" />
-              <span className={isPixelTheme ? "text-[10px]" : "text-sm"}>{error}</span>
+              <span className="text-sm">{error}</span>
             </motion.div>
           )}
 
@@ -300,7 +298,7 @@ const PinEntryModal = ({
                 transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                 className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full"
               />
-              <span className={isPixelTheme ? "text-[10px]" : "text-sm"}>Verifying...</span>
+              <span className="text-sm">Verifying...</span>
             </div>
           )}
 
@@ -309,14 +307,14 @@ const PinEntryModal = ({
             <div className="flex justify-center gap-2 mt-6">
               {mode === "setup" ? (
                 <>
-                  <div className={`w-2 h-2 ${step === "enter" ? "bg-primary" : "bg-muted"} ${isPixelTheme ? "" : "rounded-full"}`} />
-                  <div className={`w-2 h-2 ${step === "confirm" ? "bg-primary" : "bg-muted"} ${isPixelTheme ? "" : "rounded-full"}`} />
+                  <div className={`w-2 h-2 rounded-full ${step === "enter" ? "bg-primary" : "bg-muted"}`} />
+                  <div className={`w-2 h-2 rounded-full ${step === "confirm" ? "bg-primary" : "bg-muted"}`} />
                 </>
               ) : (
                 <>
-                  <div className={`w-2 h-2 ${step === "old" ? "bg-primary" : "bg-muted"} ${isPixelTheme ? "" : "rounded-full"}`} />
-                  <div className={`w-2 h-2 ${step === "new" ? "bg-primary" : "bg-muted"} ${isPixelTheme ? "" : "rounded-full"}`} />
-                  <div className={`w-2 h-2 ${step === "confirmNew" ? "bg-primary" : "bg-muted"} ${isPixelTheme ? "" : "rounded-full"}`} />
+                  <div className={`w-2 h-2 rounded-full ${step === "old" ? "bg-primary" : "bg-muted"}`} />
+                  <div className={`w-2 h-2 rounded-full ${step === "new" ? "bg-primary" : "bg-muted"}`} />
+                  <div className={`w-2 h-2 rounded-full ${step === "confirmNew" ? "bg-primary" : "bg-muted"}`} />
                 </>
               )}
             </div>

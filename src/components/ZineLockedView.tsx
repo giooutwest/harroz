@@ -19,14 +19,12 @@ interface ZineLockedViewProps {
   yesterdaysMood: YesterdayMood | null;
   onYesterdayClick?: () => void;
   onOpenFitCheckCamera?: () => void;
-  isPixelTheme?: boolean;
 }
 
 const ZineLockedView = ({
   displayName,
   yesterdaysMood,
-  onYesterdayClick,
-  isPixelTheme = false
+  onYesterdayClick
 }: ZineLockedViewProps) => {
   const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 0, seconds: 0 });
   const navigate = useNavigate();
@@ -56,11 +54,6 @@ const ZineLockedView = ({
   }, []);
 
   const formatTime = (num: number) => num.toString().padStart(2, "0");
-
-  // Don't render zine style for pixel theme
-  if (isPixelTheme) {
-    return null;
-  }
 
   return (
     <div className="relative flex flex-col min-h-[calc(100vh-80px)] w-full max-w-md mx-auto px-4 pt-2 pb-8 overflow-hidden bg-background">

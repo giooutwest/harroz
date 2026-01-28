@@ -6,7 +6,6 @@ interface VoiceMessageProps {
   audioUrl: string;
   duration: number;
   isMine: boolean;
-  isPixelTheme?: boolean;
 }
 
 const formatDuration = (seconds: number): string => {
@@ -15,7 +14,7 @@ const formatDuration = (seconds: number): string => {
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 };
 
-const VoiceMessage = ({ audioUrl, duration, isMine, isPixelTheme = false }: VoiceMessageProps) => {
+const VoiceMessage = ({ audioUrl, duration, isMine }: VoiceMessageProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
@@ -85,9 +84,9 @@ const VoiceMessage = ({ audioUrl, duration, isMine, isPixelTheme = false }: Voic
       {/* Play/Pause button */}
       <button
         onClick={handlePlayPause}
-        className={`flex-shrink-0 w-9 h-9 flex items-center justify-center ${
+        className={`flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-full ${
           isMine ? "bg-primary-foreground/20" : "bg-primary/20"
-        } ${isPixelTheme ? "" : "rounded-full"}`}
+        }`}
       >
         {isPlaying ? (
           <Pause className={`w-4 h-4 ${isMine ? "text-primary-foreground" : "text-primary"}`} />

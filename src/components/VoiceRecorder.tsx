@@ -1,12 +1,11 @@
 import { useState, useRef, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Mic, Square, Play, Pause, Trash2, Send, X } from "lucide-react";
+import { motion } from "framer-motion";
+import { Square, Play, Pause, Trash2, Send, X } from "lucide-react";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 
 interface VoiceRecorderProps {
   onSend: (audioBlob: Blob, duration: number) => void;
   onCancel: () => void;
-  isPixelTheme?: boolean;
 }
 
 const formatDuration = (seconds: number): string => {
@@ -15,7 +14,7 @@ const formatDuration = (seconds: number): string => {
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 };
 
-const VoiceRecorder = ({ onSend, onCancel, isPixelTheme = false }: VoiceRecorderProps) => {
+const VoiceRecorder = ({ onSend, onCancel }: VoiceRecorderProps) => {
   const {
     isRecording,
     isPaused,
@@ -33,7 +32,6 @@ const VoiceRecorder = ({ onSend, onCancel, isPixelTheme = false }: VoiceRecorder
 
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const borderRadius = isPixelTheme ? "0" : undefined;
 
   // Start recording immediately when component mounts
   useEffect(() => {
@@ -84,7 +82,7 @@ const VoiceRecorder = ({ onSend, onCancel, isPixelTheme = false }: VoiceRecorder
   if (error) {
     return (
       <div className="flex items-center justify-between p-3 bg-destructive/10 rounded-xl">
-        <span className={`text-destructive ${isPixelTheme ? "text-[10px]" : "text-sm"}`}>
+        <span className="text-destructive text-sm">
           {error}
         </span>
         <button onClick={onCancel} className="p-2">
@@ -99,8 +97,7 @@ const VoiceRecorder = ({ onSend, onCancel, isPixelTheme = false }: VoiceRecorder
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 20 }}
-      className={`flex items-center gap-3 p-3 bg-card border border-border ${isPixelTheme ? "" : "rounded-xl"}`}
-      style={{ borderRadius }}
+      className="flex items-center gap-3 p-3 bg-card border border-border rounded-xl"
     >
       {isRecording && !audioUrl ? (
         <>
@@ -136,15 +133,14 @@ const VoiceRecorder = ({ onSend, onCancel, isPixelTheme = false }: VoiceRecorder
           </div>
 
           {/* Duration */}
-          <span className={`font-mono text-foreground min-w-[45px] ${isPixelTheme ? "text-[10px]" : "text-sm"}`}>
+          <span className="font-mono text-foreground min-w-[45px] text-sm">
             {formatDuration(duration)}
           </span>
 
           {/* Pause/Resume */}
           <button
             onClick={isPaused ? resumeRecording : pauseRecording}
-            className={`p-2 bg-secondary hover:bg-secondary/80 transition-colors ${isPixelTheme ? "" : "rounded-full"}`}
-            style={{ borderRadius }}
+            className="p-2 bg-secondary hover:bg-secondary/80 transition-colors rounded-full"
           >
             {isPaused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
           </button>
@@ -152,8 +148,7 @@ const VoiceRecorder = ({ onSend, onCancel, isPixelTheme = false }: VoiceRecorder
           {/* Stop */}
           <button
             onClick={stopRecording}
-            className={`p-2 bg-red-500 text-white hover:bg-red-600 transition-colors ${isPixelTheme ? "" : "rounded-full"}`}
-            style={{ borderRadius }}
+            className="p-2 bg-red-500 text-white hover:bg-red-600 transition-colors rounded-full"
           >
             <Square className="w-4 h-4" />
           </button>
@@ -161,8 +156,7 @@ const VoiceRecorder = ({ onSend, onCancel, isPixelTheme = false }: VoiceRecorder
           {/* Cancel */}
           <button
             onClick={handleDiscard}
-            className={`p-2 text-muted-foreground hover:text-foreground transition-colors ${isPixelTheme ? "" : "rounded-full"}`}
-            style={{ borderRadius }}
+            className="p-2 text-muted-foreground hover:text-foreground transition-colors rounded-full"
           >
             <X className="w-4 h-4" />
           </button>
@@ -172,8 +166,7 @@ const VoiceRecorder = ({ onSend, onCancel, isPixelTheme = false }: VoiceRecorder
           {/* Playback state */}
           <button
             onClick={handlePlayPause}
-            className={`p-2 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors ${isPixelTheme ? "" : "rounded-full"}`}
-            style={{ borderRadius }}
+            className="p-2 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors rounded-full"
           >
             {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
           </button>
@@ -190,15 +183,14 @@ const VoiceRecorder = ({ onSend, onCancel, isPixelTheme = false }: VoiceRecorder
           </div>
 
           {/* Duration */}
-          <span className={`font-mono text-foreground min-w-[45px] ${isPixelTheme ? "text-[10px]" : "text-sm"}`}>
+          <span className="font-mono text-foreground min-w-[45px] text-sm">
             {formatDuration(duration)}
           </span>
 
           {/* Discard */}
           <button
             onClick={handleDiscard}
-            className={`p-2 text-destructive hover:text-destructive/80 transition-colors ${isPixelTheme ? "" : "rounded-full"}`}
-            style={{ borderRadius }}
+            className="p-2 text-destructive hover:text-destructive/80 transition-colors rounded-full"
           >
             <Trash2 className="w-4 h-4" />
           </button>
@@ -206,8 +198,7 @@ const VoiceRecorder = ({ onSend, onCancel, isPixelTheme = false }: VoiceRecorder
           {/* Send */}
           <button
             onClick={handleSend}
-            className={`p-2 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors ${isPixelTheme ? "" : "rounded-full"}`}
-            style={{ borderRadius }}
+            className="p-2 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors rounded-full"
           >
             <Send className="w-4 h-4" />
           </button>

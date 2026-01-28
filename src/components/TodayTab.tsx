@@ -421,7 +421,6 @@ const TodayTab = ({}: TodayTabProps) => {
             yesterdaysMood={yesterdaysMood && showYesterdaySummary ? yesterdaysMood : null}
             onYesterdayClick={() => setShowYesterdayEngagement(true)}
             onOpenFitCheckCamera={() => setShowFitCheckCamera(true)}
-            isPixelTheme={false}
           />
           {/* Yesterday's engagement sheet */}
           {yesterdaysMood && (
@@ -430,7 +429,6 @@ const TodayTab = ({}: TodayTabProps) => {
               onClose={() => setShowYesterdayEngagement(false)}
               moodId={yesterdaysMood.id}
               moodRating={yesterdaysMood.rating}
-              isPixelTheme={false}
             />
           )}
         </>
@@ -486,12 +484,11 @@ const TodayTab = ({}: TodayTabProps) => {
               </motion.div>
             )}
           </AnimatePresence>
-          <CountdownTimer isPixelTheme={false} />
+          <CountdownTimer />
 
           {/* Fit Check Challenge */}
           <div className="w-full mt-6">
             <FitCheckChallenge
-              isPixelTheme={false}
               onOpenCamera={() => setShowFitCheckCamera(true)}
             />
           </div>
@@ -503,7 +500,6 @@ const TodayTab = ({}: TodayTabProps) => {
             onClose={() => setShowYesterdayEngagement(false)}
             moodId={yesterdaysMood.id}
             moodRating={yesterdaysMood.rating}
-            isPixelTheme={false}
           />
         )}
       </div>
@@ -526,7 +522,6 @@ const TodayTab = ({}: TodayTabProps) => {
             activeSection={activeSection}
             onSectionChange={handleSectionChange}
             isJournalLocked={!isJournalUnlocked}
-            isPixelTheme={false}
           />
         </div>
       )}
@@ -539,7 +534,6 @@ const TodayTab = ({}: TodayTabProps) => {
         mode={pinModalMode}
         verifyPin={journalPin.verifyPin}
         setupPin={journalPin.setupPin}
-        isPixelTheme={false}
       />
 
       {/* Journal Section */}
@@ -566,7 +560,6 @@ const TodayTab = ({}: TodayTabProps) => {
             onSave={handleJournalSave}
             onDelete={journalEntry.entry ? journalEntry.deleteEntry : undefined}
             onCancel={handleJournalCancel}
-            isPixelTheme={false}
             canEdit={journalEntry.canEdit}
           />
         </motion.div>
@@ -598,7 +591,7 @@ const TodayTab = ({}: TodayTabProps) => {
 
             {/* Routine Tags */}
             <div className="w-full mb-4">
-              <RoutineTags moodId={todaysMoodId} isPixelTheme={false} />
+              <RoutineTags moodId={todaysMoodId} />
             </div>
 
             {/* Visibility Selector */}
@@ -708,7 +701,6 @@ const TodayTab = ({}: TodayTabProps) => {
           onClose={() => setShowEngagementSheet(false)}
           moodId={todaysMoodId}
           moodOwnerId={user?.id || ''}
-          isPixelTheme={false}
           photoUrl={photoPreview}
           caption={caption}
           rating={submittedRating}
@@ -722,7 +714,6 @@ const TodayTab = ({}: TodayTabProps) => {
           onClose={() => setShowYesterdayEngagement(false)}
           moodId={yesterdaysMood.id}
           moodOwnerId={user?.id || ''}
-          isPixelTheme={false}
           photoUrl={yesterdaysMood.photo_url}
           caption={yesterdaysMood.caption}
           rating={yesterdaysMood.rating}

@@ -25,11 +25,10 @@ interface MoodTag {
 
 interface RoutineTagsProps {
   moodId: string | null;
-  isPixelTheme?: boolean;
   onTagsChange?: (tags: MoodTag[]) => void;
 }
 
-const RoutineTags = ({ moodId, isPixelTheme = false, onTagsChange }: RoutineTagsProps) => {
+const RoutineTags = ({ moodId, onTagsChange }: RoutineTagsProps) => {
   const [defaultTags, setDefaultTags] = useState<DefaultTag[]>([]);
   const [userTags, setUserTags] = useState<UserTag[]>([]);
   const [selectedTags, setSelectedTags] = useState<MoodTag[]>([]);
@@ -38,8 +37,6 @@ const RoutineTags = ({ moodId, isPixelTheme = false, onTagsChange }: RoutineTags
   const [newTagIcon, setNewTagIcon] = useState("✨");
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
-
-  const borderRadius = isPixelTheme ? "0" : undefined;
 
   // Common emoji options for custom tags
   const emojiOptions = ["✨", "🎯", "💪", "📱", "🎮", "🎨", "🎵", "☕", "🍎", "🚶", "🧹", "💼", "🛒", "📞", "✍️", "🎓"];
@@ -170,7 +167,7 @@ const RoutineTags = ({ moodId, isPixelTheme = false, onTagsChange }: RoutineTags
 
   return (
     <div className="mt-4">
-      <p className={`text-muted-foreground mb-2 ${isPixelTheme ? "text-[8px]" : "text-xs"}`}>
+      <p className="text-muted-foreground mb-2 text-xs">
         What did you do today?
       </p>
 
@@ -186,15 +183,12 @@ const RoutineTags = ({ moodId, isPixelTheme = false, onTagsChange }: RoutineTags
               isTagSelected(tag.id, "default")
                 ? "bg-primary text-primary-foreground border-primary"
                 : "bg-card border-border hover:border-primary/50"
-            } ${!moodId ? "opacity-50 cursor-not-allowed" : ""} ${
-              isPixelTheme ? "" : "rounded-full"
-            }`}
-            style={{ borderRadius }}
+            } ${!moodId ? "opacity-50 cursor-not-allowed" : ""} rounded-full`}
           >
-            <span className={isPixelTheme ? "text-xs" : "text-sm"}>{tag.icon}</span>
-            <span className={isPixelTheme ? "text-[8px]" : "text-xs"}>{tag.name}</span>
+            <span className="text-sm">{tag.icon}</span>
+            <span className="text-xs">{tag.name}</span>
             {isTagSelected(tag.id, "default") && (
-              <Check className={`${isPixelTheme ? "w-2 h-2" : "w-3 h-3"}`} />
+              <Check className="w-3 h-3" />
             )}
           </motion.button>
         ))}
@@ -213,24 +207,18 @@ const RoutineTags = ({ moodId, isPixelTheme = false, onTagsChange }: RoutineTags
                 isTagSelected(tag.id, "custom")
                   ? "bg-primary text-primary-foreground border-primary"
                   : "bg-card border-border hover:border-primary/50"
-              } ${!moodId ? "opacity-50 cursor-not-allowed" : ""} ${
-                isPixelTheme ? "" : "rounded-full"
-              }`}
-              style={{ borderRadius }}
+              } ${!moodId ? "opacity-50 cursor-not-allowed" : ""} rounded-full`}
             >
-              <span className={isPixelTheme ? "text-xs" : "text-sm"}>{tag.icon}</span>
-              <span className={isPixelTheme ? "text-[8px]" : "text-xs"}>{tag.name}</span>
+              <span className="text-sm">{tag.icon}</span>
+              <span className="text-xs">{tag.name}</span>
               {isTagSelected(tag.id, "custom") && (
-                <Check className={`${isPixelTheme ? "w-2 h-2" : "w-3 h-3"}`} />
+                <Check className="w-3 h-3" />
               )}
             </motion.button>
             {/* Delete button on hover */}
             <button
               onClick={() => deleteCustomTag(tag.id)}
-              className={`absolute -top-1 -right-1 w-4 h-4 bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity ${
-                isPixelTheme ? "" : "rounded-full"
-              }`}
-              style={{ borderRadius }}
+              className="absolute -top-1 -right-1 w-4 h-4 bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-full"
             >
               <X className="w-2 h-2" />
             </button>
@@ -241,13 +229,10 @@ const RoutineTags = ({ moodId, isPixelTheme = false, onTagsChange }: RoutineTags
         <motion.button
           whileTap={{ scale: 0.95 }}
           onClick={() => setShowAddModal(true)}
-          className={`flex items-center gap-1.5 px-3 py-1.5 border border-dashed border-border hover:border-primary/50 transition-colors ${
-            isPixelTheme ? "" : "rounded-full"
-          }`}
-          style={{ borderRadius }}
+          className="flex items-center gap-1.5 px-3 py-1.5 border border-dashed border-border hover:border-primary/50 transition-colors rounded-full"
         >
-          <Plus className={`${isPixelTheme ? "w-3 h-3" : "w-4 h-4"}`} />
-          <span className={isPixelTheme ? "text-[8px]" : "text-xs"}>Add</span>
+          <Plus className="w-4 h-4" />
+          <span className="text-xs">Add</span>
         </motion.button>
       </div>
 
@@ -266,18 +251,15 @@ const RoutineTags = ({ moodId, isPixelTheme = false, onTagsChange }: RoutineTags
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className={`bg-card border border-border p-6 w-full max-w-sm ${
-                isPixelTheme ? "" : "rounded-2xl"
-              }`}
-              style={{ borderRadius }}
+              className="bg-card border border-border p-6 w-full max-w-sm rounded-2xl"
             >
-              <h3 className={`font-semibold mb-4 ${isPixelTheme ? "text-xs" : "text-lg"}`}>
+              <h3 className="font-semibold mb-4 text-lg">
                 Add Custom Tag
               </h3>
 
               {/* Emoji picker */}
               <div className="mb-4">
-                <p className={`text-muted-foreground mb-2 ${isPixelTheme ? "text-[8px]" : "text-xs"}`}>
+                <p className="text-muted-foreground mb-2 text-xs">
                   Choose an icon
                 </p>
                 <div className="flex flex-wrap gap-2">
@@ -289,8 +271,7 @@ const RoutineTags = ({ moodId, isPixelTheme = false, onTagsChange }: RoutineTags
                         newTagIcon === emoji
                           ? "border-primary bg-primary/10"
                           : "border-border hover:border-primary/50"
-                      } ${isPixelTheme ? "" : "rounded-lg"}`}
-                      style={{ borderRadius }}
+                      } rounded-lg`}
                     >
                       <span className="text-lg">{emoji}</span>
                     </button>
@@ -300,7 +281,7 @@ const RoutineTags = ({ moodId, isPixelTheme = false, onTagsChange }: RoutineTags
 
               {/* Tag name input */}
               <div className="mb-4">
-                <p className={`text-muted-foreground mb-2 ${isPixelTheme ? "text-[8px]" : "text-xs"}`}>
+                <p className="text-muted-foreground mb-2 text-xs">
                   Tag name
                 </p>
                 <input
@@ -309,26 +290,20 @@ const RoutineTags = ({ moodId, isPixelTheme = false, onTagsChange }: RoutineTags
                   onChange={(e) => setNewTagName(e.target.value)}
                   placeholder="e.g., Called mom"
                   maxLength={20}
-                  className={`w-full px-4 py-2 bg-secondary border border-border focus:border-primary outline-none ${
-                    isPixelTheme ? "text-xs" : "text-sm rounded-lg"
-                  }`}
-                  style={{ borderRadius }}
+                  className="w-full px-4 py-2 bg-secondary border border-border focus:border-primary outline-none text-sm rounded-lg"
                 />
               </div>
 
               {/* Preview */}
               <div className="mb-4">
-                <p className={`text-muted-foreground mb-2 ${isPixelTheme ? "text-[8px]" : "text-xs"}`}>
+                <p className="text-muted-foreground mb-2 text-xs">
                   Preview
                 </p>
                 <div
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground ${
-                    isPixelTheme ? "" : "rounded-full"
-                  }`}
-                  style={{ borderRadius }}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-full"
                 >
                   <span>{newTagIcon}</span>
-                  <span className={isPixelTheme ? "text-[8px]" : "text-xs"}>
+                  <span className="text-xs">
                     {newTagName || "Tag name"}
                   </span>
                 </div>
@@ -338,20 +313,14 @@ const RoutineTags = ({ moodId, isPixelTheme = false, onTagsChange }: RoutineTags
               <div className="flex gap-2">
                 <button
                   onClick={() => setShowAddModal(false)}
-                  className={`flex-1 px-4 py-2 bg-secondary text-foreground ${
-                    isPixelTheme ? "text-xs" : "text-sm rounded-lg"
-                  }`}
-                  style={{ borderRadius }}
+                  className="flex-1 px-4 py-2 bg-secondary text-foreground text-sm rounded-lg"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleAddCustomTag}
                   disabled={!newTagName.trim()}
-                  className={`flex-1 px-4 py-2 bg-primary text-primary-foreground disabled:opacity-50 ${
-                    isPixelTheme ? "text-xs" : "text-sm rounded-lg"
-                  }`}
-                  style={{ borderRadius }}
+                  className="flex-1 px-4 py-2 bg-primary text-primary-foreground disabled:opacity-50 text-sm rounded-lg"
                 >
                   Add Tag
                 </button>

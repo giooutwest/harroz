@@ -4,7 +4,7 @@ import { Sparkles, Clock, Tag } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { formatDistanceToNow } from "date-fns";
-import { APP_VERSION } from "@/lib/appVersion"; // <--- Import source of truth
+import { APP_VERSION } from "@/lib/appVersion";
 
 interface Update {
   id: string;
@@ -14,11 +14,7 @@ interface Update {
   created_at: string;
 }
 
-interface UpdatesTabProps {
-  isPixelTheme?: boolean;
-}
-
-const UpdatesTab = ({ isPixelTheme = false }: UpdatesTabProps) => {
+const UpdatesTab = () => {
   const [updates, setUpdates] = useState<Update[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
@@ -66,11 +62,9 @@ const UpdatesTab = ({ isPixelTheme = false }: UpdatesTabProps) => {
   return (
     <div className="space-y-4">
       {/* Current Version Display */}
-      <div className={`flex items-center justify-center p-3 mb-4 bg-primary/5 border border-primary/20 ${
-        isPixelTheme ? "" : "rounded-xl"
-      }`}>
+      <div className="flex items-center justify-center p-3 mb-4 bg-primary/5 border border-primary/20 rounded-xl">
         <Tag className="w-4 h-4 mr-2 text-primary" />
-        <span className={`font-medium ${isPixelTheme ? "text-xs" : "text-sm"}`}>
+        <span className="font-medium text-sm">
           Current Version: <span className="font-bold text-primary">v{APP_VERSION}</span>
         </span>
       </div>
@@ -78,7 +72,7 @@ const UpdatesTab = ({ isPixelTheme = false }: UpdatesTabProps) => {
       {updates.length === 0 ? (
         <div className="text-center py-8">
           <Sparkles className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
-          <p className={`text-muted-foreground ${isPixelTheme ? "text-xs" : "text-sm"}`}>
+          <p className="text-muted-foreground text-sm">
             No updates yet. Check back soon!
           </p>
         </div>
@@ -89,33 +83,29 @@ const UpdatesTab = ({ isPixelTheme = false }: UpdatesTabProps) => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
-            className={`p-4 bg-secondary border border-border ${
-              isPixelTheme ? "" : "rounded-xl"
-            }`}
+            className="p-4 bg-secondary border border-border rounded-xl"
           >
             <div className="flex items-start gap-3">
-              <div className={`p-2 bg-primary/20 ${isPixelTheme ? "" : "rounded-lg"}`}>
+              <div className="p-2 bg-primary/20 rounded-lg">
                 <Sparkles className="w-4 h-4 text-primary" />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <h4 className={`font-semibold ${isPixelTheme ? "text-xs" : "text-sm"}`}>
+                  <h4 className="font-semibold text-sm">
                     {update.title}
                   </h4>
                   {update.version && (
-                    <span className={`px-2 py-0.5 bg-primary/10 text-primary ${
-                      isPixelTheme ? "text-[6px]" : "text-xs rounded-full"
-                    }`}>
+                    <span className="px-2 py-0.5 bg-primary/10 text-primary text-xs rounded-full">
                       v{update.version}
                     </span>
                   )}
                 </div>
-                <p className={`text-muted-foreground mb-2 ${isPixelTheme ? "text-[8px]" : "text-sm"}`}>
+                <p className="text-muted-foreground mb-2 text-sm">
                   {update.description}
                 </p>
                 <div className="flex items-center gap-1 text-muted-foreground">
                   <Clock className="w-3 h-3" />
-                  <span className={`${isPixelTheme ? "text-[6px]" : "text-xs"}`}>
+                  <span className="text-xs">
                     {formatDistanceToNow(new Date(update.created_at), { addSuffix: true })}
                   </span>
                 </div>

@@ -1,29 +1,27 @@
-import { Calendar, BarChart3, Smile, Users, User, MessageCircle } from "lucide-react";
+import { Calendar, Smile, Users, User, MessageCircle } from "lucide-react";
 import { motion } from "framer-motion";
-import { PixelSmile, PixelCalendar, PixelChart, PixelHeart } from "./PixelIcons";
 
 interface BottomNavProps {
   activeTab: "today" | "calendar" | "stats" | "friends" | "messages";
   onTabChange: (tab: "today" | "calendar" | "stats" | "friends" | "messages") => void;
-  isPixelTheme?: boolean;
 }
 
-const BottomNav = ({ activeTab, onTabChange, isPixelTheme = false }: BottomNavProps) => {
+const BottomNav = ({ activeTab, onTabChange }: BottomNavProps) => {
   const tabs = [
     {
       id: "today" as const,
       label: "Today",
-      icon: isPixelTheme ? PixelSmile : Smile
+      icon: Smile
     },
     {
       id: "calendar" as const,
       label: "Calendar",
-      icon: isPixelTheme ? PixelCalendar : Calendar
+      icon: Calendar
     },
     {
       id: "friends" as const,
       label: "Friends",
-      icon: isPixelTheme ? PixelHeart : Users
+      icon: Users
     },
     {
       id: "messages" as const,
@@ -32,9 +30,8 @@ const BottomNav = ({ activeTab, onTabChange, isPixelTheme = false }: BottomNavPr
     },
     {
       id: "stats" as const,
-      label: "You", // Renamed from "Stats"
-      // Swapped BarChart3 for User in the standard theme
-      icon: isPixelTheme ? PixelChart : User
+      label: "You",
+      icon: User
     },
   ];
 
@@ -44,7 +41,7 @@ const BottomNav = ({ activeTab, onTabChange, isPixelTheme = false }: BottomNavPr
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
-          
+
           return (
             <button
               key={tab.id}
@@ -52,29 +49,29 @@ const BottomNav = ({ activeTab, onTabChange, isPixelTheme = false }: BottomNavPr
               className="flex flex-col items-center justify-center py-2 px-4 min-w-[60px] touch-manipulation"
             >
               <motion.div
-                animate={{ 
+                animate={{
                   scale: isActive ? 1 : 0.9,
                 }}
                 transition={{ type: "spring", stiffness: 500, damping: 30 }}
                 className="relative"
               >
-                {isActive && !isPixelTheme && (
+                {isActive && (
                   <motion.div
                     layoutId="activeTab"
                     className="absolute inset-0 -m-2 bg-secondary rounded-xl"
                     transition={{ type: "spring", stiffness: 500, damping: 30 }}
                   />
                 )}
-                <Icon 
-                  className={`relative z-10 transition-colors ${
+                <Icon
+                  className={`relative z-10 transition-colors w-6 h-6 ${
                     isActive ? "text-tab-active" : "text-tab-inactive"
-                  } ${isPixelTheme ? "w-4 h-4" : "w-6 h-6"}`}
+                  }`}
                 />
               </motion.div>
-              <span 
-                className={`mt-1 font-medium transition-colors ${
+              <span
+                className={`mt-1 font-medium transition-colors text-xs ${
                   isActive ? "text-tab-active" : "text-tab-inactive"
-                } ${isPixelTheme ? "text-[8px]" : "text-xs"}`}
+                }`}
               >
                 {tab.label}
               </span>

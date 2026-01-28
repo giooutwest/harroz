@@ -9,7 +9,6 @@ interface ImageCropperProps {
   image: string;
   onCropComplete: (croppedBlob: Blob) => void;
   onCancel: () => void;
-  isPixelTheme?: boolean;
 }
 
 const createImage = (url: string): Promise<HTMLImageElement> =>
@@ -69,7 +68,6 @@ export const ImageCropper = ({
   image,
   onCropComplete,
   onCancel,
-  isPixelTheme = false,
 }: ImageCropperProps) => {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
@@ -93,7 +91,7 @@ export const ImageCropper = ({
 
   const handleConfirm = async () => {
     if (!croppedAreaPixels) return;
-    
+
     setIsProcessing(true);
     try {
       const croppedBlob = await getCroppedImg(image, croppedAreaPixels);
@@ -104,8 +102,6 @@ export const ImageCropper = ({
       setIsProcessing(false);
     }
   };
-
-  const borderRadius = isPixelTheme ? "0" : undefined;
 
   return (
     <AnimatePresence>
@@ -119,20 +115,17 @@ export const ImageCropper = ({
         <div className="flex items-center justify-between p-4 border-b border-border">
           <button
             onClick={onCancel}
-            className={`p-2 bg-secondary touch-manipulation ${isPixelTheme ? "" : "rounded-full"}`}
-            style={{ borderRadius }}
+            className="p-2 bg-secondary touch-manipulation rounded-full"
           >
             <X className="w-5 h-5" />
           </button>
-          <h3 className={`font-semibold ${isPixelTheme ? "text-xs" : "text-lg"}`}>
+          <h3 className="font-semibold text-lg">
             Crop Photo
           </h3>
           <Button
             onClick={handleConfirm}
             disabled={isProcessing}
             size="sm"
-            className={`${isPixelTheme ? "text-[8px] px-2" : ""}`}
-            style={{ borderRadius }}
           >
             {isProcessing ? "..." : <Check className="w-4 h-4" />}
           </Button>
@@ -167,7 +160,7 @@ export const ImageCropper = ({
             />
             <ZoomIn className="w-4 h-4 text-muted-foreground" />
           </div>
-          <p className={`text-center text-muted-foreground mt-2 ${isPixelTheme ? "text-[6px]" : "text-xs"}`}>
+          <p className="text-center text-muted-foreground mt-2 text-xs">
             Pinch or use slider to zoom
           </p>
         </div>
