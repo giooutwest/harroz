@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, Camera, BookOpen } from "lucide-react";
+import { Users, User } from "lucide-react"; // Icons for 'FRNDS' and 'YOU'
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { getLocalDateString } from "@/hooks/useTimeWindow";
@@ -9,7 +9,40 @@ import FriendProfileModal from "./FriendProfileModal";
 import PinEntryModal from "./PinEntryModal";
 import JournalView from "./JournalView";
 import { useJournalPin } from "@/hooks/useJournalPin";
-import { useJournalEntries, useJournalEntry, JournalEntry } from "@/hooks/useJournalEntry";
+import { useJournalEntries, useJournalEntry } from "@/hooks/useJournalEntry";
+
+// --- COORDINATE MAPPING FOR THE "WINDING PATH" ---
+// These approximate the snake path from your image
+const DAY_POSITIONS = [
+  { left: "10%", top: "12%", rotate: -5 },  // 1
+  { left: "28%", top: "12%", rotate: 2 },   // 2
+  { left: "55%", top: "14%", rotate: 5 },   // 3
+  { left: "75%", top: "20%", rotate: 10 },  // 4
+  { left: "65%", top: "28%", rotate: -2 },  // 5
+  { left: "25%", top: "32%", rotate: -8 },  // 6
+  { left: "10%", top: "40%", rotate: -5 },  // 7
+  { left: "15%", top: "50%", rotate: 5 },   // 8 - Near Moods
+  { left: "75%", top: "48%", rotate: 10 },  // 9 - Near Jrnl
+  { left: "85%", top: "58%", rotate: 5 },   // 10
+  { left: "60%", top: "62%", rotate: -5 },  // 11
+  { left: "40%", top: "68%", rotate: 2 },   // 12
+  { left: "15%", top: "72%", rotate: -10 }, // 13
+  { left: "25%", top: "80%", rotate: 5 },   // 14
+  { left: "55%", top: "78%", rotate: -2 },  // 15
+  { left: "75%", top: "85%", rotate: 8 },   // 16
+  { left: "50%", top: "92%", rotate: 0 },   // 17
+  // ... Loop or extend for 31 days. For this demo, I'll map the rest dynamically or wrap around.
+];
+
+// Helper to get position for any day index (0-30)
+const getPosition = (index: number) => {
+  if (index < DAY_POSITIONS.length) return DAY_POSITIONS[index];
+  // Simple fallback logic for days 18-31 to keep winding down
+  const baseTop = 92 + (index - 16) * 8; 
+  const isEvenRow = Math.floor((index - 17) / 4) % 2 === 0;
+  const leftPos = isEvenRow ? 20 + ((index % 4) * 20) : 80 - ((index % 4) * 20);
+  return { left: `${leftPos}%`, top: `${baseTop}%`, rotate: (index % 2 === 0 ? -5 : 5) };
+};
 
 interface MoodEntry {
   date: string;
@@ -20,27 +53,23 @@ interface MoodEntry {
   caption: string | null;
 }
 
-interface CalendarTabProps {
-  // Props can be extended here
-}
-
 const getMoodColor = (rating: number): string => {
-  if (rating <= 2) return "hsl(0, 70%, 50%)";
-  if (rating <= 4) return "hsl(30, 80%, 55%)";
-  if (rating <= 6) return "hsl(50, 90%, 55%)";
-  if (rating <= 8) return "hsl(140, 55%, 45%)";
-  return "hsl(210, 80%, 55%)";
+  if (rating <= 2) return "#ef4444"; // Red
+  if (rating <= 4) return "#f97316"; // Orange
+  if (rating <= 6) return "#eab308"; // Yellow
+  if (rating <= 8) return "#84cc16"; // Lime
+  return "#22c55e"; // Green
 };
 
 type ViewMode = "moods" | "journal";
 
-const CalendarTab = ({}: CalendarTabProps) => {
+const CalendarTab = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [moods, setMoods] = useState<Record<string, MoodEntry>>({});
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedFriendId, setSelectedFriendId] = useState<string | null>(null);
 
-  // Journal view state
+  // View & Lock State
   const [viewMode, setViewMode] = useState<ViewMode>("moods");
   const [showPinModal, setShowPinModal] = useState(false);
   const [isJournalUnlocked, setIsJournalUnlocked] = useState(false);
@@ -48,24 +77,19 @@ const CalendarTab = ({}: CalendarTabProps) => {
   const [pendingJournalDate, setPendingJournalDate] = useState<string | null>(null);
 
   const { user } = useAuth();
-
-  // Journal hooks
   const journalPin = useJournalPin();
-  const { entries: journalEntries, isLoading: isLoadingJournalEntries } = useJournalEntries(
+  const { entries: journalEntries } = useJournalEntries(
     currentDate.getFullYear(),
     currentDate.getMonth()
   );
   const selectedJournalEntry = useJournalEntry(selectedJournalDate || undefined);
 
   useEffect(() => {
-    if (user) {
-      fetchMoods();
-    }
+    if (user) fetchMoods();
   }, [currentDate, user]);
 
   const fetchMoods = async () => {
     if (!user) return;
-    
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
     const firstDay = `${year}-${String(month + 1).padStart(2, '0')}-01`;
@@ -81,24 +105,14 @@ const CalendarTab = ({}: CalendarTabProps) => {
 
     if (data) {
       const moodMap: Record<string, MoodEntry> = {};
-      
-      // Generate signed URLs for photos
       for (const m of data) {
         let signedUrl: string | null = null;
         if (m.photo_url) {
-          const { data: signedData } = await supabase.storage
-            .from('mood-photos')
-            .createSignedUrl(m.photo_url, 3600);
+          const { data: signedData } = await supabase.storage.from('mood-photos').createSignedUrl(m.photo_url, 3600);
           signedUrl = signedData?.signedUrl || null;
         }
-        
         moodMap[m.date] = { 
-          date: m.date, 
-          rating: m.rating, 
-          note: m.note,
-          photo_url: m.photo_url,
-          photo_signed_url: signedUrl,
-          caption: m.caption
+          date: m.date, rating: m.rating, note: m.note || null, photo_url: m.photo_url, photo_signed_url: signedUrl, caption: m.caption 
         };
       }
       setMoods(moodMap);
@@ -108,19 +122,7 @@ const CalendarTab = ({}: CalendarTabProps) => {
   const getDaysInMonth = () => {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const daysInMonth = lastDay.getDate();
-    const startingDay = firstDay.getDay();
-
-    const days: (number | null)[] = [];
-    for (let i = 0; i < startingDay; i++) {
-      days.push(null);
-    }
-    for (let i = 1; i <= daysInMonth; i++) {
-      days.push(i);
-    }
-    return days;
+    return new Date(year, month + 1, 0).getDate();
   };
 
   const formatDate = (day: number) => {
@@ -129,31 +131,15 @@ const CalendarTab = ({}: CalendarTabProps) => {
     return `${year}-${month}-${String(day).padStart(2, '0')}`;
   };
 
-  const navigateMonth = (direction: number) => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + direction, 1));
-  };
-
-  const monthYear = currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-  const weekDays = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-  const days = getDaysInMonth();
-  const today = getLocalDateString();
-  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-
-  // Handle view mode change
+  // --- HANDLERS ---
   const handleViewModeChange = (mode: ViewMode) => {
     if (mode === "journal" && !isJournalUnlocked) {
-      if (journalPin.hasPin) {
-        setShowPinModal(true);
-      } else {
-        // No PIN set, user needs to set one first
-        setShowPinModal(true);
-      }
+      setShowPinModal(true);
     } else {
       setViewMode(mode);
     }
   };
 
-  // Handle PIN success
   const handlePinSuccess = () => {
     setIsJournalUnlocked(true);
     setViewMode("journal");
@@ -163,217 +149,166 @@ const CalendarTab = ({}: CalendarTabProps) => {
     }
   };
 
-  // Handle journal day click
-  const handleJournalDayClick = (dateStr: string) => {
-    if (!isJournalUnlocked) {
-      setPendingJournalDate(dateStr);
-      setShowPinModal(true);
+  const handleDayClick = (dateStr: string) => {
+    const isFuture = dateStr > getLocalDateString();
+    if (isFuture) return;
+
+    if (viewMode === "moods") {
+      setSelectedDate(dateStr);
     } else {
-      setSelectedJournalDate(dateStr);
+      if (!isJournalUnlocked) {
+        setPendingJournalDate(dateStr);
+        setShowPinModal(true);
+      } else {
+        setSelectedJournalDate(dateStr);
+      }
     }
   };
 
+  const monthName = currentDate.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
+  const yearNum = currentDate.getFullYear();
+  const totalDays = getDaysInMonth();
+  const today = getLocalDateString();
+
   return (
-    <div className="px-4 py-6 pb-28">
-      {/* View Mode Toggle */}
-      <div className="flex bg-secondary p-1 mb-4 rounded-full">
-        <button
-          onClick={() => handleViewModeChange("moods")}
-          className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 relative transition-colors ${
-            viewMode === "moods"
-              ? "text-foreground"
-              : "text-muted-foreground hover:text-foreground"
-          } rounded-full`}
-        >
-          {viewMode === "moods" && (
-            <motion.div
-              layoutId="calendarViewIndicator"
-              className="absolute inset-0 bg-background shadow-sm rounded-full"
-              transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-            />
-          )}
-          <Camera className="w-4 h-4 relative z-10" />
-          <span className="relative z-10 font-medium text-sm">
-            Moods
-          </span>
-        </button>
-        <button
-          onClick={() => handleViewModeChange("journal")}
-          className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 relative transition-colors ${
-            viewMode === "journal"
-              ? "text-foreground"
-              : "text-muted-foreground hover:text-foreground"
-          } rounded-full`}
-        >
-          {viewMode === "journal" && (
-            <motion.div
-              layoutId="calendarViewIndicator"
-              className="absolute inset-0 bg-background shadow-sm rounded-full"
-              transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-            />
-          )}
-          <BookOpen className="w-4 h-4 relative z-10" />
-          <span className="relative z-10 font-medium text-sm">
-            Journal
-          </span>
-        </button>
-      </div>
+    <div className="relative min-h-screen bg-[#050505] text-white overflow-hidden pb-32">
+      
+      {/* --- BACKGROUND DASHED LINE (SVG) --- */}
+      {/* This draws the winding path behind the numbers */}
+      <svg className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-20" style={{ zIndex: 0 }}>
+        <path 
+          d="M 40 100 Q 100 100 120 150 T 200 200 T 300 300 T 100 400 T 50 500 T 300 600" 
+          fill="none" 
+          stroke="white" 
+          strokeWidth="2" 
+          strokeDasharray="8 8"
+        />
+        {/* Note: A real implementation would generate this path D based on the day coordinates dynamically */}
+      </svg>
 
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <motion.button
-          whileTap={{ scale: 0.9 }}
-          onClick={() => navigateMonth(-1)}
-          className="p-2 hover:bg-secondary/80 transition-colors touch-manipulation rounded-full bg-secondary"
-        >
-          <ChevronLeft className="w-5 h-5" />
-        </motion.button>
-
-        <motion.h2
-          key={monthYear}
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="font-bold text-lg"
-        >
-          {monthYear}
-        </motion.h2>
-
-        <motion.button
-          whileTap={{ scale: 0.9 }}
-          onClick={() => navigateMonth(1)}
-          className="p-2 hover:bg-secondary/80 transition-colors touch-manipulation rounded-full bg-secondary"
-        >
-          <ChevronRight className="w-5 h-5" />
-        </motion.button>
-      </div>
-
-      {/* Weekday headers */}
-      <div className="grid grid-cols-7 mb-1">
-        {weekDays.map((day, i) => (
-          <div key={`${day}-${i}`} className="text-center text-muted-foreground font-medium py-1 text-xs">
-            {day}
-          </div>
-        ))}
-      </div>
-
-      {/* Calendar grid */}
-      <motion.div 
-        key={monthYear}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="grid grid-cols-7 gap-1"
-      >
-        {days.map((day, index) => {
-          if (day === null) {
-            return <div key={`empty-${index}`} className="aspect-square" />;
-          }
-
-          const dateStr = formatDate(day);
-          const mood = moods[dateStr];
-          const journalEntry = journalEntries[dateStr];
-          const isToday = dateStr === today;
-          const isFuture = dateStr > today;
-
-          // Determine what to show based on view mode
-          const hasContent = viewMode === "moods" ? !!mood : !!journalEntry;
-
-          return (
-            <motion.button
-              key={dateStr}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => {
-                if (isFuture) return;
-                if (viewMode === "moods") {
-                  setSelectedDate(dateStr);
-                } else {
-                  handleJournalDayClick(dateStr);
-                }
-              }}
-              disabled={isFuture}
-              className={`aspect-square flex flex-col items-center justify-center touch-manipulation relative ${
-                isFuture ? "opacity-30" : ""
-              } rounded-lg`}
-            >
-              {/* Day number */}
-              <span className={`font-medium ${hasContent ? "text-foreground" : "text-muted-foreground"} text-base`}>
-                {day}
-              </span>
-
-              {/* Mood indicator dot */}
-              {viewMode === "moods" && mood && (
-                <div
-                  className="mt-0.5 w-2.5 h-2.5 rounded-full"
-                  style={{ backgroundColor: getMoodColor(mood.rating) }}
-                />
-              )}
-
-              {/* Journal indicator */}
-              {viewMode === "journal" && journalEntry && (
-                <BookOpen
-                  className="mt-0.5 text-primary w-3 h-3"
-                />
-              )}
-
-              {/* Today indicator */}
-              {isToday && (
-                <div className="absolute inset-0 border-2 border-primary pointer-events-none rounded-lg" />
-              )}
-            </motion.button>
-          );
-        })}
-      </motion.div>
-
-      {/* Timezone indicator */}
-      <div className="mt-4 text-center">
-        <span className={`text-muted-foreground ${isPixelTheme ? "text-[8px]" : "text-xs"}`}>
-          🕐 {timezone}
-        </span>
-      </div>
-
-      {/* Full legend showing all mood ranges */}
-      <div className="mt-4 bg-card border border-border p-4" style={{ borderRadius: isPixelTheme ? "0" : "1rem" }}>
-        <p className={`text-center text-muted-foreground mb-3 ${isPixelTheme ? "text-[8px]" : "text-xs"}`}>
-          Mood Legend
-        </p>
-        <div className="grid grid-cols-5 gap-2">
-          {[
-            { range: "0-2", label: "Stormy", emoji: "🌧️", rating: 1 },
-            { range: "3-4", label: "Rainy", emoji: "🌦️", rating: 3 },
-            { range: "5-6", label: "Cloudy", emoji: "⛅", rating: 5 },
-            { range: "7-8", label: "Sunny", emoji: "🌤️", rating: 7 },
-            { range: "9-10", label: "Bright", emoji: "☀️", rating: 9 },
-          ].map((item) => (
-            <div key={item.range} className="flex flex-col items-center gap-1">
-              <div 
-                className={`w-4 h-4 ${isPixelTheme ? "" : "rounded-full"}`}
-                style={{ backgroundColor: getMoodColor(item.rating) }}
-              />
-              <span className={`${isPixelTheme ? "text-[6px]" : "text-[10px]"}`}>{item.emoji}</span>
-              <span className={`text-muted-foreground ${isPixelTheme ? "text-[5px]" : "text-[8px]"}`}>
-                {item.range}
-              </span>
-            </div>
-          ))}
+      {/* --- HEADER --- */}
+      <div className="relative z-10 px-6 pt-12 flex justify-between items-start">
+        <div>
+          <h1 className="text-8xl font-black tracking-tighter leading-none mix-blend-difference">
+            {monthName}
+          </h1>
+          <h2 
+            className="text-5xl font-bold tracking-tight text-transparent ml-2"
+            style={{ WebkitTextStroke: "1px rgba(255,255,255,0.5)" }}
+          >
+            {yearNum}
+          </h2>
+        </div>
+        
+        {/* Friends Icon (Top Right) */}
+        <div className="flex flex-col items-center gap-1 opacity-70">
+          <span className="font-handwriting text-xs -rotate-6">FRNDS</span>
+          <Users className="w-6 h-6" />
         </div>
       </div>
 
-      {/* Day detail modal - PASSING THE CLICK HANDLER HERE */}
+      {/* --- CENTER TOGGLES (Floating) --- */}
+      <div className="absolute top-[35%] left-0 w-full flex flex-col items-center justify-center gap-4 z-20 pointer-events-none">
+        
+        {/* MOODS BUTTON */}
+        <button 
+          onClick={() => handleViewModeChange("moods")}
+          className={`pointer-events-auto transition-all duration-300 ${viewMode === 'moods' ? 'scale-110 opacity-100' : 'opacity-40 scale-90'}`}
+        >
+          <div className="relative">
+            <span className="absolute inset-0 text-cyan-400 blur-[2px] opacity-70">MOODS</span>
+            <span className="relative text-5xl font-black tracking-widest text-white mix-blend-overlay">MOODS</span>
+            {/* Glitch Effect Bars */}
+            <div className="absolute top-1/2 left-0 w-full h-1 bg-cyan-500/50 -translate-x-1" />
+          </div>
+        </button>
+
+        {/* JRNL BUTTON */}
+        <button 
+          onClick={() => handleViewModeChange("journal")}
+          className={`pointer-events-auto transition-all duration-300 ${viewMode === 'journal' ? 'scale-110 opacity-100' : 'opacity-40 scale-90'}`}
+        >
+          <div className="border-2 border-white px-6 py-2 rotate-[-2deg] backdrop-blur-sm bg-black/30">
+             <span className="text-4xl font-mono font-bold tracking-widest" style={{ textShadow: "0 0 10px white" }}>
+               JRNL
+             </span>
+          </div>
+        </button>
+
+      </div>
+
+      {/* --- DAYS (Winding Path) --- */}
+      <div className="relative w-full h-[150vh] mt-10 z-10">
+        {Array.from({ length: totalDays }).map((_, i) => {
+          const dayNum = i + 1;
+          const pos = getPosition(i);
+          const dateStr = formatDate(dayNum);
+          const mood = moods[dateStr];
+          const hasJournal = !!journalEntries[dateStr];
+          const isToday = dateStr === today;
+          const isFuture = dateStr > today;
+
+          return (
+            <motion.button
+              key={dayNum}
+              onClick={() => handleDayClick(dateStr)}
+              disabled={isFuture}
+              initial={{ opacity: 0, scale: 0 }}
+              animate={{ opacity: isFuture ? 0.3 : 1, scale: 1 }}
+              transition={{ delay: i * 0.03 }}
+              style={{
+                position: "absolute",
+                left: pos.left,
+                top: pos.top,
+                rotate: `${pos.rotate}deg`,
+              }}
+              className="flex flex-col items-center justify-center group"
+            >
+              <div className={`
+                 relative flex items-center justify-center w-12 h-16
+                 transition-transform duration-200 group-active:scale-95
+              `}>
+                {/* Day Number */}
+                <span className={`text-2xl font-bold ${isToday ? 'text-cyan-400' : 'text-zinc-400'}`}>
+                  {String(dayNum).padStart(2, '0')}
+                </span>
+
+                {/* Mood Background (If exists) */}
+                {viewMode === "moods" && mood && (
+                   <div className="absolute inset-0 -z-10 bg-zinc-800/80 rotate-3 rounded-sm border border-white/10" />
+                )}
+
+                {/* Journal Indicator (If exists) */}
+                {viewMode === "journal" && hasJournal && (
+                   <div className="absolute -bottom-2 w-full h-[2px] bg-white shadow-[0_0_8px_white]" />
+                )}
+              </div>
+            </motion.button>
+          );
+        })}
+      </div>
+
+      {/* --- FOOTER ICON --- */}
+      <div className="fixed bottom-24 left-6 flex flex-col items-center gap-1 opacity-70 z-30">
+         <User className="w-8 h-8" />
+         <span className="font-handwriting text-xs -rotate-6">YOU</span>
+      </div>
+
+      {/* --- MODALS (Fixed Props) --- */}
+      {/* Note: I removed isPixelTheme from these calls to fix your error */}
+      
       <CalendarDayDetail
         isOpen={!!selectedDate}
         onClose={() => setSelectedDate(null)}
         date={selectedDate || ""}
-        isPixelTheme={isPixelTheme}
-        onFriendClick={(id) => setSelectedFriendId(id)} // 3. Pass the handler down
+        onFriendClick={(id) => setSelectedFriendId(id)}
       />
 
-      {/* Profile Modal - ACTUALLY RENDER THE POPUP */}
       <FriendProfileModal
         friendId={selectedFriendId}
         onClose={() => setSelectedFriendId(null)}
-        isPixelTheme={isPixelTheme}
       />
 
-      {/* PIN Entry Modal for Journal */}
       <PinEntryModal
         isOpen={showPinModal}
         onClose={() => {
@@ -384,17 +319,15 @@ const CalendarTab = ({}: CalendarTabProps) => {
         mode={journalPin.hasPin ? "verify" : "setup"}
         verifyPin={journalPin.verifyPin}
         setupPin={journalPin.setupPin}
-        isPixelTheme={isPixelTheme}
       />
 
-      {/* Journal View Modal */}
       <JournalView
         isOpen={!!selectedJournalDate && isJournalUnlocked}
         entry={selectedJournalEntry.entry}
         onClose={() => setSelectedJournalDate(null)}
         canEdit={selectedJournalEntry.canEdit}
-        isPixelTheme={isPixelTheme}
       />
+
     </div>
   );
 };
