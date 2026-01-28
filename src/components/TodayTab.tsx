@@ -423,14 +423,15 @@ const TodayTab = ({}: TodayTabProps) => {
             onOpenFitCheckCamera={() => setShowFitCheckCamera(true)}
           />
           {/* Yesterday's engagement sheet */}
-          {yesterdaysMood && (
-            <MoodEngagementSheet
-              isOpen={showYesterdayEngagement}
-              onClose={() => setShowYesterdayEngagement(false)}
-              moodId={yesterdaysMood.id}
-              moodRating={yesterdaysMood.rating}
-            />
-          )}
+{yesterdaysMood && (
+  <MoodEngagementSheet
+    isOpen={showYesterdayEngagement}
+    onClose={() => setShowYesterdayEngagement(false)}
+    moodId={yesterdaysMood.id}
+    rating={yesterdaysMood.rating}     // <--- FIXED
+    moodOwnerId={user?.id || ''}       // <--- ADDED for safety
+  />
+)}
         </>
       );
     }
@@ -494,14 +495,17 @@ const TodayTab = ({}: TodayTabProps) => {
           </div>
         </motion.div>
         {/* Yesterday's engagement sheet */}
-        {yesterdaysMood && (
-          <MoodEngagementSheet
-            isOpen={showYesterdayEngagement}
-            onClose={() => setShowYesterdayEngagement(false)}
-            moodId={yesterdaysMood.id}
-            moodRating={yesterdaysMood.rating}
-          />
-        )}
+{yesterdaysMood && (
+  <MoodEngagementSheet
+    isOpen={showYesterdayEngagement}
+    onClose={() => setShowYesterdayEngagement(false)}
+    moodId={yesterdaysMood.id}
+    moodOwnerId={user?.id || ''}
+    photoUrl={yesterdaysMood.photo_url}
+    caption={yesterdaysMood.caption}
+    rating={yesterdaysMood.rating}     // <--- FIXED
+  />
+)}
       </div>
     );
   }

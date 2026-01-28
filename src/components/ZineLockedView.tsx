@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Lock, Heart, MessageCircle } from "lucide-react";
+import { Lock } from "lucide-react";
 import { differenceInSeconds, setHours, setMinutes, setSeconds, addDays, isBefore } from "date-fns";
-import { useNavigate } from "react-router-dom";
 
 interface YesterdayMood {
   id: string;
@@ -27,7 +26,6 @@ const ZineLockedView = ({
   onYesterdayClick
 }: ZineLockedViewProps) => {
   const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 0, seconds: 0 });
-  const navigate = useNavigate();
 
   // Calculate time until 9 PM
   useEffect(() => {
@@ -56,7 +54,7 @@ const ZineLockedView = ({
   const formatTime = (num: number) => num.toString().padStart(2, "0");
 
   return (
-    <div className="relative flex flex-col min-h-[calc(100vh-80px)] w-full max-w-md mx-auto px-4 pt-2 pb-8 overflow-hidden bg-background">
+    <div className="relative flex flex-col min-h-[calc(100vh-140px)] w-full max-w-md mx-auto px-4 pt-2 pb-8 overflow-hidden bg-background">
       {/* Noise overlay */}
       <div className="fixed inset-0 z-0 pointer-events-none opacity-[0.08] noise-overlay mix-blend-overlay" />
 
@@ -254,57 +252,8 @@ const ZineLockedView = ({
           </div>
         </div>
       )}
-
-      {/* Scattered navigation */}
-      <nav className="relative z-10 mt-auto pt-8">
-        {/* Calendar button */}
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <button
-            onClick={() => navigate('/?tab=calendar')}
-            className="bg-black text-white px-4 py-2 text-xs uppercase tracking-[0.15em]"
-            style={{ fontFamily: "'Space Mono', monospace" }}
-          >
-            Calendar
-          </button>
-
-          {/* Friends - cursive */}
-          <button
-            onClick={() => navigate('/?tab=friends')}
-            className="text-2xl text-foreground/80 hover:text-foreground transition-colors"
-            style={{ fontFamily: "'Great Vibes', cursive" }}
-          >
-            Friends
-          </button>
-        </div>
-
-        <div className="flex flex-wrap items-end justify-between gap-4 mt-4">
-          {/* Today - bold serif */}
-          <span
-            className="text-4xl font-bold text-foreground"
-            style={{ fontFamily: "'Playfair Display', serif" }}
-          >
-            Today
-          </span>
-
-          {/* You - italic */}
-          <button
-            onClick={() => navigate('/?tab=profile')}
-            className="text-3xl italic text-[#C5A059] hover:opacity-80 transition-opacity"
-            style={{ fontFamily: "'Playfair Display', serif" }}
-          >
-            You
-          </button>
-
-          {/* Messages - red tape style */}
-          <button
-            onClick={() => navigate('/?tab=messages')}
-            className="bg-[#C62828] text-white px-3 py-1.5 text-[10px] uppercase tracking-[0.1em] transform rotate-[-2deg] shadow-md"
-            style={{ fontFamily: "'Space Mono', monospace" }}
-          >
-            Messages
-          </button>
-        </div>
-      </nav>
+      
+      {/* Footer navigation has been removed to prevent duplication */}
     </div>
   );
 };
