@@ -22,6 +22,8 @@ import { useJournalPin } from "@/hooks/useJournalPin";
 import { useJournalEntry } from "@/hooks/useJournalEntry";
 import RoutineTags from "./RoutineTags";
 import FitCheckChallenge from "./FitCheckChallenge";
+import ZineLockedView from "./ZineLockedView";
+import ZineOpenView from "./ZineOpenView";
 
 const captionSchema = z.string().max(500, "Caption must be 500 characters or less").trim();
 
@@ -133,6 +135,13 @@ const TodayTab = ({ isPixelTheme = false }: TodayTabProps) => {
   const [pinModalMode, setPinModalMode] = useState<"setup" | "verify">("verify");
   const [isJournalUnlocked, setIsJournalUnlocked] = useState(false);
   const [showFitCheckCamera, setShowFitCheckCamera] = useState(false);
+
+  // Room entry state - persists for the day
+  const [hasEnteredRoom, setHasEnteredRoom] = useState(() => {
+    const today = getLocalDateString();
+    const stored = localStorage.getItem(`roz-room-entered-${today}`);
+    return stored === "true";
+  });
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const shareRef = useRef<HTMLDivElement>(null);
@@ -393,7 +402,40 @@ const TodayTab = ({ isPixelTheme = false }: TodayTabProps) => {
     setActiveSection("post");
   };
 
+  // Handle entering the room when window opens
+  const handleEnterRoom = () => {
+    const today = getLocalDateString();
+    localStorage.setItem(`roz-room-entered-${today}`, "true");
+    setHasEnteredRoom(true);
+  };
+
   if (showLockedState) {
+    // Use new Zine aesthetic for default dark theme
+    if (!isPixelTheme) {
+      return (
+        <>
+          <ZineLockedView
+            displayName={displayName}
+            yesterdaysMood={yesterdaysMood && showYesterdaySummary ? yesterdaysMood : null}
+            onYesterdayClick={() => setShowYesterdayEngagement(true)}
+            onOpenFitCheckCamera={() => setShowFitCheckCamera(true)}
+            isPixelTheme={false}
+          />
+          {/* Yesterday's engagement sheet */}
+          {yesterdaysMood && (
+            <MoodEngagementSheet
+              isOpen={showYesterdayEngagement}
+              onClose={() => setShowYesterdayEngagement(false)}
+              moodId={yesterdaysMood.id}
+              moodRating={yesterdaysMood.rating}
+              isPixelTheme={isPixelTheme}
+            />
+          )}
+        </>
+      );
+    }
+
+    // Pixel theme fallback - original locked state
     const YesterdayMoodIcon = yesterdaysMood ? getMoodIcon(yesterdaysMood.rating, isPixelTheme) : null;
     return (
       <div className="flex flex-col items-center justify-center min-h-[calc(100vh-120px)] px-6 py-8 pb-32">
@@ -452,7 +494,24 @@ const TodayTab = ({ isPixelTheme = false }: TodayTabProps) => {
             />
           </div>
         </motion.div>
+        {/* Yesterday's engagement sheet */}
+        {yesterdaysMood && (
+          <MoodEngagementSheet
+            isOpen={showYesterdayEngagement}
+            onClose={() => setShowYesterdayEngagement(false)}
+            moodId={yesterdaysMood.id}
+            moodRating={yesterdaysMood.rating}
+            isPixelTheme={isPixelTheme}
+          />
+        )}
       </div>
+    );
+  }
+
+  // Show ZineOpenView when window just opened but user hasn't entered yet
+  if (timeWindow.isOpen && !submitted && !hasEnteredRoom) {
+    return (
+      <ZineOpenView onEnter={handleEnterRoom} />
     );
   }
 
