@@ -24,13 +24,15 @@ import RoutineTags from "./RoutineTags";
 import FitCheckChallenge from "./FitCheckChallenge";
 import ZineLockedView from "./ZineLockedView";
 import ZineOpenView from "./ZineOpenView";
+import ZineMoodEntry from "./ZineMoodEntry";
+import ZinePostView from "./ZinePostView";
 
 const captionSchema = z.string().max(500, "Caption must be 500 characters or less").trim();
 
 type Visibility = "private" | "friends" | "close_friends";
 
 interface TodayTabProps {
-  isPixelTheme?: boolean;
+  // Props removed - zine is now the only theme
 }
 
 interface Liker {
@@ -94,7 +96,7 @@ const getMoodLabel = (rating: number): string => {
   return "Bright & sunny!";
 };
 
-const TodayTab = ({ isPixelTheme = false }: TodayTabProps) => {
+const TodayTab = ({}: TodayTabProps) => {
   const [rating, setRating] = useState(5);
   const [submitted, setSubmitted] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -367,8 +369,8 @@ const TodayTab = ({ isPixelTheme = false }: TodayTabProps) => {
     } catch (error) { setIsSharing(false); toast({ variant: "destructive", title: "Share failed" }); }
   };
 
-  const MoodIcon = getMoodIcon(submitted ? submittedRating : rating, isPixelTheme);
-  const HeartIcon = isPixelTheme ? PixelHeart : Heart;
+  const MoodIcon = getMoodIcon(submitted ? submittedRating : rating, false);
+  const HeartIcon = Heart;
   const showLockedState = !timeWindow.isOpen && !submitted;
 
   // Handle section change
@@ -411,7 +413,7 @@ const TodayTab = ({ isPixelTheme = false }: TodayTabProps) => {
 
   if (showLockedState) {
     // Use new Zine aesthetic for default dark theme
-    if (!isPixelTheme) {
+    if (true) {
       return (
         <>
           <ZineLockedView
@@ -428,7 +430,7 @@ const TodayTab = ({ isPixelTheme = false }: TodayTabProps) => {
               onClose={() => setShowYesterdayEngagement(false)}
               moodId={yesterdaysMood.id}
               moodRating={yesterdaysMood.rating}
-              isPixelTheme={isPixelTheme}
+              isPixelTheme={false}
             />
           )}
         </>
@@ -436,21 +438,21 @@ const TodayTab = ({ isPixelTheme = false }: TodayTabProps) => {
     }
 
     // Pixel theme fallback - original locked state
-    const YesterdayMoodIcon = yesterdaysMood ? getMoodIcon(yesterdaysMood.rating, isPixelTheme) : null;
+    const YesterdayMoodIcon = yesterdaysMood ? getMoodIcon(yesterdaysMood.rating, false) : null;
     return (
       <div className="flex flex-col items-center justify-center min-h-[calc(100vh-120px)] px-6 py-8 pb-32">
         <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-sm flex flex-col items-center text-center">
-          <motion.div animate={{ scale: [1, 1.05, 1] }} transition={{ repeat: Infinity, duration: 2 }} className={`w-24 h-24 flex items-center justify-center mb-6 bg-secondary ${isPixelTheme ? "" : "rounded-full"}`}>
+          <motion.div animate={{ scale: [1, 1.05, 1] }} transition={{ repeat: Infinity, duration: 2 }} className={`w-24 h-24 flex items-center justify-center mb-6 bg-secondary rounded-full`}>
             <Lock className="w-10 h-10 text-muted-foreground" />
           </motion.div>
-          <h2 className={`font-bold mb-2 flex items-center gap-2 ${isPixelTheme ? "text-base" : "text-xl"}`}>{displayName ? `Hi ${displayName}! ✨` : "Hey there! ✨"}</h2>
+          <h2 className={`font-bold mb-2 flex items-center gap-2 text-xl`}>{displayName ? `Hi ${displayName}! ✨` : "Hey there! ✨"}</h2>
           {currentStreak > 0 && (<Badge variant="secondary" className="mb-4 bg-orange-50 text-orange-600 border-orange-100 gap-1.5 px-3 py-1"><Flame className="w-3 h-3 fill-orange-500" /><span className="font-bold">{currentStreak} Day Streak</span></Badge>)}
-          <p className={`text-muted-foreground mb-6 ${isPixelTheme ? "text-xs" : ""}`}>Your journal opens at 9 PM so you can reflect on your whole day.</p>
+          <p className={`text-muted-foreground mb-6 `}>Your journal opens at 9 PM so you can reflect on your whole day.</p>
           <AnimatePresence>
             {yesterdaysMood && showYesterdaySummary && YesterdayMoodIcon && (
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className={`w-full max-w-sm mx-auto mb-6 bg-card border border-border overflow-hidden ${isPixelTheme ? "" : "rounded-2xl shadow-sm"}`}>
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className={`w-full max-w-sm mx-auto mb-6 bg-card border border-border overflow-hidden rounded-2xl shadow-sm`}>
                 <div className="p-4 flex items-center justify-between border-b border-border/50">
-                  <span className={`text-muted-foreground font-medium ${isPixelTheme ? "text-[10px]" : "text-xs"}`}>Yesterday's Mood</span>
+                  <span className={`text-muted-foreground font-medium text-xs`}>Yesterday's Mood</span>
                   <button onClick={dismissYesterdaySummary} className="p-1 hover:bg-secondary rounded-full transition-colors"><X className="w-4 h-4 text-muted-foreground" /></button>
                 </div>
                 <div
@@ -465,18 +467,18 @@ const TodayTab = ({ isPixelTheme = false }: TodayTabProps) => {
                     <div className="w-full h-48 flex items-center justify-center bg-secondary/30"><YesterdayMoodIcon className="w-10 h-10 text-primary-foreground" /></div>
                   )}
                   <div className="p-4">
-                    <p className={`text-foreground/90 mb-3 ${isPixelTheme ? "text-xs" : "text-sm"}`}>{getMoodLabel(yesterdaysMood.rating)} ({yesterdaysMood.rating}/10)</p>
+                    <p className={`text-foreground/90 mb-3 text-sm`}>{getMoodLabel(yesterdaysMood.rating)} ({yesterdaysMood.rating}/10)</p>
                     {yesterdaysMood.caption && (
-                      <p className={`text-muted-foreground italic mb-3 ${isPixelTheme ? "text-[10px]" : "text-xs"}`}>"{yesterdaysMood.caption}"</p>
+                      <p className={`text-muted-foreground italic mb-3 text-xs`}>"{yesterdaysMood.caption}"</p>
                     )}
                     <div className="flex items-center gap-4 text-muted-foreground">
                       <div className="flex items-center gap-1">
                         <Heart className="w-4 h-4" />
-                        <span className={isPixelTheme ? "text-[10px]" : "text-xs"}>{yesterdaysMood.likes_count}</span>
+                        <span className="text-xs">{yesterdaysMood.likes_count}</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <MessageCircle className="w-4 h-4" />
-                        <span className={isPixelTheme ? "text-[10px]" : "text-xs"}>{yesterdaysMood.comments_count}</span>
+                        <span className="text-xs">{yesterdaysMood.comments_count}</span>
                       </div>
                     </div>
                   </div>
@@ -484,12 +486,12 @@ const TodayTab = ({ isPixelTheme = false }: TodayTabProps) => {
               </motion.div>
             )}
           </AnimatePresence>
-          <CountdownTimer isPixelTheme={isPixelTheme} />
+          <CountdownTimer isPixelTheme={false} />
 
           {/* Fit Check Challenge */}
           <div className="w-full mt-6">
             <FitCheckChallenge
-              isPixelTheme={isPixelTheme}
+              isPixelTheme={false}
               onOpenCamera={() => setShowFitCheckCamera(true)}
             />
           </div>
@@ -501,7 +503,7 @@ const TodayTab = ({ isPixelTheme = false }: TodayTabProps) => {
             onClose={() => setShowYesterdayEngagement(false)}
             moodId={yesterdaysMood.id}
             moodRating={yesterdaysMood.rating}
-            isPixelTheme={isPixelTheme}
+            isPixelTheme={false}
           />
         )}
       </div>
@@ -524,7 +526,7 @@ const TodayTab = ({ isPixelTheme = false }: TodayTabProps) => {
             activeSection={activeSection}
             onSectionChange={handleSectionChange}
             isJournalLocked={!isJournalUnlocked}
-            isPixelTheme={isPixelTheme}
+            isPixelTheme={false}
           />
         </div>
       )}
@@ -537,7 +539,7 @@ const TodayTab = ({ isPixelTheme = false }: TodayTabProps) => {
         mode={pinModalMode}
         verifyPin={journalPin.verifyPin}
         setupPin={journalPin.setupPin}
-        isPixelTheme={isPixelTheme}
+        isPixelTheme={false}
       />
 
       {/* Journal Section */}
@@ -548,12 +550,12 @@ const TodayTab = ({ isPixelTheme = false }: TodayTabProps) => {
           className="w-full max-w-sm"
         >
           <div className="flex items-center gap-3 mb-6">
-            <div className={`w-12 h-12 bg-primary/10 flex items-center justify-center ${isPixelTheme ? "" : "rounded-full"}`}>
+            <div className={`w-12 h-12 bg-primary/10 flex items-center justify-center rounded-full`}>
               <BookOpen className="w-6 h-6 text-primary" />
             </div>
             <div>
-              <h2 className={`font-bold ${isPixelTheme ? "text-sm" : "text-lg"}`}>Private Journal</h2>
-              <p className={`text-muted-foreground ${isPixelTheme ? "text-[8px]" : "text-xs"}`}>
+              <h2 className={`font-bold text-lg`}>Private Journal</h2>
+              <p className={`text-muted-foreground text-xs`}>
                 {journalEntry.entry ? "Edit your entry" : "Write about your day"}
               </p>
             </div>
@@ -564,7 +566,7 @@ const TodayTab = ({ isPixelTheme = false }: TodayTabProps) => {
             onSave={handleJournalSave}
             onDelete={journalEntry.entry ? journalEntry.deleteEntry : undefined}
             onCancel={handleJournalCancel}
-            isPixelTheme={isPixelTheme}
+            isPixelTheme={false}
             canEdit={journalEntry.canEdit}
           />
         </motion.div>
@@ -576,32 +578,32 @@ const TodayTab = ({ isPixelTheme = false }: TodayTabProps) => {
           {!submitted ? (
             <motion.div key="input" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="w-full max-w-sm flex flex-col items-center">
             <div className="flex flex-col items-center mb-2">
-              <motion.h1 className={`text-2xl md:text-3xl font-bold text-center ${isPixelTheme ? "text-lg leading-relaxed" : ""}`}>{displayName ? `Hey ${displayName}! ✨` : "Hey there! ✨"}</motion.h1>
+              <motion.h1 className={`text-2xl md:text-3xl font-bold text-center `}>{displayName ? `Hey ${displayName}! ✨` : "Hey there! ✨"}</motion.h1>
               {currentStreak > 0 && (<Badge variant="secondary" className="mt-2 bg-orange-50 text-orange-600 border-orange-100 gap-1.5 px-3 py-1"><Flame className="w-3 h-3 fill-orange-500" /><span className="font-bold">{currentStreak} Day Streak</span></Badge>)}
             </div>
             <motion.div className="relative mb-6" animate={{ scale: [1, 1.02, 1] }} transition={{ repeat: Infinity, duration: 2 }}>
-              <motion.div className={`w-28 h-28 flex items-center justify-center ${isPixelTheme ? "pixel-border" : "rounded-full"}`} style={{ backgroundColor: getMoodColor(rating), borderRadius: isPixelTheme ? "0" : "9999px" }}><MoodIcon className="w-12 h-12 text-primary-foreground" /></motion.div>
-              <motion.span key={rating} className={`absolute -bottom-2 -right-2 w-10 h-10 bg-card border-2 border-border flex items-center justify-center text-xl font-bold ${isPixelTheme ? "" : "rounded-full"}`} style={{ borderRadius: isPixelTheme ? "0" : "9999px" }}>{rating}</motion.span>
+              <motion.div className={`w-28 h-28 flex items-center justify-center rounded-full`} style={{ backgroundColor: getMoodColor(rating) }}><MoodIcon className="w-12 h-12 text-primary-foreground" /></motion.div>
+              <motion.span key={rating} className={`absolute -bottom-2 -right-2 w-10 h-10 bg-card border-2 border-border flex items-center justify-center text-xl font-bold rounded-full`} style={{ borderRadius: "9999px" }}>{rating}</motion.span>
             </motion.div>
             <Slider value={[rating]} onValueChange={(value) => setRating(value[0])} min={1} max={10} step={1} className="w-full touch-manipulation mb-6" />
             <motion.div className="w-full mb-6">
               {!photoPreview ? (
-                <button onClick={() => fileInputRef.current?.click()} className={`w-full py-4 border-2 border-dashed border-primary/50 bg-primary/5 flex items-center justify-center gap-2 text-primary hover:bg-primary/10 transition-colors ${isPixelTheme ? "text-xs" : "rounded-xl"}`} style={{ borderRadius: isPixelTheme ? "0" : undefined }}><Camera className="w-5 h-5" /><span className="font-semibold">Add Required Photo</span></button>
+                <button onClick={() => fileInputRef.current?.click()} className={`w-full py-4 border-2 border-dashed border-primary/50 bg-primary/5 flex items-center justify-center gap-2 text-primary hover:bg-primary/10 transition-colors rounded-xl`}><Camera className="w-5 h-5" /><span className="font-semibold">Add Required Photo</span></button>
               ) : (
-                <div className="relative"><img src={photoPreview} alt="Selected" className={`w-full h-40 object-cover ${isPixelTheme ? "" : "rounded-xl"}`} /><button onClick={removePhoto} className={`absolute top-2 right-2 p-1 bg-background/80 ${isPixelTheme ? "" : "rounded-full"}`}><X className="w-4 h-4" /></button></div>
+                <div className="relative"><img src={photoPreview} alt="Selected" className={`w-full h-40 object-cover rounded-xl`} /><button onClick={removePhoto} className={`absolute top-2 right-2 p-1 bg-background/80 rounded-full`}><X className="w-4 h-4" /></button></div>
               )}
               <input ref={fileInputRef} type="file" accept="image/*" onChange={handlePhotoSelect} className="hidden" />
             </motion.div>
-            <Input type="text" placeholder="Caption (optional)" value={caption} onChange={(e) => setCaption(e.target.value)} maxLength={500} className={`mb-2 ${isPixelTheme ? "text-xs" : ""}`} style={{ borderRadius: isPixelTheme ? "0" : undefined }} />
+            <Input type="text" placeholder="Caption (optional)" value={caption} onChange={(e) => setCaption(e.target.value)} maxLength={500} className={`mb-2 `} />
 
             {/* Routine Tags */}
             <div className="w-full mb-4">
-              <RoutineTags moodId={todaysMoodId} isPixelTheme={isPixelTheme} />
+              <RoutineTags moodId={todaysMoodId} isPixelTheme={false} />
             </div>
 
             {/* Visibility Selector */}
             <div className="w-full mb-4">
-              <p className={`text-sm text-muted-foreground mb-2 ${isPixelTheme ? "text-xs" : ""}`}>Share with:</p>
+              <p className={`text-sm text-muted-foreground mb-2 `}>Share with:</p>
               <div className="flex gap-2">
                 <button
                   type="button"
@@ -610,9 +612,8 @@ const TodayTab = ({ isPixelTheme = false }: TodayTabProps) => {
                     visibility === "friends"
                       ? "bg-primary text-primary-foreground border-primary"
                       : "bg-card text-foreground border-border hover:bg-secondary"
-                  } ${isPixelTheme ? "text-xs" : "rounded-xl"}`}
-                  style={{ borderRadius: isPixelTheme ? "0" : undefined }}
-                >
+                  } rounded-xl`}
+                                  >
                   <Users className="w-4 h-4" />
                   <span className="font-medium">All Friends</span>
                 </button>
@@ -623,21 +624,20 @@ const TodayTab = ({ isPixelTheme = false }: TodayTabProps) => {
                     visibility === "close_friends"
                       ? "bg-primary text-primary-foreground border-primary"
                       : "bg-card text-foreground border-border hover:bg-secondary"
-                  } ${isPixelTheme ? "text-xs" : "rounded-xl"}`}
-                  style={{ borderRadius: isPixelTheme ? "0" : undefined }}
-                >
+                  } rounded-xl`}
+                                  >
                   <Star className="w-4 h-4" />
                   <span className="font-medium">Close Friends</span>
                 </button>
               </div>
             </div>
 
-            <motion.button onClick={handleSubmit} disabled={isUploading} className={`w-full py-4 bg-primary text-primary-foreground font-semibold touch-manipulation disabled:opacity-50 ${isPixelTheme ? "text-sm" : "text-lg rounded-2xl"}`} style={{ borderRadius: isPixelTheme ? "0" : undefined }}>{isUploading ? "Saving..." : "Save My Mood ✨"}</motion.button>
+            <motion.button onClick={handleSubmit} disabled={isUploading} className={`w-full py-4 bg-primary text-primary-foreground font-semibold touch-manipulation disabled:opacity-50 text-lg rounded-2xl`}>{isUploading ? "Saving..." : "Save My Mood ✨"}</motion.button>
           </motion.div>
         ) : (
           <motion.div key="result" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-sm flex flex-col items-center text-center">
-            <div ref={shareRef} className={`w-full flex flex-col items-center bg-card p-6 mb-4 ${isPixelTheme ? "" : "rounded-3xl"}`}>
-               <motion.div className={`w-32 h-32 flex items-center justify-center mb-6 ${isPixelTheme ? "pixel-border" : "rounded-full"}`} style={{ backgroundColor: getMoodColor(submittedRating), borderRadius: isPixelTheme ? "0" : "9999px" }}><MoodIcon className="w-14 h-14 text-primary-foreground" /></motion.div>
+            <div ref={shareRef} className={`w-full flex flex-col items-center bg-card p-6 mb-4 rounded-3xl`}>
+               <motion.div className={`w-32 h-32 flex items-center justify-center mb-6 rounded-full`} style={{ backgroundColor: getMoodColor(submittedRating) }}><MoodIcon className="w-14 h-14 text-primary-foreground" /></motion.div>
                <h2 className="text-2xl font-bold mb-2">{submittedRating >= 7 ? "Beautiful day! 🌈" : "Sending sunshine! 🌤️"}</h2>
                <p className="text-4xl font-bold mb-6" style={{ color: getMoodColor(submittedRating) }}>{submittedRating}/10</p>
                {photoPreview && (
@@ -645,7 +645,7 @@ const TodayTab = ({ isPixelTheme = false }: TodayTabProps) => {
                    src={photoPreview}
                    alt="Mood"
                    onClick={() => setShowEngagementSheet(true)}
-                   className={`w-full aspect-square object-cover mb-4 cursor-pointer hover:opacity-90 transition-opacity ${isPixelTheme ? "" : "rounded-xl"}`}
+                   className={`w-full aspect-square object-cover mb-4 cursor-pointer hover:opacity-90 transition-opacity rounded-xl`}
                  />
                )}
                <p className="text-sm italic">"{caption}"</p>
@@ -655,14 +655,13 @@ const TodayTab = ({ isPixelTheme = false }: TodayTabProps) => {
             {visibility !== "private" && todaysMoodId && (
               <div 
                 onClick={() => setShowEngagementSheet(true)}
-                className={`w-full bg-secondary p-4 mb-4 flex items-center justify-between cursor-pointer active:scale-95 transition-transform ${isPixelTheme ? "" : "rounded-2xl"}`} 
-                style={{ borderRadius: isPixelTheme ? "0" : undefined }}
-              >
+                className={`w-full bg-secondary p-4 mb-4 flex items-center justify-between cursor-pointer active:scale-95 transition-transform rounded-2xl`} 
+                              >
                 <div className="flex items-center gap-3">
                   {recentLikers.length > 0 ? (
                     <div className="flex -space-x-2">
                       {recentLikers.map((liker) => (
-                        <div key={liker.user_id} className={`w-6 h-6 border-2 border-background overflow-hidden ${isPixelTheme ? "" : "rounded-full"}`}>
+                        <div key={liker.user_id} className={`w-6 h-6 border-2 border-background overflow-hidden rounded-full`}>
                           {liker.profiles?.avatar_url ? (
                             <img src={liker.profiles.avatar_url} alt="" className="w-full h-full object-cover" onError={(e) => { e.currentTarget.parentElement!.innerHTML = '<div class="w-full h-full bg-muted flex items-center justify-center"><svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div>'; }} />
                           ) : (
@@ -676,11 +675,11 @@ const TodayTab = ({ isPixelTheme = false }: TodayTabProps) => {
                   )}
                   
                   <div className="text-left">
-                    <p className={`font-semibold ${isPixelTheme ? "text-[10px]" : "text-sm"}`}>
+                    <p className={`font-semibold text-sm`}>
                       {likesCount > 0 ? `${likesCount} Likes` : "No likes yet"}
                     </p>
                     {recentLikers.length > 0 && (
-                      <p className={`text-muted-foreground truncate max-w-[150px] ${isPixelTheme ? "text-[8px]" : "text-xs"}`}>
+                      <p className={`text-muted-foreground truncate max-w-[150px] text-xs`}>
                         Liked by <span className="text-foreground">{recentLikers[0].profiles?.username}</span> {likesCount > 1 ? `and ${likesCount - 1} others` : ""}
                       </p>
                     )}
@@ -688,14 +687,14 @@ const TodayTab = ({ isPixelTheme = false }: TodayTabProps) => {
                 </div>
                 <div className="flex items-center gap-1 text-muted-foreground">
                   <MessageCircle className="w-4 h-4" />
-                  <span className={isPixelTheme ? "text-[8px]" : "text-xs"}>{commentsCount}</span>
+                  <span className="text-xs">{commentsCount}</span>
                 </div>
               </div>
             )}
 
             <div className="flex gap-2 w-full">
-               <motion.button onClick={handleShare} disabled={isSharing} className={`flex-1 px-4 py-3 bg-foreground text-background font-medium ${isPixelTheme ? "text-xs" : "rounded-xl"}`} style={{ borderRadius: isPixelTheme ? "0" : undefined }}>{isSharing ? "..." : <Share2 className="w-4 h-4 mx-auto" />}</motion.button>
-               {timeWindow.isOpen && <motion.button onClick={handleEditEntry} className={`px-4 py-3 bg-secondary text-foreground font-medium ${isPixelTheme ? "text-xs" : "rounded-xl"}`} style={{ borderRadius: isPixelTheme ? "0" : undefined }}><Pencil className="w-4 h-4" /></motion.button>}
+               <motion.button onClick={handleShare} disabled={isSharing} className={`flex-1 px-4 py-3 bg-foreground text-background font-medium rounded-xl`}>{isSharing ? "..." : <Share2 className="w-4 h-4 mx-auto" />}</motion.button>
+               {timeWindow.isOpen && <motion.button onClick={handleEditEntry} className={`px-4 py-3 bg-secondary text-foreground font-medium rounded-xl`}><Pencil className="w-4 h-4" /></motion.button>}
             </div>
           </motion.div>
         )}
@@ -709,7 +708,7 @@ const TodayTab = ({ isPixelTheme = false }: TodayTabProps) => {
           onClose={() => setShowEngagementSheet(false)}
           moodId={todaysMoodId}
           moodOwnerId={user?.id || ''}
-          isPixelTheme={isPixelTheme}
+          isPixelTheme={false}
           photoUrl={photoPreview}
           caption={caption}
           rating={submittedRating}
@@ -723,7 +722,7 @@ const TodayTab = ({ isPixelTheme = false }: TodayTabProps) => {
           onClose={() => setShowYesterdayEngagement(false)}
           moodId={yesterdaysMood.id}
           moodOwnerId={user?.id || ''}
-          isPixelTheme={isPixelTheme}
+          isPixelTheme={false}
           photoUrl={yesterdaysMood.photo_url}
           caption={yesterdaysMood.caption}
           rating={yesterdaysMood.rating}
