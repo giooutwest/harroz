@@ -334,7 +334,7 @@ const Index = () => {
               transition={{ duration: 0.2 }}
             >
               <Suspense fallback={<TabLoader />}>
-                <StatsTab />
+                <StatsTab onSettingsClick={() => setShowSettings(true)} />
               </Suspense>
             </motion.div>
           )}

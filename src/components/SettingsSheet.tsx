@@ -18,7 +18,6 @@ import { useNavigate } from "react-router-dom";
 import PinEntryModal from "./PinEntryModal";
 import { useJournalPin } from "@/hooks/useJournalPin";
 
-type Theme = "dark" | "pixel" | "fruit" | "calligraphy" | "grunge";
 type DefaultVisibility = "private" | "friends" | "close_friends";
 
 interface PrivacySettings {
@@ -31,22 +30,11 @@ interface PrivacySettings {
 interface SettingsSheetProps {
   isOpen: boolean;
   onClose: () => void;
-  currentTheme: Theme;
-  onThemeChange: (theme: Theme) => void;
-  isPixelTheme?: boolean;
-  isFruitTheme?: boolean;
 }
 
 type SettingsTab = "settings" | "updates";
 
-const SettingsSheet = ({ 
-  isOpen, 
-  onClose, 
-  currentTheme, 
-  onThemeChange,
-  isPixelTheme = false,
-  isFruitTheme = false
-}: SettingsSheetProps) => {
+const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
   // 1. ALL HOOKS MUST BE DECLARED HERE AT THE TOP (UNCONDITIONALLY)
   const [activeTab, setActiveTab] = useState<SettingsTab>("settings");
   const [displayName, setDisplayName] = useState("");
@@ -269,21 +257,11 @@ const SettingsSheet = ({
   const hasNameChanged = displayName.trim() !== originalName;
   const hasUsernameChanged = username.trim() !== originalUsername;
 
-  const themes = [
-    { id: "dark" as Theme, name: "Dark Mode", description: "Minimal & sleek", icon: Moon, bgColor: "bg-black", iconColor: "text-white" },
-    { id: "pixel" as Theme, name: "Pixel Art", description: "Colorful & retro", icon: isPixelTheme ? PixelStar : Sparkles, gradient: "linear-gradient(135deg, hsl(280, 80%, 65%), hsl(180, 80%, 60%))", iconColor: "text-white" },
-    { id: "fruit" as Theme, name: "Fruit Fresh", description: "Sweet & pastel", icon: Cherry, gradient: "linear-gradient(135deg, hsl(350, 80%, 80%), hsl(30, 90%, 85%))", iconColor: "text-white" },
-    { id: "calligraphy" as Theme, name: "Calligraphy", description: "White, sleek & script", icon: Sparkles, gradient: "linear-gradient(135deg, rgba(255,245,230,1), rgba(255,250,240,1))", bgColor: "bg-white", iconColor: "text-amber-600" },
-    { id: "grunge" as Theme, name: "Y2K Grunge", description: "Typewriter & chaos", icon: Sparkles, gradient: "linear-gradient(135deg, hsl(40, 20%, 90%), hsl(0, 75%, 45%))", iconColor: "text-black" }
-  ];
-
   const privacyOptions = [
     { key: "show_rating_to_friends" as const, label: "Mood rating", icon: Activity },
     { key: "show_photo_to_friends" as const, label: "Photos", icon: Image },
     { key: "show_caption_to_friends" as const, label: "Journal text", icon: MessageSquare },
   ];
-
-  const borderRadius = isPixelTheme ? "0" : undefined;
 
   return (
     <AnimatePresence>
@@ -292,7 +270,7 @@ const SettingsSheet = ({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-end justify-center"
+          className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-end justify-center"
           onClick={onClose}
         >
           <motion.div
@@ -301,102 +279,150 @@ const SettingsSheet = ({
             exit={{ y: "100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
             onClick={(e) => e.stopPropagation()}
-            className={`bg-card border-t border-border p-6 w-full max-w-lg safe-area-bottom ${
-              isPixelTheme ? "" : "rounded-t-3xl"
-            }`}
+            className="bg-[#1a1a1a] border-t border-white/10 p-6 w-full max-w-lg safe-area-bottom"
             style={{ maxHeight: "85vh", overflowY: "auto" }}
           >
+            {/* SYS.CONFIG Header */}
             <div className="flex items-center justify-between mb-6">
-              <h3 className={`font-semibold ${isPixelTheme ? "text-xs" : "text-lg"}`}>Settings</h3>
-              <button onClick={onClose} className={`p-2 bg-secondary touch-manipulation ${isPixelTheme ? "" : "rounded-full"}`}>
-                <X className="w-5 h-5" />
+              <div>
+                <h3
+                  className="text-2xl font-bold text-white uppercase tracking-wider"
+                  style={{ fontFamily: "'Space Mono', monospace" }}
+                >
+                  SYS.CONFIG
+                </h3>
+                <p
+                  className="text-[10px] text-white/40 uppercase tracking-[0.2em]"
+                  style={{ fontFamily: "'Space Mono', monospace" }}
+                >
+                  System Settings v2.0
+                </p>
+              </div>
+              <button
+                onClick={onClose}
+                className="p-2 bg-white/10 hover:bg-white/20 transition-colors touch-manipulation"
+              >
+                <X className="w-5 h-5 text-white" />
               </button>
+            </div>
+
+            {/* APPRVD Stamp */}
+            <div className="flex justify-center mb-6">
+              <div
+                className="px-6 py-2 border-2 border-green-500 text-green-500 uppercase tracking-widest text-xs"
+                style={{ fontFamily: "'Space Mono', monospace", transform: "rotate(-3deg)" }}
+              >
+                APPRVD
+              </div>
             </div>
 
             <div className="flex gap-2 mb-6">
               <button
                 onClick={() => setActiveTab("settings")}
-                className={`flex-1 py-2 px-4 font-medium transition-colors ${
-                  activeTab === "settings" ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"
-                } ${isPixelTheme ? "text-xs" : "text-sm rounded-lg"}`}
+                className={`flex-1 py-2 px-4 font-medium text-sm transition-colors ${
+                  activeTab === "settings"
+                    ? "bg-white text-black"
+                    : "bg-white/10 text-white/60 hover:bg-white/20"
+                }`}
+                style={{ fontFamily: "'Space Mono', monospace" }}
               >
-                Settings
+                Config
               </button>
               <button
                 onClick={() => { setActiveTab("updates"); refreshUnread(); }}
-                className={`flex-1 py-2 px-4 font-medium transition-colors relative ${
-                  activeTab === "updates" ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"
-                } ${isPixelTheme ? "text-xs" : "text-sm rounded-lg"}`}
+                className={`flex-1 py-2 px-4 font-medium text-sm transition-colors relative ${
+                  activeTab === "updates"
+                    ? "bg-white text-black"
+                    : "bg-white/10 text-white/60 hover:bg-white/20"
+                }`}
+                style={{ fontFamily: "'Space Mono', monospace" }}
               >
                 <span className="flex items-center justify-center gap-1">
                   <Bell className="w-4 h-4" />
                   Updates
                   {hasUnread && activeTab !== "updates" && (
-                    <span className="w-2 h-2 bg-primary rounded-full absolute top-1 right-1" />
+                    <span className="w-2 h-2 bg-green-500 absolute top-1 right-1" />
                   )}
                 </span>
               </button>
             </div>
 
             {activeTab === "updates" ? (
-              <UpdatesTab isPixelTheme={isPixelTheme} />
+              <UpdatesTab />
             ) : (
               <>
+                {/* Profile Section */}
                 <div className="mb-6">
-                  <h4 className={`font-medium mb-4 flex items-center gap-2 ${isPixelTheme ? "text-[10px]" : "text-sm"}`}>
-                    <User className={`${isPixelTheme ? "w-3 h-3" : "w-4 h-4"}`} />
-                    Profile
+                  <h4
+                    className="text-[10px] text-white/40 uppercase tracking-[0.2em] mb-4 flex items-center gap-2"
+                    style={{ fontFamily: "'Space Mono', monospace" }}
+                  >
+                    <User className="w-3 h-3" /> User_Profile
                   </h4>
                   <div className="flex items-center gap-4 mb-4">
                     <div className="relative">
-                      <div className={`w-20 h-20 bg-secondary flex items-center justify-center overflow-hidden ${isPixelTheme ? "" : "rounded-full"}`} style={{ borderRadius }}>
-                        {avatarUrl ? <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" /> : <User className="w-8 h-8 text-muted-foreground" />}
+                      <div className="w-20 h-20 bg-white/10 flex items-center justify-center overflow-hidden border border-white/20">
+                        {avatarUrl ? (
+                          <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover grayscale" />
+                        ) : (
+                          <User className="w-8 h-8 text-white/40" />
+                        )}
                       </div>
                       <button
                         onClick={() => fileInputRef.current?.click()}
                         disabled={isUploadingAvatar}
-                        className={`absolute -bottom-1 -right-1 p-2 bg-primary text-primary-foreground ${isPixelTheme ? "" : "rounded-full"}`}
-                        style={{ borderRadius }}
+                        className="absolute -bottom-1 -right-1 p-2 bg-white text-black"
                       >
                         {isUploadingAvatar ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
                       </button>
                       <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAvatarSelect} className="hidden" />
                     </div>
                     <div className="flex-1">
-                      <p className={`text-muted-foreground ${isPixelTheme ? "text-[6px]" : "text-xs"}`}>Tap camera to change avatar</p>
+                      <p className="text-white/40 text-xs" style={{ fontFamily: "'Space Mono', monospace" }}>
+                        Tap camera to change avatar
+                      </p>
                     </div>
                   </div>
 
                   <div className="mb-3">
-                    <label className={`text-muted-foreground mb-1 block flex items-center gap-1 ${isPixelTheme ? "text-[8px]" : "text-xs"}`}>
+                    <label
+                      className="text-[10px] text-white/40 uppercase tracking-wider mb-1 block flex items-center gap-1"
+                      style={{ fontFamily: "'Space Mono', monospace" }}
+                    >
                       <AtSign className="w-3 h-3" /> Username
                     </label>
                     <div className="flex gap-2">
-                      <div className="flex-1 relative">
-                        <Input
-                          type="text"
-                          placeholder="username"
-                          value={username}
-                          onChange={(e) => handleUsernameChange(e.target.value)}
-                          maxLength={20}
-                          className={`flex-1 ${isPixelTheme ? "text-xs" : ""} ${usernameError ? "border-destructive" : ""}`}
-                          style={{ borderRadius }}
-                        />
-                      </div>
+                      <Input
+                        type="text"
+                        placeholder="username"
+                        value={username}
+                        onChange={(e) => handleUsernameChange(e.target.value)}
+                        maxLength={20}
+                        className={`flex-1 bg-white/5 border-white/10 text-white placeholder:text-white/30 ${usernameError ? "border-red-500" : ""}`}
+                        style={{ fontFamily: "'Space Mono', monospace" }}
+                      />
                       <Button
                         onClick={handleSaveUsername}
                         disabled={!hasUsernameChanged || isSavingUsername || isCheckingUsername || !!usernameError || !username.trim()}
                         size="sm"
-                        className={`${isPixelTheme ? "text-[8px] px-2" : ""}`}
-                        style={{ borderRadius }}
+                        className="bg-white text-black hover:bg-white/80"
                       >
                         {isSavingUsername || isCheckingUsername ? "..." : <Check className="w-4 h-4" />}
                       </Button>
                     </div>
-                    {usernameError && <p className={`text-destructive mt-1 ${isPixelTheme ? "text-[6px]" : "text-xs"}`}>{usernameError}</p>}
+                    {usernameError && (
+                      <p className="text-red-500 mt-1 text-xs" style={{ fontFamily: "'Space Mono', monospace" }}>
+                        {usernameError}
+                      </p>
+                    )}
                   </div>
 
-                  <label className={`text-muted-foreground mb-1 block ${isPixelTheme ? "text-[8px]" : "text-xs"}`}>Display name</label>
+                  <label
+                    className="text-[10px] text-white/40 uppercase tracking-wider mb-1 block"
+                    style={{ fontFamily: "'Space Mono', monospace" }}
+                  >
+                    Display_name
+                  </label>
                   <div className="flex gap-2">
                     <Input
                       type="text"
@@ -404,72 +430,74 @@ const SettingsSheet = ({
                       value={displayName}
                       onChange={(e) => setDisplayName(e.target.value)}
                       maxLength={50}
-                      className={`flex-1 ${isPixelTheme ? "text-xs" : ""}`}
-                      style={{ borderRadius }}
+                      className="flex-1 bg-white/5 border-white/10 text-white placeholder:text-white/30"
+                      style={{ fontFamily: "'Space Mono', monospace" }}
                     />
                     <Button
                       onClick={handleSaveName}
                       disabled={!hasNameChanged || isSaving || !displayName.trim()}
                       size="sm"
-                      className={`${isPixelTheme ? "text-[8px] px-2" : ""}`}
-                      style={{ borderRadius }}
+                      className="bg-white text-black hover:bg-white/80"
                     >
                       {isSaving ? "..." : <Check className="w-4 h-4" />}
                     </Button>
                   </div>
                 </div>
 
-                <div>
-                  <h4 className={`font-medium mb-3 ${isPixelTheme ? "text-[10px]" : "text-sm"}`}>Choose Theme</h4>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {themes.map((theme) => {
-                      const Icon = theme.icon;
-                      return (
-                        <motion.button
-                          key={theme.id}
-                          whileTap={{ scale: 0.95 }}
-                          onClick={() => { onThemeChange(theme.id); onClose(); }}
-                          className={`p-4 border-2 transition-all touch-manipulation ${currentTheme === theme.id ? "border-primary bg-secondary" : "border-border bg-card"} ${isPixelTheme ? "" : "rounded-xl"}`}
-                        >
-                          <div className={`w-10 h-10 flex items-center justify-center mb-2 mx-auto ${isPixelTheme ? "" : "rounded-lg"}`} style={{ background: theme.gradient, backgroundColor: theme.bgColor }}>
-                            {theme.bgColor ? <div className={`w-full h-full ${theme.bgColor} flex items-center justify-center ${isPixelTheme ? "" : "rounded-lg"}`}><Icon className={`w-5 h-5 ${theme.iconColor}`} /></div> : <Icon className={`w-5 h-5 ${theme.iconColor}`} />}
-                          </div>
-                          <p className={`font-medium ${isPixelTheme ? "text-[6px]" : "text-xs"}`}>{theme.name}</p>
-                        </motion.button>
-                      );
-                    })}
-                  </div>
-                </div>
-
+                {/* Discoverability Section */}
                 <div className="mt-6">
-                  <h4 className={`font-medium mb-3 flex items-center gap-2 ${isPixelTheme ? "text-[10px]" : "text-sm"}`}><Search className={`${isPixelTheme ? "w-3 h-3" : "w-4 h-4"}`} /> Who can find you</h4>
+                  <h4
+                    className="text-[10px] text-white/40 uppercase tracking-[0.2em] mb-3 flex items-center gap-2"
+                    style={{ fontFamily: "'Space Mono', monospace" }}
+                  >
+                    <Search className="w-3 h-3" /> Discoverability
+                  </h4>
                   <div className="space-y-2">
                     {[
-                      { value: "everyone" as const, label: "Everyone", description: "Anyone can search for you" },
-                      { value: "friends_of_friends" as const, label: "Friends of friends", description: "Only mutual connections" },
-                      { value: "nobody" as const, label: "Nobody", description: "Only existing friends can see you" },
+                      { value: "everyone" as const, label: "EVERYONE", description: "Anyone can search for you" },
+                      { value: "friends_of_friends" as const, label: "MUTUAL_ONLY", description: "Only mutual connections" },
+                      { value: "nobody" as const, label: "HIDDEN", description: "Only existing friends can see you" },
                     ].map((option) => (
                       <button
                         key={option.value}
                         onClick={async () => { setDiscoverableBy(option.value); await supabase.from('profiles').upsert({ user_id: user?.id, discoverable_by: option.value }, { onConflict: 'user_id' }); }}
-                        className={`w-full flex items-center justify-between p-3 border-2 transition-all ${discoverableBy === option.value ? "border-primary bg-secondary" : "border-border bg-card"} ${isPixelTheme ? "" : "rounded-xl"}`}
-                        style={{ borderRadius }}
+                        className={`w-full flex items-center justify-between p-3 border transition-all ${
+                          discoverableBy === option.value
+                            ? "border-white bg-white/10"
+                            : "border-white/10 bg-transparent hover:border-white/30"
+                        }`}
                       >
-                        <div className="text-left"><p className={`font-medium ${isPixelTheme ? "text-[8px]" : "text-sm"}`}>{option.label}</p><p className={`text-muted-foreground ${isPixelTheme ? "text-[6px]" : "text-xs"}`}>{option.description}</p></div>
-                        {discoverableBy === option.value && <Check className={`${isPixelTheme ? "w-3 h-3" : "w-4 h-4"} text-primary`} />}
+                        <div className="text-left">
+                          <p className="text-white text-sm" style={{ fontFamily: "'Space Mono', monospace" }}>
+                            {option.label}
+                          </p>
+                          <p className="text-white/40 text-xs">{option.description}</p>
+                        </div>
+                        {discoverableBy === option.value && <Check className="w-4 h-4 text-white" />}
                       </button>
                     ))}
                   </div>
                 </div>
 
+                {/* Privacy Section */}
                 <div className="mt-6">
-                  <h4 className={`font-medium mb-3 flex items-center gap-2 ${isPixelTheme ? "text-[10px]" : "text-sm"}`}><Eye className={`${isPixelTheme ? "w-3 h-3" : "w-4 h-4"}`} /> Friends can see</h4>
+                  <h4
+                    className="text-[10px] text-white/40 uppercase tracking-[0.2em] mb-3 flex items-center gap-2"
+                    style={{ fontFamily: "'Space Mono', monospace" }}
+                  >
+                    <Eye className="w-3 h-3" /> Privacy_Settings
+                  </h4>
                   <div className="space-y-3">
                     {privacyOptions.map((option) => {
                       const Icon = option.icon;
                       return (
-                        <div key={option.key} className={`flex items-center justify-between p-3 bg-secondary ${isPixelTheme ? "" : "rounded-xl"}`} style={{ borderRadius }}>
-                          <div className="flex items-center gap-3"><Icon className={`${isPixelTheme ? "w-3 h-3" : "w-4 h-4"} text-muted-foreground`} /><span className={`${isPixelTheme ? "text-[8px]" : "text-sm"}`}>{option.label}</span></div>
+                        <div key={option.key} className="flex items-center justify-between p-3 bg-white/5 border border-white/10">
+                          <div className="flex items-center gap-3">
+                            <Icon className="w-4 h-4 text-white/40" />
+                            <span className="text-white text-sm" style={{ fontFamily: "'Space Mono', monospace" }}>
+                              {option.label}
+                            </span>
+                          </div>
                           <Switch checked={privacy[option.key]} onCheckedChange={(checked) => handlePrivacyChange(option.key, checked)} />
                         </div>
                       );
@@ -477,60 +505,76 @@ const SettingsSheet = ({
                   </div>
                 </div>
 
+                {/* Notifications Section */}
                 <div className="mt-6">
-                  <h4 className={`font-medium mb-3 flex items-center gap-2 ${isPixelTheme ? "text-[10px]" : "text-sm"}`}><BellRing className={`${isPixelTheme ? "w-3 h-3" : "w-4 h-4"}`} /> Notifications</h4>
+                  <h4
+                    className="text-[10px] text-white/40 uppercase tracking-[0.2em] mb-3 flex items-center gap-2"
+                    style={{ fontFamily: "'Space Mono', monospace" }}
+                  >
+                    <BellRing className="w-3 h-3" /> Notifications
+                  </h4>
                   {pushNotifications.isSupported ? (
                     <div className="space-y-3">
-                      <div className={`flex items-center justify-between p-3 bg-secondary ${isPixelTheme ? "" : "rounded-xl"}`} style={{ borderRadius }}>
-                        <div className="flex items-center gap-3"><Bell className={`${isPixelTheme ? "w-3 h-3" : "w-4 h-4"} text-muted-foreground`} /><div><span className={`${isPixelTheme ? "text-[8px]" : "text-sm"}`}>Activity & Daily Reminders</span><p className={`text-muted-foreground ${isPixelTheme ? "text-[6px]" : "text-xs"}`}>Get notified about likes, comments, and your 9 PM journal</p></div></div>
+                      <div className="flex items-center justify-between p-3 bg-white/5 border border-white/10">
+                        <div className="flex items-center gap-3">
+                          <Bell className="w-4 h-4 text-white/40" />
+                          <div>
+                            <span className="text-white text-sm" style={{ fontFamily: "'Space Mono', monospace" }}>
+                              Activity_Alerts
+                            </span>
+                            <p className="text-white/40 text-xs">Likes, comments, and 9 PM journal</p>
+                          </div>
+                        </div>
                         <Switch checked={pushNotifications.isSubscribed} onCheckedChange={handleNotificationToggle} />
                       </div>
-                      
-                      {/* 🔥 FIXED BUTTON: Uses the new handleTestNotification function */}
+
                       {pushNotifications.isSubscribed && (
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={handleTestNotification} 
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleTestNotification}
                           disabled={isSendingTest}
-                          className={`w-full ${isPixelTheme ? "text-xs" : ""}`} 
-                          style={{ borderRadius }}
+                          className="w-full bg-transparent border-white/20 text-white hover:bg-white/10"
+                          style={{ fontFamily: "'Space Mono', monospace" }}
                         >
-                          {isSendingTest ? "Sending..." : "Send test notification"}
+                          {isSendingTest ? "Sending..." : "Send_Test_Notification"}
                         </Button>
                       )}
                     </div>
                   ) : (
-                    <div className={`p-3 bg-secondary text-center ${isPixelTheme ? "" : "rounded-xl"}`} style={{ borderRadius }}>
-                      <BellOff className={`${isPixelTheme ? "w-4 h-4" : "w-5 h-5"} mx-auto mb-2 text-muted-foreground`} />
-                      <p className={`text-muted-foreground ${isPixelTheme ? "text-[8px]" : "text-sm"}`}>Notifications not supported on this device</p>
+                    <div className="p-3 bg-white/5 border border-white/10 text-center">
+                      <BellOff className="w-5 h-5 mx-auto mb-2 text-white/40" />
+                      <p className="text-white/40 text-sm" style={{ fontFamily: "'Space Mono', monospace" }}>
+                        Notifications not supported
+                      </p>
                     </div>
                   )}
                 </div>
 
                 {/* Private Journal PIN Section */}
                 <div className="mt-6">
-                  <h4 className={`font-medium mb-3 flex items-center gap-2 ${isPixelTheme ? "text-[10px]" : "text-sm"}`}>
-                    <BookOpen className={`${isPixelTheme ? "w-3 h-3" : "w-4 h-4"}`} /> Private Journal
+                  <h4
+                    className="text-[10px] text-white/40 uppercase tracking-[0.2em] mb-3 flex items-center gap-2"
+                    style={{ fontFamily: "'Space Mono', monospace" }}
+                  >
+                    <BookOpen className="w-3 h-3" /> Private_Journal
                   </h4>
-                  <div className={`p-4 bg-secondary ${isPixelTheme ? "" : "rounded-xl"}`} style={{ borderRadius }}>
+                  <div className="p-4 bg-white/5 border border-white/10">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 bg-primary/10 flex items-center justify-center ${isPixelTheme ? "" : "rounded-full"}`}>
+                        <div className="w-10 h-10 bg-white/10 flex items-center justify-center">
                           {journalPin.hasPin ? (
-                            <Lock className={`${isPixelTheme ? "w-4 h-4" : "w-5 h-5"} text-primary`} />
+                            <Lock className="w-5 h-5 text-green-500" />
                           ) : (
-                            <KeyRound className={`${isPixelTheme ? "w-4 h-4" : "w-5 h-5"} text-muted-foreground`} />
+                            <KeyRound className="w-5 h-5 text-white/40" />
                           )}
                         </div>
                         <div>
-                          <p className={`font-medium ${isPixelTheme ? "text-[8px]" : "text-sm"}`}>
-                            {journalPin.hasPin ? "PIN Protected" : "No PIN Set"}
+                          <p className="text-white text-sm" style={{ fontFamily: "'Space Mono', monospace" }}>
+                            {journalPin.hasPin ? "PIN_ACTIVE" : "PIN_INACTIVE"}
                           </p>
-                          <p className={`text-muted-foreground ${isPixelTheme ? "text-[6px]" : "text-xs"}`}>
-                            {journalPin.hasPin
-                              ? "Your private journal is secured"
-                              : "Set a PIN to protect your journal"}
+                          <p className="text-white/40 text-xs">
+                            {journalPin.hasPin ? "Journal is secured" : "Set a PIN to protect"}
                           </p>
                         </div>
                       </div>
@@ -541,43 +585,72 @@ const SettingsSheet = ({
                           setJournalPinMode(journalPin.hasPin ? "change" : "setup");
                           setShowJournalPinModal(true);
                         }}
-                        className={`${isPixelTheme ? "text-[8px]" : ""}`}
-                        style={{ borderRadius }}
+                        className="bg-transparent border-white/20 text-white hover:bg-white/10"
+                        style={{ fontFamily: "'Space Mono', monospace" }}
                       >
-                        {journalPin.hasPin ? "Change" : "Set PIN"}
+                        {journalPin.hasPin ? "Change" : "Set_PIN"}
                       </Button>
                     </div>
                   </div>
                 </div>
 
+                {/* Install App Section */}
                 <div className="mt-6">
-                  <h4 className={`font-medium mb-3 flex items-center gap-2 ${isPixelTheme ? "text-[10px]" : "text-sm"}`}><Smartphone className={`${isPixelTheme ? "w-3 h-3" : "w-4 h-4"}`} /> Install App</h4>
-                  <button onClick={() => setShowPWATutorial(true)} className={`w-full flex items-center justify-between p-4 bg-gradient-to-r from-primary/20 to-primary/10 border-2 border-primary/30 ${isPixelTheme ? "" : "rounded-xl"}`} style={{ borderRadius }}>
-                    <div className="text-left"><p className={`font-medium ${isPixelTheme ? "text-[8px]" : "text-sm"}`}>Add to Home Screen</p><p className={`text-muted-foreground ${isPixelTheme ? "text-[6px]" : "text-xs"}`}>Install Roz for quick access</p></div>
-                    <Smartphone className={`${isPixelTheme ? "w-4 h-4" : "w-5 h-5"} text-primary`} />
+                  <h4
+                    className="text-[10px] text-white/40 uppercase tracking-[0.2em] mb-3 flex items-center gap-2"
+                    style={{ fontFamily: "'Space Mono', monospace" }}
+                  >
+                    <Smartphone className="w-3 h-3" /> Install_App
+                  </h4>
+                  <button
+                    onClick={() => setShowPWATutorial(true)}
+                    className="w-full flex items-center justify-between p-4 bg-white/5 border border-white/20 hover:border-white/40 transition-colors"
+                  >
+                    <div className="text-left">
+                      <p className="text-white text-sm" style={{ fontFamily: "'Space Mono', monospace" }}>
+                        Add_to_Home_Screen
+                      </p>
+                      <p className="text-white/40 text-xs">Install ROZ for quick access</p>
+                    </div>
+                    <Smartphone className="w-5 h-5 text-white/60" />
                   </button>
                 </div>
 
+                {/* Feedback Section */}
                 <div className="mt-6">
-                  <h4 className={`font-medium mb-3 flex items-center gap-2 ${isPixelTheme ? "text-[10px]" : "text-sm"}`}><MessageSquareHeart className={`${isPixelTheme ? "w-3 h-3" : "w-4 h-4"}`} /> Feedback</h4>
-                  <button onClick={() => setShowFeedback(true)} className={`w-full flex items-center justify-between p-4 bg-secondary hover:bg-secondary/80 transition-colors ${isPixelTheme ? "" : "rounded-xl"}`} style={{ borderRadius }}>
-                    <div className="text-left"><p className={`font-medium ${isPixelTheme ? "text-[8px]" : "text-sm"}`}>Send Feedback</p><p className={`text-muted-foreground ${isPixelTheme ? "text-[6px]" : "text-xs"}`}>Help us improve with your thoughts</p></div>
-                    <MessageSquareHeart className={`${isPixelTheme ? "w-4 h-4" : "w-5 h-5"} text-primary`} />
+                  <h4
+                    className="text-[10px] text-white/40 uppercase tracking-[0.2em] mb-3 flex items-center gap-2"
+                    style={{ fontFamily: "'Space Mono', monospace" }}
+                  >
+                    <MessageSquareHeart className="w-3 h-3" /> Feedback
+                  </h4>
+                  <button
+                    onClick={() => setShowFeedback(true)}
+                    className="w-full flex items-center justify-between p-4 bg-white/5 border border-white/10 hover:border-white/30 transition-colors"
+                  >
+                    <div className="text-left">
+                      <p className="text-white text-sm" style={{ fontFamily: "'Space Mono', monospace" }}>
+                        Send_Feedback
+                      </p>
+                      <p className="text-white/40 text-xs">Help us improve</p>
+                    </div>
+                    <MessageSquareHeart className="w-5 h-5 text-white/60" />
                   </button>
                 </div>
 
-                {/* Red Logout Button */}
+                {/* Logout Section */}
                 <div className="mt-6">
                   <button
                     onClick={handleLogout}
-                    className={`w-full flex items-center justify-between p-4 bg-red-500/10 hover:bg-red-500/20 border-2 border-red-500/20 transition-colors ${isPixelTheme ? "" : "rounded-xl"}`}
-                    style={{ borderRadius }}
+                    className="w-full flex items-center justify-between p-4 bg-red-500/10 border border-red-500/30 hover:bg-red-500/20 transition-colors"
                   >
                     <div className="text-left">
-                      <p className={`font-medium text-red-500 ${isPixelTheme ? "text-[8px]" : "text-sm"}`}>Log Out</p>
-                      <p className={`text-red-500/60 ${isPixelTheme ? "text-[6px]" : "text-xs"}`}>Sign out of your account</p>
+                      <p className="text-red-500 text-sm" style={{ fontFamily: "'Space Mono', monospace" }}>
+                        LOGOUT
+                      </p>
+                      <p className="text-red-500/60 text-xs">Sign out of your account</p>
                     </div>
-                    <LogOut className={`${isPixelTheme ? "w-4 h-4" : "w-5 h-5"} text-red-500`} />
+                    <LogOut className="w-5 h-5 text-red-500" />
                   </button>
                 </div>
               </>
@@ -586,9 +659,9 @@ const SettingsSheet = ({
         </motion.div>
       )}
 
-      {imageToCrop && <ImageCropper image={imageToCrop} onCropComplete={handleCropComplete} onCancel={handleCropCancel} isPixelTheme={isPixelTheme} />}
-      <PWAInstallTutorial isOpen={showPWATutorial} onClose={() => setShowPWATutorial(false)} isPixelTheme={isPixelTheme} />
-      <FeedbackSheet isOpen={showFeedback} onClose={() => setShowFeedback(false)} isPixelTheme={isPixelTheme} />
+      {imageToCrop && <ImageCropper image={imageToCrop} onCropComplete={handleCropComplete} onCancel={handleCropCancel} />}
+      <PWAInstallTutorial isOpen={showPWATutorial} onClose={() => setShowPWATutorial(false)} />
+      <FeedbackSheet isOpen={showFeedback} onClose={() => setShowFeedback(false)} />
       <PinEntryModal
         isOpen={showJournalPinModal}
         onClose={() => setShowJournalPinModal(false)}
@@ -600,7 +673,6 @@ const SettingsSheet = ({
         verifyPin={journalPin.verifyPin}
         setupPin={journalPin.setupPin}
         changePin={journalPin.changePin}
-        isPixelTheme={isPixelTheme}
       />
     </AnimatePresence>
   );

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Flame, Sun, TrendingUp, PieChart, Sparkles, Camera, Edit2, Save, X, User, Clock, Activity } from "lucide-react";
+import { Flame, Sun, TrendingUp, PieChart, Sparkles, Camera, Edit2, Save, X, User, Clock, Activity, Settings } from "lucide-react";
 import OnThisDay from "./OnThisDay";
 import TagActivityChart from "./TagActivityChart";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { Textarea } from "./ui/textarea";
+import ZineProfileView from "./ZineProfileView";
 
 interface Stats {
   bestStreak: number;
@@ -29,7 +30,7 @@ interface UserProfile {
 }
 
 interface StatsTabProps {
-  isPixelTheme?: boolean;
+  onSettingsClick?: () => void;
 }
 
 const getMoodColor = (rating: number): string => {
@@ -40,7 +41,7 @@ const getMoodColor = (rating: number): string => {
   return "hsl(210, 80%, 55%)";
 };
 
-const StatsTab = ({ isPixelTheme = false }: StatsTabProps) => {
+const StatsTab = ({ onSettingsClick }: StatsTabProps) => {
   const [stats, setStats] = useState<Stats>({
     bestStreak: 0,
     currentStreak: 0,
@@ -261,269 +262,40 @@ const StatsTab = ({ isPixelTheme = false }: StatsTabProps) => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[calc(100vh-120px)]">
+      <div className="flex items-center justify-center min-h-[calc(100vh-120px)] bg-[#f5f0e8]">
         <motion.div
           animate={{ rotate: 360 }}
           transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-        >
-          {isPixelTheme ? (
-            <PixelStar className="w-8 h-8 text-primary" />
-          ) : (
-            <Sparkles className="w-8 h-8 text-primary" />
-          )}
-        </motion.div>
+          className="w-8 h-8 border-2 border-black border-t-transparent"
+        />
       </div>
     );
   }
 
-  const FlameIcon = isPixelTheme ? PixelFlame : Flame;
-  const SunIcon = isPixelTheme ? PixelStar : Sun;
-  const TrendIcon = isPixelTheme ? PixelChart : TrendingUp;
-
-  const statCards = [
-    {
-      icon: FlameIcon,
-      label: "Current Streak",
-      value: `${stats.currentStreak} days`,
-      color: "hsl(30, 80%, 55%)",
-      description: "Keep the momentum! 🔥",
-    },
-    {
-      icon: FlameIcon,
-      label: "Best Streak",
-      value: `${stats.bestStreak} days`,
-      color: "hsl(0, 70%, 50%)",
-      description: "Your personal best!",
-    },
-    {
-      icon: SunIcon,
-      label: "Sunny Days",
-      value: `${stats.totalGoodDays}`,
-      color: "hsl(50, 90%, 55%)",
-      description: `${stats.totalEntries > 0 ? Math.round((stats.totalGoodDays / stats.totalEntries) * 100) : 0}% of all days ☀️`,
-    },
-    {
-      icon: TrendIcon,
-      label: "Average Weather",
-      value: stats.yearlyAverage.toFixed(1),
-      color: getMoodColor(Math.round(stats.yearlyAverage)),
-      description: `From ${stats.totalEntries} check-ins`,
-    },
-  ];
-
   return (
-    <div className="px-4 py-6 pb-28">
-      
-      {/* 1. NEW PROFILE HEADER */}
-      <div className="mb-8 flex flex-col items-center text-center">
-        {/* Avatar Container */}
-        <motion.div 
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          className="relative mb-4"
-        >
-          <div className={`w-24 h-24 bg-secondary overflow-hidden border-4 border-background shadow-xl ${
-            isPixelTheme ? "" : "rounded-full"
-          }`}>
-            {profile?.avatar_url ? (
-              <img src={profile.avatar_url} alt="Profile" className="w-full h-full object-cover" />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                <User className="w-10 h-10" />
-              </div>
-            )}
-          </div>
+    <div className="pb-28">
+      {/* Zine Profile View - Dossier style */}
+      <ZineProfileView
+        displayName={profile?.display_name || null}
+        username={profile?.username || null}
+        avatarUrl={profile?.avatar_url || null}
+        currentStreak={stats.currentStreak}
+        bestStreak={stats.bestStreak}
+        totalGoodDays={stats.totalGoodDays}
+        totalEntries={stats.totalEntries}
+        yearlyAverage={stats.yearlyAverage}
+        onEditClick={() => setIsEditing(true)}
+        onSettingsClick={onSettingsClick || (() => {})}
+      />
 
-          {/* 🔥 STREAK BADGE: Positioned Absolute to the RIGHT of the Avatar */}
-          <div className={`absolute top-1/2 left-full ml-3 -translate-y-1/2 flex items-center gap-1 px-2.5 py-1 bg-orange-100 text-orange-600 border border-orange-200 shadow-sm whitespace-nowrap ${
-               isPixelTheme ? "text-xs border-2" : "text-sm rounded-full"
-             }`}>
-               <Flame className="w-3.5 h-3.5 fill-orange-500" /> 
-               <span className="font-bold">{stats.currentStreak}</span>
-          </div>
-
-          {/* Edit Button */}
-          <button 
-            onClick={() => setIsEditing(true)}
-            className={`absolute bottom-0 right-0 p-2 bg-primary text-primary-foreground shadow-lg hover:scale-110 transition-transform ${
-              isPixelTheme ? "" : "rounded-full"
-            }`}
-          >
-            <Edit2 className="w-4 h-4" />
-          </button>
-        </motion.div>
-
-        {/* Name & Bio - Centered Below */}
-        <motion.div
-           initial={{ y: 10, opacity: 0 }}
-           animate={{ y: 0, opacity: 1 }}
-           transition={{ delay: 0.1 }}
-           className="w-full max-w-xs"
-        >
-          <h1 className={`font-bold mb-1 ${isPixelTheme ? "text-lg" : "text-2xl"}`}>
-            {profile?.display_name || "New User"}
-          </h1>
-          
-          <p className={`text-muted-foreground mb-3 ${isPixelTheme ? "text-[10px]" : "text-sm"}`}>
-            @{profile?.username || "username"}
-          </p>
-
-          {profile?.bio && (
-            <p className={`text-muted-foreground/80 mb-4 px-4 ${isPixelTheme ? "text-[10px]" : "text-sm"}`}>
-              {profile.bio}
-            </p>
-          )}
-
-          <Button 
-             variant="outline" 
-             size="sm"
-             onClick={() => setIsEditing(true)}
-             className={`mx-auto flex ${isPixelTheme ? "text-xs h-7" : "rounded-full h-8"}`}
-          >
-            Edit Profile
-          </Button>
-        </motion.div>
-      </div>
-
-      <div className={`h-px w-full bg-border mb-8 ${isPixelTheme ? "" : "opacity-50"}`} />
-
-      {/* 2. EXISTING STATS CONTENT */}
-      {stats.totalEntries === 0 ? (
-        <div className="flex flex-col items-center justify-center py-10 text-center">
-           <motion.div
-             initial={{ scale: 0 }}
-             animate={{ scale: 1 }}
-             className={`w-20 h-20 bg-secondary flex items-center justify-center mb-4 ${isPixelTheme ? "" : "rounded-full"}`}
-           >
-             {isPixelTheme ? (
-               <PixelChart className="w-10 h-10 text-muted-foreground" />
-             ) : (
-               <PieChart className="w-10 h-10 text-muted-foreground" />
-             )}
-           </motion.div>
-           <h2 className={`font-bold mb-2 ${isPixelTheme ? "text-sm" : "text-lg"}`}>No stats yet!</h2>
-           <p className={`text-muted-foreground ${isPixelTheme ? "text-xs" : "text-sm"}`}>
-             Start logging your moods to unlock your insights.
-           </p>
-         </div>
-      ) : (
-        <>
-          <motion.h3 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className={`font-semibold mb-4 px-1 ${isPixelTheme ? "text-xs" : "text-lg"}`}
-          >
-            Insights
-          </motion.h3>
-
-          <div className="grid grid-cols-2 gap-4 mb-8">
-            {statCards.map((stat, index) => {
-              const Icon = stat.icon;
-              return (
-                <motion.div
-                  key={stat.label}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  className={`bg-card border border-border p-5 relative overflow-hidden ${isPixelTheme ? "" : "rounded-2xl"}`}
-                >
-                  <div 
-                    className={`absolute top-0 right-0 w-20 h-20 blur-3xl opacity-30 ${isPixelTheme ? "" : "rounded-full"}`}
-                    style={{ backgroundColor: stat.color }}
-                  />
-                  <Icon 
-                    className="w-8 h-8 mb-3" 
-                    style={{ color: stat.color }}
-                  />
-                  <p className={`text-muted-foreground font-medium uppercase tracking-wide ${isPixelTheme ? "text-[6px]" : "text-xs"}`}>
-                    {stat.label}
-                  </p>
-                  <p className={`font-bold mt-1 ${isPixelTheme ? "text-sm" : "text-2xl"}`} style={{ color: stat.color }}>
-                    {stat.value}
-                  </p>
-                  <p className={`text-muted-foreground mt-1 ${isPixelTheme ? "text-[6px]" : "text-xs"}`}>
-                    {stat.description}
-                  </p>
-                </motion.div>
-              );
-            })}
-          </div>
-
-          {/* Time Travel / On This Day */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="mb-8"
-          >
-            <OnThisDay isPixelTheme={isPixelTheme} />
-          </motion.div>
-
-          {/* Activity Insights / Tag Correlation */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
-            className="mb-8"
-          >
-            <TagActivityChart isPixelTheme={isPixelTheme} />
-          </motion.div>
-
-          {stats.moodDistribution.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.4 }}
-              className={`bg-card border border-border p-6 ${isPixelTheme ? "" : "rounded-2xl"}`}
-            >
-              <h3 className={`font-semibold mb-4 text-center ${isPixelTheme ? "text-xs" : "text-lg"}`}>Weather Patterns</h3>
-              
-              <div className="h-48 mb-4">
-                <ResponsiveContainer width="100%" height="100%">
-                  <RechartsPie>
-                    <Pie
-                      data={stats.moodDistribution}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={50}
-                      outerRadius={80}
-                      paddingAngle={3}
-                      dataKey="value"
-                    >
-                      {stats.moodDistribution.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                  </RechartsPie>
-                </ResponsiveContainer>
-              </div>
-
-              <div className="flex flex-wrap justify-center gap-3">
-                {stats.moodDistribution.map((item) => (
-                  <div key={item.name} className="flex items-center gap-2">
-                    <div 
-                      className={`w-3 h-3 ${isPixelTheme ? "" : "rounded-full"}`}
-                      style={{ backgroundColor: item.color }}
-                    />
-                    <span className={`text-muted-foreground ${isPixelTheme ? "text-[8px]" : "text-sm"}`}>
-                      {item.name} ({item.value})
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-          )}
-        </>
-      )}
-
-      {/* 3. EDIT PROFILE MODAL (OVERLAY) */}
+      {/* Edit Profile Modal - Zine style */}
       <AnimatePresence>
         {isEditing && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-6"
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-6"
             onClick={() => setIsEditing(false)}
           >
             <motion.div
@@ -531,28 +303,31 @@ const StatsTab = ({ isPixelTheme = false }: StatsTabProps) => {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className={`bg-card border border-border p-6 w-full max-w-sm shadow-2xl ${
-                isPixelTheme ? "border-2" : "rounded-3xl"
-              }`}
+              className="bg-[#f5f0e8] border-2 border-black/10 p-6 w-full max-w-sm shadow-2xl"
             >
               <div className="flex items-center justify-between mb-6">
-                <h3 className={`font-semibold ${isPixelTheme ? "text-sm" : "text-lg"}`}>Edit Profile</h3>
-                <button 
-                  onClick={() => setIsEditing(false)}
-                  className={`p-2 bg-secondary ${isPixelTheme ? "" : "rounded-full"}`}
+                <h3
+                  className="font-bold text-black uppercase tracking-wide"
+                  style={{ fontFamily: "'Space Grotesk', sans-serif" }}
                 >
-                  <X className="w-5 h-5" />
+                  Edit Profile
+                </h3>
+                <button
+                  onClick={() => setIsEditing(false)}
+                  className="p-2 bg-black/10 hover:bg-black/20 transition-colors"
+                >
+                  <X className="w-5 h-5 text-black" />
                 </button>
               </div>
 
               <div className="space-y-4">
                 {/* Avatar Upload */}
                 <div className="flex flex-col items-center gap-3">
-                   <div className={`w-20 h-20 bg-secondary overflow-hidden ${isPixelTheme ? "" : "rounded-full"}`}>
+                   <div className="w-20 h-20 bg-white border-2 border-black/10 overflow-hidden">
                       {editForm.avatar_url ? (
-                        <img src={editForm.avatar_url} className="w-full h-full object-cover" />
+                        <img src={editForm.avatar_url} className="w-full h-full object-cover grayscale" />
                       ) : (
-                        <User className="w-8 h-8 m-auto mt-6 text-muted-foreground" />
+                        <User className="w-8 h-8 m-auto mt-6 text-black/30" />
                       )}
                    </div>
                    <div>
@@ -564,9 +339,10 @@ const StatsTab = ({ isPixelTheme = false }: StatsTabProps) => {
                        onChange={handleAvatarUpload}
                        disabled={uploading}
                      />
-                     <label 
+                     <label
                        htmlFor="avatar-upload"
-                       className={`cursor-pointer px-4 py-2 bg-secondary text-foreground text-xs font-medium hover:bg-secondary/80 flex items-center gap-2 ${isPixelTheme ? "" : "rounded-full"}`}
+                       className="cursor-pointer px-4 py-2 bg-black text-white text-xs font-medium hover:bg-black/80 flex items-center gap-2"
+                       style={{ fontFamily: "'Space Mono', monospace" }}
                      >
                         <Camera className="w-3.5 h-3.5" />
                         {uploading ? "Uploading..." : "Change Photo"}
@@ -576,37 +352,53 @@ const StatsTab = ({ isPixelTheme = false }: StatsTabProps) => {
 
                 <div className="space-y-3">
                    <div>
-                     <label className="text-xs text-muted-foreground ml-1 mb-1 block">Display Name</label>
-                     <Input 
+                     <label
+                       className="text-[10px] text-black/40 uppercase tracking-wider ml-1 mb-1 block"
+                       style={{ fontFamily: "'Space Mono', monospace" }}
+                     >
+                       Display Name
+                     </label>
+                     <Input
                        value={editForm.display_name || ""}
                        onChange={(e) => setEditForm({...editForm, display_name: e.target.value})}
-                       className={isPixelTheme ? "text-xs" : ""}
-                     />
-                   </div>
-                   
-                   <div>
-                     <label className="text-xs text-muted-foreground ml-1 mb-1 block">Username</label>
-                     <Input 
-                       value={editForm.username || ""}
-                       onChange={(e) => setEditForm({...editForm, username: e.target.value})}
-                       className={isPixelTheme ? "text-xs" : ""}
+                       className="bg-white border-2 border-black/10 text-black"
                      />
                    </div>
 
                    <div>
-                     <label className="text-xs text-muted-foreground ml-1 mb-1 block">Bio</label>
-                     <Textarea 
+                     <label
+                       className="text-[10px] text-black/40 uppercase tracking-wider ml-1 mb-1 block"
+                       style={{ fontFamily: "'Space Mono', monospace" }}
+                     >
+                       Username
+                     </label>
+                     <Input
+                       value={editForm.username || ""}
+                       onChange={(e) => setEditForm({...editForm, username: e.target.value})}
+                       className="bg-white border-2 border-black/10 text-black"
+                     />
+                   </div>
+
+                   <div>
+                     <label
+                       className="text-[10px] text-black/40 uppercase tracking-wider ml-1 mb-1 block"
+                       style={{ fontFamily: "'Space Mono', monospace" }}
+                     >
+                       Bio
+                     </label>
+                     <Textarea
                        value={editForm.bio || ""}
                        onChange={(e) => setEditForm({...editForm, bio: e.target.value})}
-                       className={isPixelTheme ? "text-xs" : "resize-none"}
+                       className="bg-white border-2 border-black/10 text-black resize-none"
                        maxLength={150}
                      />
                    </div>
                 </div>
 
-                <Button 
-                   onClick={handleUpdateProfile} 
-                   className={`w-full gap-2 ${isPixelTheme ? "text-xs" : "rounded-full"}`}
+                <Button
+                   onClick={handleUpdateProfile}
+                   className="w-full gap-2 bg-black text-white hover:bg-black/80"
+                   style={{ fontFamily: "'Space Mono', monospace" }}
                 >
                   <Save className="w-4 h-4" /> Save Changes
                 </Button>

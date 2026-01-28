@@ -9,9 +9,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { formatDistanceToNow, format } from "date-fns";
 import VoiceRecorder from "./VoiceRecorder";
 import VoiceMessage from "./VoiceMessage";
+import ZineConversationCard from "./ZineConversationCard";
 
 interface MessagesTabProps {
-  isPixelTheme?: boolean;
   onFriendClick?: (friendId: string) => void;
 }
 
@@ -54,7 +54,7 @@ interface Friend {
   avatar_url: string | null;
 }
 
-const MessagesTab = ({ isPixelTheme = false, onFriendClick }: MessagesTabProps) => {
+const MessagesTab = ({ onFriendClick }: MessagesTabProps) => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedFriend, setSelectedFriend] = useState<{
     id: string;
@@ -433,52 +433,56 @@ const MessagesTab = ({ isPixelTheme = false, onFriendClick }: MessagesTabProps) 
     return name.includes(searchQuery.toLowerCase());
   });
 
-  const borderRadius = isPixelTheme ? "0" : undefined;
-
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[50vh]">
+      <div className="flex items-center justify-center min-h-[50vh] bg-[#f5f0e8]">
         <motion.div
           animate={{ rotate: 360 }}
           transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-          className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full"
+          className="w-8 h-8 border-2 border-black border-t-transparent"
         />
       </div>
     );
   }
 
-  // Conversation view
+  // Conversation view - Brutalist cream style
   if (selectedFriend) {
     return (
-      <div className="flex flex-col h-full max-h-[calc(100vh-200px)]">
+      <div className="flex flex-col h-full max-h-[calc(100vh-200px)] bg-[#f5f0e8]">
         {/* Header */}
-        <div className={`flex-shrink-0 flex items-center gap-3 p-4 border-b border-border bg-card ${isPixelTheme ? "" : "rounded-t-xl"}`}>
+        <div className="flex-shrink-0 flex items-center gap-3 p-4 border-b-2 border-black/10 bg-[#f5f0e8]">
           <button
             onClick={() => setSelectedFriend(null)}
-            className="p-2 hover:bg-secondary rounded-full transition-colors"
+            className="p-2 hover:bg-black/5 transition-colors"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="w-5 h-5 text-black" />
           </button>
           <button
             onClick={() => onFriendClick?.(selectedFriend.id)}
             className="flex items-center gap-3 flex-1"
           >
-            <Avatar className={isPixelTheme ? "rounded-none" : ""}>
+            <Avatar className="border-2 border-black/20">
               {selectedFriend.avatar && <AvatarImage src={selectedFriend.avatar} />}
-              <AvatarFallback>{selectedFriend.name[0]}</AvatarFallback>
+              <AvatarFallback className="bg-black text-white">{selectedFriend.name[0]}</AvatarFallback>
             </Avatar>
-            <span className={`font-semibold ${isPixelTheme ? "text-xs" : ""}`}>
+            <span
+              className="font-bold text-black uppercase tracking-wide"
+              style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+            >
               {selectedFriend.name}
             </span>
           </button>
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-background/50">
+        <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#f5f0e8]">
           {messages.length === 0 ? (
-            <div className="flex items-center justify-center h-full text-muted-foreground">
-              <p className={isPixelTheme ? "text-xs" : "text-sm"}>
-                No messages yet. Say hi! 👋
+            <div className="flex items-center justify-center h-full">
+              <p
+                className="text-black/40 text-sm"
+                style={{ fontFamily: "'Space Mono', monospace" }}
+              >
+                No messages yet. Say hi!
               </p>
             </div>
           ) : (
@@ -498,10 +502,9 @@ const MessagesTab = ({ isPixelTheme = false, onFriendClick }: MessagesTabProps) 
                     onClick={() => handleMessageTap(msg)}
                     className={`max-w-[75%] px-4 py-2 relative cursor-pointer select-none ${
                       isMine
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-card border border-border"
-                    } ${isPixelTheme ? "" : "rounded-2xl"}`}
-                    style={{ borderRadius }}
+                        ? "bg-black text-white"
+                        : "bg-white border-2 border-black/10 text-black"
+                    }`}
                     whileTap={{ scale: 0.98 }}
                   >
                     {/* Voice message or text */}
@@ -510,10 +513,12 @@ const MessagesTab = ({ isPixelTheme = false, onFriendClick }: MessagesTabProps) 
                         audioUrl={msg.voice_url}
                         duration={msg.voice_duration || 0}
                         isMine={isMine}
-                        isPixelTheme={isPixelTheme}
                       />
                     ) : (
-                      <p className={`break-words ${isPixelTheme ? "text-xs" : "text-sm"}`}>
+                      <p
+                        className="break-words text-sm"
+                        style={{ fontFamily: "'Space Mono', monospace" }}
+                      >
                         {msg.content}
                       </p>
                     )}
@@ -521,10 +526,7 @@ const MessagesTab = ({ isPixelTheme = false, onFriendClick }: MessagesTabProps) 
                     {/* Reactions badge */}
                     {hasReactions && (
                       <div
-                        className={`absolute -bottom-2 ${isMine ? 'left-2' : 'right-2'} flex items-center gap-0.5 px-1.5 py-0.5 bg-card border border-border shadow-sm ${
-                          isPixelTheme ? "" : "rounded-full"
-                        }`}
-                        style={{ borderRadius: isPixelTheme ? "0" : undefined }}
+                        className={`absolute -bottom-2 ${isMine ? 'left-2' : 'right-2'} flex items-center gap-0.5 px-1.5 py-0.5 bg-white border-2 border-black/10 shadow-sm`}
                       >
                         {msg.reactions?.map((r, i) => (
                           <span key={i} className="text-xs">{r.emoji}</span>
@@ -540,20 +542,24 @@ const MessagesTab = ({ isPixelTheme = false, onFriendClick }: MessagesTabProps) 
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
                         exit={{ opacity: 0, height: 0 }}
-                        className={`flex items-center gap-2 mt-1 ${
-                          isMine ? "flex-row-reverse" : ""
-                        }`}
+                        className={`flex items-center gap-2 mt-1 ${isMine ? "flex-row-reverse" : ""}`}
                       >
-                        <span className={`text-[10px] text-muted-foreground`}>
+                        <span
+                          className="text-[10px] text-black/40"
+                          style={{ fontFamily: "'Space Mono', monospace" }}
+                        >
                           {format(new Date(msg.created_at), 'MMM d, h:mm a')}
                         </span>
 
                         {/* Read/Delivered indicator for sent messages */}
                         {isMine && (
-                          <span className="flex items-center text-[10px] text-muted-foreground">
+                          <span
+                            className="flex items-center text-[10px] text-black/40"
+                            style={{ fontFamily: "'Space Mono', monospace" }}
+                          >
                             {msg.read_at ? (
                               <>
-                                <CheckCheck className="w-3 h-3 mr-0.5 text-primary" />
+                                <CheckCheck className="w-3 h-3 mr-0.5 text-black" />
                                 Read {format(new Date(msg.read_at), 'h:mm a')}
                               </>
                             ) : msg.delivered_at ? (
@@ -577,11 +583,11 @@ const MessagesTab = ({ isPixelTheme = false, onFriendClick }: MessagesTabProps) 
                   {!isExpanded && isMine && (
                     <div className="flex items-center mt-0.5">
                       {msg.read_at ? (
-                        <CheckCheck className="w-3 h-3 text-primary" />
+                        <CheckCheck className="w-3 h-3 text-black" />
                       ) : msg.delivered_at ? (
-                        <CheckCheck className="w-3 h-3 text-muted-foreground" />
+                        <CheckCheck className="w-3 h-3 text-black/40" />
                       ) : (
-                        <Check className="w-3 h-3 text-muted-foreground" />
+                        <Check className="w-3 h-3 text-black/40" />
                       )}
                     </div>
                   )}
@@ -593,14 +599,13 @@ const MessagesTab = ({ isPixelTheme = false, onFriendClick }: MessagesTabProps) 
         </div>
 
         {/* Input */}
-        <div className="flex-shrink-0 p-4 border-t border-border bg-card">
+        <div className="flex-shrink-0 p-4 border-t-2 border-black/10 bg-[#f5f0e8]">
           <AnimatePresence mode="wait">
             {isRecording ? (
               <VoiceRecorder
                 key="recorder"
                 onSend={handleSendVoice}
                 onCancel={() => setIsRecording(false)}
-                isPixelTheme={isPixelTheme}
               />
             ) : (
               <motion.div
@@ -620,18 +625,15 @@ const MessagesTab = ({ isPixelTheme = false, onFriendClick }: MessagesTabProps) 
                       handleSendMessage();
                     }
                   }}
-                  className={isPixelTheme ? "text-xs" : ""}
-                  style={{ borderRadius }}
+                  className="bg-white border-2 border-black/10 text-black placeholder:text-black/30"
+                  style={{ fontFamily: "'Space Mono', monospace" }}
                 />
 
                 {/* Mic button - show when no text */}
                 {!newMessage.trim() && (
                   <button
                     onClick={() => setIsRecording(true)}
-                    className={`p-2 bg-secondary text-foreground hover:bg-secondary/80 transition-colors ${
-                      isPixelTheme ? "" : "rounded-full"
-                    }`}
-                    style={{ borderRadius }}
+                    className="p-2 bg-black/10 text-black hover:bg-black/20 transition-colors"
                   >
                     <Mic className="w-4 h-4" />
                   </button>
@@ -641,10 +643,7 @@ const MessagesTab = ({ isPixelTheme = false, onFriendClick }: MessagesTabProps) 
                 <button
                   onClick={handleSendMessage}
                   disabled={!newMessage.trim() || sending}
-                  className={`p-2 bg-primary text-primary-foreground disabled:opacity-50 ${
-                    isPixelTheme ? "" : "rounded-full"
-                  } ${!newMessage.trim() ? "hidden" : ""}`}
-                  style={{ borderRadius }}
+                  className={`p-2 bg-black text-white disabled:opacity-50 ${!newMessage.trim() ? "hidden" : ""}`}
                 >
                   <Send className="w-4 h-4" />
                 </button>
@@ -656,101 +655,92 @@ const MessagesTab = ({ isPixelTheme = false, onFriendClick }: MessagesTabProps) 
     );
   }
 
-  // Conversations list
+  // Conversations list - Zine INBOX style
   return (
     <>
-      <div className="space-y-2 pb-20">
-        {/* Header with New Message Button */}
-        <div className="flex items-center justify-between mb-4 px-6">
-          <h2 className={`font-bold ${isPixelTheme ? "text-sm" : "text-lg"}`}>
-            Messages
-          </h2>
-          <button
-            onClick={() => setShowNewMessageModal(true)}
-            className={`p-2 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors ${
-              isPixelTheme ? "" : "rounded-full"
-            }`}
-            style={{ borderRadius }}
-          >
-            <MessageCirclePlus className="w-5 h-5" />
-          </button>
+      <div className="min-h-screen bg-[#f5f0e8] pb-28">
+        {/* Zine INBOX Header */}
+        <div className="px-6 pt-6 pb-4">
+          <div className="flex items-start justify-between">
+            <div>
+              <h1
+                className="text-6xl font-black text-black uppercase tracking-tighter"
+                style={{ fontFamily: "'Abril Fatface', serif" }}
+              >
+                INBOX
+              </h1>
+              <p
+                className="text-[10px] text-black/40 uppercase tracking-[0.2em] mt-1"
+                style={{ fontFamily: "'Space Mono', monospace" }}
+              >
+                {conversations.length} conversation{conversations.length !== 1 ? 's' : ''}
+              </p>
+            </div>
+            <button
+              onClick={() => setShowNewMessageModal(true)}
+              className="p-3 bg-black text-white hover:bg-black/80 transition-colors"
+            >
+              <MessageCirclePlus className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {conversations.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-muted-foreground px-6">
-            <Circle className="w-12 h-12 mb-3 opacity-20" />
-            <p className={isPixelTheme ? "text-xs" : "text-sm"}>No messages yet</p>
-            <p className={`${isPixelTheme ? "text-[10px]" : "text-xs"} mt-1 text-center`}>
-              Tap the + button to start a conversation!
+          <div className="flex flex-col items-center justify-center py-16 px-6">
+            <div
+              className="relative w-24 h-24 bg-white border-2 border-black/10 p-2 mb-6"
+              style={{ transform: "rotate(3deg)" }}
+            >
+              <div className="w-full h-full flex items-center justify-center">
+                <Circle className="w-8 h-8 text-black/20" />
+              </div>
+            </div>
+            <p
+              className="text-black/40 text-sm uppercase tracking-wider"
+              style={{ fontFamily: "'Space Mono', monospace" }}
+            >
+              No messages yet
+            </p>
+            <p
+              className="text-black/30 text-xs mt-2 italic"
+              style={{ fontFamily: "'Playfair Display', serif" }}
+            >
+              Tap + to start a conversation
             </p>
           </div>
         ) : (
-          <div className="px-6">
-            {conversations.map((conv) => (
-          <motion.button
-            key={conv.friend_id}
-            onClick={() =>
-              setSelectedFriend({
-                id: conv.friend_id,
-                name: conv.friend_name,
-                avatar: conv.friend_avatar
-              })
-            }
-            className={`w-full p-4 bg-card border border-border hover:bg-secondary/50 transition-colors text-left ${
-              isPixelTheme ? "" : "rounded-xl"
-            }`}
-            whileTap={{ scale: 0.98 }}
-          >
-            <div className="flex items-start gap-3">
-              <Avatar className={isPixelTheme ? "rounded-none" : ""}>
-                {conv.friend_avatar && <AvatarImage src={conv.friend_avatar} />}
-                <AvatarFallback>{conv.friend_name[0]}</AvatarFallback>
-              </Avatar>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between mb-1">
-                  <span className={`font-semibold ${isPixelTheme ? "text-xs" : "text-sm"}`}>
-                    {conv.friend_name}
-                  </span>
-                  <span className={`text-muted-foreground ${isPixelTheme ? "text-[8px]" : "text-xs"}`}>
-                    {formatDistanceToNow(new Date(conv.last_message_time), { addSuffix: true })}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <p
-                    className={`text-muted-foreground truncate ${
-                      isPixelTheme ? "text-[10px]" : "text-sm"
-                    } ${conv.unread_count > 0 ? "font-semibold" : ""}`}
-                  >
-                    {conv.is_sender ? "You: " : ""}
-                    {conv.last_message}
-                  </p>
-                  {conv.unread_count > 0 && (
-                    <span
-                      className={`ml-2 px-2 py-0.5 bg-primary text-primary-foreground font-bold ${
-                        isPixelTheme ? "text-[8px]" : "text-xs rounded-full"
-                      }`}
-                      style={{ borderRadius }}
-                    >
-                      {conv.unread_count}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-          </motion.button>
+          <div className="px-4 space-y-0">
+            {conversations.map((conv, index) => (
+              <ZineConversationCard
+                key={conv.friend_id}
+                friendName={conv.friend_name}
+                friendAvatar={conv.friend_avatar}
+                lastMessage={conv.last_message}
+                lastMessageTime={formatDistanceToNow(new Date(conv.last_message_time), { addSuffix: true })}
+                unreadCount={conv.unread_count}
+                isSender={conv.is_sender}
+                index={index}
+                onClick={() =>
+                  setSelectedFriend({
+                    id: conv.friend_id,
+                    name: conv.friend_name,
+                    avatar: conv.friend_avatar
+                  })
+                }
+              />
             ))}
           </div>
         )}
       </div>
 
-      {/* New Message Modal */}
+      {/* New Message Modal - Zine style */}
       <AnimatePresence>
         {showNewMessageModal && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center"
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center"
             onClick={() => setShowNewMessageModal(false)}
           >
             <motion.div
@@ -759,51 +749,61 @@ const MessagesTab = ({ isPixelTheme = false, onFriendClick }: MessagesTabProps) 
               exit={{ y: "100%", opacity: 0 }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
               onClick={(e) => e.stopPropagation()}
-              className={`bg-card border border-border w-full sm:max-w-md max-h-[80vh] flex flex-col ${
-                isPixelTheme ? "" : "sm:rounded-3xl rounded-t-3xl"
-              }`}
-              style={{ borderRadius: isPixelTheme ? "0" : undefined }}
+              className="bg-[#f5f0e8] border-t-2 border-black/10 w-full sm:max-w-md max-h-[80vh] flex flex-col"
             >
               {/* Header */}
-              <div className="flex-shrink-0 flex items-center justify-between p-4 border-b border-border">
-                <h3 className={`font-semibold ${isPixelTheme ? "text-xs" : "text-lg"}`}>
+              <div className="flex-shrink-0 flex items-center justify-between p-4 border-b-2 border-black/10">
+                <h3
+                  className="font-bold text-black uppercase tracking-wide"
+                  style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+                >
                   New Message
                 </h3>
                 <button
                   onClick={() => setShowNewMessageModal(false)}
-                  className={`p-2 hover:bg-secondary transition-colors ${
-                    isPixelTheme ? "" : "rounded-full"
-                  }`}
-                  style={{ borderRadius }}
+                  className="p-2 hover:bg-black/10 transition-colors"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="w-5 h-5 text-black" />
                 </button>
               </div>
 
               {/* Search */}
-              <div className="flex-shrink-0 p-4 border-b border-border">
+              <div className="flex-shrink-0 p-4 border-b-2 border-black/10">
                 <Input
                   placeholder="Search friends..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className={isPixelTheme ? "text-xs" : ""}
-                  style={{ borderRadius }}
+                  className="bg-white border-2 border-black/10 text-black placeholder:text-black/30"
+                  style={{ fontFamily: "'Space Mono', monospace" }}
                 />
               </div>
 
               {/* Friends List */}
               <div className="flex-1 overflow-y-auto p-4">
                 {friends.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
-                    <User className="w-12 h-12 mb-3 opacity-20" />
-                    <p className={isPixelTheme ? "text-xs" : "text-sm"}>No friends yet</p>
-                    <p className={`${isPixelTheme ? "text-[10px]" : "text-xs"} mt-1`}>
+                  <div className="flex flex-col items-center justify-center py-8">
+                    <User className="w-12 h-12 mb-3 text-black/20" />
+                    <p
+                      className="text-black/40 text-sm"
+                      style={{ fontFamily: "'Space Mono', monospace" }}
+                    >
+                      No friends yet
+                    </p>
+                    <p
+                      className="text-black/30 text-xs mt-1 italic"
+                      style={{ fontFamily: "'Playfair Display', serif" }}
+                    >
                       Add friends to start messaging!
                     </p>
                   </div>
                 ) : filteredFriends.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <p className={isPixelTheme ? "text-xs" : "text-sm"}>No friends found</p>
+                  <div className="text-center py-8">
+                    <p
+                      className="text-black/40 text-sm"
+                      style={{ fontFamily: "'Space Mono', monospace" }}
+                    >
+                      No friends found
+                    </p>
                   </div>
                 ) : (
                   <div className="space-y-2">
@@ -811,24 +811,27 @@ const MessagesTab = ({ isPixelTheme = false, onFriendClick }: MessagesTabProps) 
                       <motion.button
                         key={friend.user_id}
                         onClick={() => handleStartNewConversation(friend)}
-                        className={`w-full p-3 bg-secondary/50 hover:bg-secondary transition-colors text-left flex items-center gap-3 ${
-                          isPixelTheme ? "" : "rounded-xl"
-                        }`}
-                        style={{ borderRadius }}
+                        className="w-full p-3 bg-white border-2 border-black/10 hover:border-black/30 transition-colors text-left flex items-center gap-3"
                         whileTap={{ scale: 0.98 }}
                       >
-                        <Avatar className={isPixelTheme ? "rounded-none" : ""}>
+                        <Avatar className="border-2 border-black/20">
                           {friend.avatar_url && <AvatarImage src={friend.avatar_url} />}
-                          <AvatarFallback>
+                          <AvatarFallback className="bg-black text-white">
                             {(friend.display_name || friend.username || 'F')[0]}
                           </AvatarFallback>
                         </Avatar>
                         <div>
-                          <p className={`font-semibold ${isPixelTheme ? "text-xs" : "text-sm"}`}>
+                          <p
+                            className="font-bold text-black text-sm uppercase tracking-wide"
+                            style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+                          >
                             {friend.display_name || friend.username || 'Friend'}
                           </p>
                           {friend.username && friend.display_name && (
-                            <p className={`text-muted-foreground ${isPixelTheme ? "text-[8px]" : "text-xs"}`}>
+                            <p
+                              className="text-black/40 text-xs"
+                              style={{ fontFamily: "'Space Mono', monospace" }}
+                            >
                               @{friend.username}
                             </p>
                           )}

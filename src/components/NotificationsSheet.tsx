@@ -9,7 +9,6 @@ import { useNotificationNavigation } from "@/hooks/useNotificationNavigation";
 interface NotificationsSheetProps {
   isOpen: boolean;
   onClose: () => void;
-  isPixelTheme?: boolean;
   onNotificationClick?: (type: "like" | "comment" | "friend_request", actorId: string, moodId: string | null) => void;
 }
 
@@ -27,7 +26,7 @@ interface Notification {
   };
 }
 
-const NotificationsSheet = ({ isOpen, onClose, isPixelTheme = false, onNotificationClick }: NotificationsSheetProps) => {
+const NotificationsSheet = ({ isOpen, onClose, onNotificationClick }: NotificationsSheetProps) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();

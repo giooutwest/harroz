@@ -13,12 +13,11 @@ import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
 import { formatDistanceToNow } from "date-fns";
 
 interface FriendsTabProps {
-  isPixelTheme?: boolean;
   initialSelectedFriendId?: string | null;
   initialSelectedMoodId?: string | null;
   initialSelectedCommentId?: string | null;
   initialShowRequests?: boolean;
-  initialOpenComments?: boolean; 
+  initialOpenComments?: boolean;
   onClearInitialFriend?: () => void;
 }
 
@@ -38,7 +37,7 @@ interface Nudge {
   };
 }
 
-const FriendsTab = ({ isPixelTheme = false, initialSelectedFriendId, initialSelectedMoodId, initialSelectedCommentId, initialShowRequests, initialOpenComments, onClearInitialFriend }: FriendsTabProps) => {
+const FriendsTab = ({ initialSelectedFriendId, initialSelectedMoodId, initialSelectedCommentId, initialShowRequests, initialOpenComments, onClearInitialFriend }: FriendsTabProps) => {
   const [activeSection, setActiveSection] = useState<"feed" | "friends" | "close" | "requests">("feed");
   const [friends, setFriends] = useState<Friendship[]>([]);
   const [pendingRequests, setPendingRequests] = useState<Friendship[]>([]);
@@ -294,100 +293,334 @@ const FriendsTab = ({ isPixelTheme = false, initialSelectedFriendId, initialSele
   };
 
   return (
-    <div className="px-4 py-6 pb-28">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className={`font-bold ${isPixelTheme ? "text-sm" : "text-xl"}`}>Friends</h2>
+    <div className="min-h-screen bg-black px-4 py-6 pb-28">
+      {/* Zine Header */}
+      <div className="flex items-start justify-between mb-8">
+        <div>
+          <h1
+            className="text-5xl font-black text-[#C5A059] uppercase tracking-tight"
+            style={{ fontFamily: "'Abril Fatface', serif" }}
+          >
+            Hi, ROZ
+          </h1>
+          <p
+            className="text-[10px] text-white/40 uppercase tracking-[0.2em] mt-1"
+            style={{ fontFamily: "'Space Mono', monospace" }}
+          >
+            Latest updates from friends
+          </p>
+        </div>
         <div className="flex items-center gap-2">
-          <motion.button whileTap={{ scale: 0.95 }} onClick={() => setShowNotifications(true)} className={`relative p-2 bg-secondary ${isPixelTheme ? "" : "rounded-full"}`} style={{ borderRadius: isPixelTheme ? "0" : undefined }}>
-            <Bell className={`${isPixelTheme ? "w-4 h-4" : "w-5 h-5"}`} />
-            {unreadCount > 0 && <span className={`absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-destructive text-destructive-foreground flex items-center justify-center ${isPixelTheme ? "text-[6px]" : "text-[10px] rounded-full"}`}>{unreadCount > 99 ? "99+" : unreadCount}</span>}
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setShowNotifications(true)}
+            className="relative p-3 bg-white/5 border border-white/10"
+          >
+            <Bell className="w-5 h-5 text-white/70" />
+            {unreadCount > 0 && (
+              <span
+                className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 text-white flex items-center justify-center text-[10px] font-bold"
+                style={{ fontFamily: "'Space Mono', monospace" }}
+              >
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </span>
+            )}
           </motion.button>
-          <motion.button whileTap={{ scale: 0.95 }} onClick={() => setShowAddFriend(true)} className={`flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground ${isPixelTheme ? "text-[8px]" : "text-sm rounded-full"}`} style={{ borderRadius: isPixelTheme ? "0" : undefined }}>
-            <UserPlus className={`${isPixelTheme ? "w-3 h-3" : "w-4 h-4"}`} /> Add
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setShowAddFriend(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-[#C5A059] text-black font-bold text-xs uppercase tracking-wider"
+            style={{ fontFamily: "'Space Mono', monospace" }}
+          >
+            <UserPlus className="w-4 h-4" /> Add
           </motion.button>
         </div>
       </div>
 
+      {/* Section Tabs - Zine style */}
       <div className="flex gap-2 mb-6 overflow-x-auto no-scrollbar">
-        {[ { id: "feed", icon: Newspaper, count: null }, { id: "friends", icon: Users, count: friends.length }, { id: "close", icon: Star, count: closeFriends.length }, { id: "requests", icon: Mail, count: pendingRequests.length + nudges.length } ].map((s) => (
-          <button key={s.id} onClick={() => setActiveSection(s.id as any)} className={`flex-1 py-2 px-3 flex items-center justify-center gap-1 border transition-colors ${activeSection === s.id ? "bg-primary text-primary-foreground border-primary" : "bg-card border-border"} ${isPixelTheme ? "" : "rounded-xl"}`} style={{ borderRadius: isPixelTheme ? "0" : undefined }}>
+        {[
+          { id: "feed", label: "Feed", icon: Newspaper, count: null },
+          { id: "friends", label: "All", icon: Users, count: friends.length },
+          { id: "close", label: "Close", icon: Star, count: closeFriends.length },
+          { id: "requests", label: "Inbox", icon: Mail, count: pendingRequests.length + nudges.length }
+        ].map((s) => (
+          <button
+            key={s.id}
+            onClick={() => setActiveSection(s.id as any)}
+            className={`flex-1 py-2 px-3 flex items-center justify-center gap-1 border transition-all ${
+              activeSection === s.id
+                ? "bg-white text-black border-white"
+                : "bg-transparent border-white/20 text-white/60 hover:border-white/40"
+            }`}
+          >
             {/* @ts-ignore */}
-            <s.icon className={`${isPixelTheme ? "w-3 h-3" : "w-4 h-4"}`} /> {s.count !== null && <span className={`${isPixelTheme ? "text-[6px]" : "text-xs"}`}>{s.count}</span>}
+            <s.icon className="w-4 h-4" />
+            <span className="text-[10px] uppercase tracking-wider" style={{ fontFamily: "'Space Mono', monospace" }}>
+              {s.label}
+            </span>
+            {s.count !== null && s.count > 0 && (
+              <span className="text-[10px] ml-1">({s.count})</span>
+            )}
           </button>
         ))}
       </div>
 
       <AnimatePresence mode="wait">
-        {activeSection === "feed" && <motion.div key="feed" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><FriendsFeed isPixelTheme={isPixelTheme} onFriendClick={setSelectedFriendId} highlightMoodId={highlightMoodId} highlightCommentId={highlightCommentId} onClearHighlight={() => { setHighlightMoodId(null); setHighlightCommentId(null); }} shouldOpenComments={shouldOpenComments} /></motion.div>}
-        {activeSection === "friends" && <motion.div key="friends" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-3">{friends.map(f => (<div key={f.id} className={`bg-card border border-border p-4 flex items-center justify-between ${isPixelTheme ? "" : "rounded-xl"}`} style={{ borderRadius: isPixelTheme ? "0" : undefined }}><div className="flex items-center gap-3" onClick={() => setSelectedFriendId(f.friend_profile?.user_id || null)}><div className={`w-10 h-10 bg-secondary flex items-center justify-center overflow-hidden ${isPixelTheme ? "" : "rounded-full"}`}>{f.friend_profile?.avatar_url ? <img src={f.friend_profile.avatar_url} className="w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.parentElement!.innerHTML = '<svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>'; }} /> : <User className="w-5 h-5" />}</div><div><p className={`font-medium ${isPixelTheme ? "text-xs" : "text-sm"}`}>{f.friend_profile?.display_name || f.friend_profile?.username}</p></div></div><div className="flex gap-2"><button onClick={() => handleSendNudge(f.friend_profile?.user_id || "", f.friend_profile?.username || "")} className={`p-2 text-muted-foreground hover:text-yellow-500 hover:bg-yellow-500/10 ${isPixelTheme ? "" : "rounded-full"}`} title="Nudge"><Zap className="w-4 h-4 fill-current" /></button><button onClick={() => handleToggleCloseFriend(f.friend_profile?.user_id || "")} className={`p-2 ${closeFriends.some(c => c.friend_id === f.friend_profile?.user_id) ? "text-primary" : "text-muted-foreground"} hover:bg-secondary ${isPixelTheme ? "" : "rounded-full"}`}><Star className={`w-4 h-4 ${closeFriends.some(c => c.friend_id === f.friend_profile?.user_id) ? "fill-current" : ""}`} /></button><button onClick={() => handleRemoveFriend(f.id)} className={`p-2 text-muted-foreground hover:text-destructive hover:bg-secondary ${isPixelTheme ? "" : "rounded-full"}`}><X className="w-4 h-4" /></button></div></div>))} {friends.length === 0 && <div className="text-center py-12 text-muted-foreground"><p>No friends yet.</p></div>}</motion.div>}
-        {activeSection === "close" && <motion.div key="close" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><FriendsFeed isPixelTheme={isPixelTheme} onFriendClick={setSelectedFriendId} closeFriendsOnly={true} /></motion.div>}
-        {activeSection === "requests" && <motion.div key="requests" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4">
-          {pendingRequests.length > 0 && (
-            <div className="space-y-3">
-              <h3 className={`font-bold text-sm text-muted-foreground ${isPixelTheme ? "text-[10px]" : ""}`}>Friend Requests</h3>
-              {pendingRequests.map(r => (
-                <div key={r.id} className={`bg-card border border-border p-4 flex items-center justify-between ${isPixelTheme ? "" : "rounded-xl"}`} style={{ borderRadius: isPixelTheme ? "0" : undefined }}>
-                  <p className={`font-medium ${isPixelTheme ? "text-xs" : ""}`}>{r.friend_profile?.display_name}</p>
-                  <div className="flex gap-2">
-                    <button onClick={() => handleAcceptRequest(r.id, r.requester_id)} disabled={processingRequestId === r.id} className="p-2 bg-primary text-primary-foreground rounded-full disabled:opacity-50 disabled:cursor-not-allowed"><Check className="w-4 h-4" /></button>
-                    <button onClick={() => handleRejectRequest(r.id)} disabled={processingRequestId === r.id} className="p-2 bg-secondary text-muted-foreground rounded-full disabled:opacity-50 disabled:cursor-not-allowed"><X className="w-4 h-4" /></button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-          {nudges.length > 0 && (
-            <div className="space-y-3">
-              <h3 className={`font-bold text-sm text-muted-foreground ${isPixelTheme ? "text-[10px]" : ""}`}>Nudges</h3>
-              {nudges.map((nudge) => (
-                <motion.div
-                  key={nudge.id}
-                  initial={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -100 }}
-                  className={`bg-card border border-border p-4 flex items-center justify-between ${isPixelTheme ? "" : "rounded-xl"}`}
-                  style={{ borderRadius: isPixelTheme ? "0" : undefined }}
+        {activeSection === "feed" && (
+          <motion.div key="feed" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <FriendsFeed
+              onFriendClick={setSelectedFriendId}
+              highlightMoodId={highlightMoodId}
+              highlightCommentId={highlightCommentId}
+              onClearHighlight={() => { setHighlightMoodId(null); setHighlightCommentId(null); }}
+              shouldOpenComments={shouldOpenComments}
+            />
+          </motion.div>
+        )}
+
+        {activeSection === "friends" && (
+          <motion.div key="friends" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-3">
+            {friends.map(f => (
+              <div
+                key={f.id}
+                className="bg-white/5 border border-white/10 p-4 flex items-center justify-between"
+              >
+                <div
+                  className="flex items-center gap-3 cursor-pointer"
+                  onClick={() => setSelectedFriendId(f.friend_profile?.user_id || null)}
                 >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 bg-secondary flex items-center justify-center overflow-hidden ${isPixelTheme ? "" : "rounded-full"}`}>
-                      {nudge.sender_profile?.avatar_url ? <img src={nudge.sender_profile.avatar_url} className="w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.parentElement!.innerHTML = '<svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>'; }} /> : <User className="w-5 h-5" />}
-                    </div>
-                    <div>
-                      <p className={`font-medium ${isPixelTheme ? "text-xs" : "text-sm"}`}>
-                        <span className="font-bold">{nudge.sender_profile?.display_name || nudge.sender_profile?.username || "Someone"}</span> nudged you!
-                      </p>
-                      <p className={`text-muted-foreground ${isPixelTheme ? "text-[6px]" : "text-xs"}`}>
-                        {formatDistanceToNow(new Date(nudge.created_at), { addSuffix: true })}
-                      </p>
+                  <div className="w-10 h-10 bg-white/10 flex items-center justify-center overflow-hidden">
+                    {f.friend_profile?.avatar_url ? (
+                      <img
+                        src={f.friend_profile.avatar_url}
+                        className="w-full h-full object-cover"
+                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                      />
+                    ) : (
+                      <User className="w-5 h-5 text-white/40" />
+                    )}
+                  </div>
+                  <p
+                    className="font-medium text-white text-sm uppercase tracking-wide"
+                    style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+                  >
+                    {f.friend_profile?.display_name || f.friend_profile?.username}
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleSendNudge(f.friend_profile?.user_id || "", f.friend_profile?.username || "")}
+                    className="p-2 text-white/40 hover:text-yellow-500 hover:bg-yellow-500/10 transition-colors"
+                    title="Nudge"
+                  >
+                    <Zap className="w-4 h-4 fill-current" />
+                  </button>
+                  <button
+                    onClick={() => handleToggleCloseFriend(f.friend_profile?.user_id || "")}
+                    className={`p-2 transition-colors ${
+                      closeFriends.some(c => c.friend_id === f.friend_profile?.user_id)
+                        ? "text-[#C5A059]"
+                        : "text-white/40 hover:text-[#C5A059]"
+                    }`}
+                  >
+                    <Star className={`w-4 h-4 ${closeFriends.some(c => c.friend_id === f.friend_profile?.user_id) ? "fill-current" : ""}`} />
+                  </button>
+                  <button
+                    onClick={() => handleRemoveFriend(f.id)}
+                    className="p-2 text-white/40 hover:text-red-500 transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+            {friends.length === 0 && (
+              <div className="text-center py-12">
+                <Users className="w-12 h-12 mx-auto mb-3 text-white/20" />
+                <p className="text-white/40" style={{ fontFamily: "'Space Mono', monospace" }}>No friends yet</p>
+              </div>
+            )}
+          </motion.div>
+        )}
+
+        {activeSection === "close" && (
+          <motion.div key="close" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <FriendsFeed onFriendClick={setSelectedFriendId} closeFriendsOnly={true} />
+          </motion.div>
+        )}
+
+        {activeSection === "requests" && (
+          <motion.div key="requests" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4">
+            {pendingRequests.length > 0 && (
+              <div className="space-y-3">
+                <h3
+                  className="text-[10px] text-white/40 uppercase tracking-[0.2em]"
+                  style={{ fontFamily: "'Space Mono', monospace" }}
+                >
+                  Friend Requests
+                </h3>
+                {pendingRequests.map(r => (
+                  <div key={r.id} className="bg-white/5 border border-white/10 p-4 flex items-center justify-between">
+                    <p className="font-medium text-white text-sm">{r.friend_profile?.display_name}</p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleAcceptRequest(r.id, r.requester_id)}
+                        disabled={processingRequestId === r.id}
+                        className="p-2 bg-[#C5A059] text-black disabled:opacity-50"
+                      >
+                        <Check className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleRejectRequest(r.id)}
+                        disabled={processingRequestId === r.id}
+                        className="p-2 bg-white/10 text-white/60 disabled:opacity-50"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <button onClick={() => handleNudgeBack(nudge.id, nudge.sender_id, nudge.sender_profile?.display_name || nudge.sender_profile?.username || "")} className={`p-2 bg-secondary hover:bg-yellow-500/20 text-yellow-600 ${isPixelTheme ? "" : "rounded-full"}`} title="Nudge back">
-                      <Zap className="w-4 h-4 fill-current" />
-                    </button>
-                    <button onClick={() => handleDismissNudge(nudge.id)} className={`p-2 bg-secondary hover:bg-destructive/20 text-muted-foreground hover:text-destructive ${isPixelTheme ? "" : "rounded-full"}`} title="Dismiss">
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          )}
-          {pendingRequests.length === 0 && nudges.length === 0 && (
-            <div className="text-center py-12 text-muted-foreground">
-              <Mail className="w-12 h-12 mx-auto mb-3 opacity-50" />
-              <p>No pending requests or nudges</p>
-            </div>
-          )}
-        </motion.div>}
+                ))}
+              </div>
+            )}
+
+            {nudges.length > 0 && (
+              <div className="space-y-3">
+                <h3
+                  className="text-[10px] text-white/40 uppercase tracking-[0.2em]"
+                  style={{ fontFamily: "'Space Mono', monospace" }}
+                >
+                  Nudges
+                </h3>
+                {nudges.map((nudge) => (
+                  <motion.div
+                    key={nudge.id}
+                    initial={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -100 }}
+                    className="bg-yellow-500/10 border border-yellow-500/30 p-4 flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-yellow-500/20 flex items-center justify-center overflow-hidden">
+                        {nudge.sender_profile?.avatar_url ? (
+                          <img src={nudge.sender_profile.avatar_url} className="w-full h-full object-cover" />
+                        ) : (
+                          <User className="w-5 h-5 text-yellow-500" />
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-white text-sm">
+                          <span className="font-bold text-yellow-500">{nudge.sender_profile?.display_name || nudge.sender_profile?.username || "Someone"}</span> nudged you!
+                        </p>
+                        <p className="text-white/40 text-xs" style={{ fontFamily: "'Space Mono', monospace" }}>
+                          {formatDistanceToNow(new Date(nudge.created_at), { addSuffix: true })}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleNudgeBack(nudge.id, nudge.sender_id, nudge.sender_profile?.display_name || nudge.sender_profile?.username || "")}
+                        className="p-2 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-500"
+                        title="Nudge back"
+                      >
+                        <Zap className="w-4 h-4 fill-current" />
+                      </button>
+                      <button
+                        onClick={() => handleDismissNudge(nudge.id)}
+                        className="p-2 bg-white/10 hover:bg-red-500/20 text-white/60 hover:text-red-500"
+                        title="Dismiss"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+
+            {pendingRequests.length === 0 && nudges.length === 0 && (
+              <div className="text-center py-12">
+                <Mail className="w-12 h-12 mx-auto mb-3 text-white/20" />
+                <p className="text-white/40" style={{ fontFamily: "'Space Mono', monospace" }}>No pending requests or nudges</p>
+              </div>
+            )}
+          </motion.div>
+        )}
       </AnimatePresence>
 
       <AnimatePresence>
-        {showAddFriend && <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-6" onClick={() => setShowAddFriend(false)}><div className={`bg-card border border-border p-6 w-full max-w-sm ${isPixelTheme ? "" : "rounded-3xl"}`} onClick={e => e.stopPropagation()}><div className="flex justify-between mb-4"><h3 className="font-bold">Add Friend</h3><button onClick={() => setShowAddFriend(false)}><X className="w-5 h-5"/></button></div><div className="flex gap-2"><Input value={searchUsername} onChange={e => setSearchUsername(e.target.value)} placeholder="@username"/><Button onClick={handleSearchUsername}>Search</Button></div>{searchResult && <div className="mt-4 p-4 bg-secondary rounded-xl flex justify-between items-center"><p className="font-bold">{searchResult.username}</p><Button onClick={handleSendRequest} disabled={isSearching}>{isSearching ? "Sending..." : "Add"}</Button></div>}</div></div>}
+        {showAddFriend && (
+          <div
+            className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-6"
+            onClick={() => setShowAddFriend(false)}
+          >
+            <div
+              className="bg-[#1a1a1a] border border-white/10 p-6 w-full max-w-sm"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex justify-between mb-4">
+                <h3
+                  className="text-xl font-bold text-white uppercase tracking-wide"
+                  style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+                >
+                  Add Friend
+                </h3>
+                <button onClick={() => setShowAddFriend(false)} className="text-white/60 hover:text-white">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="flex gap-2">
+                <Input
+                  value={searchUsername}
+                  onChange={e => setSearchUsername(e.target.value)}
+                  placeholder="@username"
+                  className="bg-white/5 border-white/10 text-white placeholder:text-white/30"
+                />
+                <Button
+                  onClick={handleSearchUsername}
+                  className="bg-[#C5A059] text-black hover:bg-[#C5A059]/80"
+                >
+                  Search
+                </Button>
+              </div>
+              {searchError && (
+                <p className="mt-2 text-red-400 text-xs" style={{ fontFamily: "'Space Mono', monospace" }}>
+                  {searchError}
+                </p>
+              )}
+              {searchResult && (
+                <div className="mt-4 p-4 bg-white/5 border border-white/10 flex justify-between items-center">
+                  <p className="font-bold text-white">@{searchResult.username}</p>
+                  <Button
+                    onClick={handleSendRequest}
+                    disabled={isSearching}
+                    className="bg-[#C5A059] text-black hover:bg-[#C5A059]/80"
+                  >
+                    {isSearching ? "Sending..." : "Add"}
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </AnimatePresence>
 
-      <FriendProfileModal friendId={selectedFriendId} onClose={() => setSelectedFriendId(null)} isPixelTheme={isPixelTheme} />
+      <FriendProfileModal friendId={selectedFriendId} onClose={() => setSelectedFriendId(null)} />
 
-      <NotificationsSheet isOpen={showNotifications} onClose={() => setShowNotifications(false)} isPixelTheme={isPixelTheme} onNotificationClick={(type, actorId, moodId) => { if (type === "friend_request") { setActiveSection("requests"); } else if (moodId) { setActiveSection("feed"); setHighlightMoodId(moodId); setShouldOpenComments(type === 'comment'); } else { setSelectedFriendId(actorId); } }} />
+      <NotificationsSheet
+        isOpen={showNotifications}
+        onClose={() => setShowNotifications(false)}
+        onNotificationClick={(type, actorId, moodId) => {
+          if (type === "friend_request") {
+            setActiveSection("requests");
+          } else if (moodId) {
+            setActiveSection("feed");
+            setHighlightMoodId(moodId);
+            setShouldOpenComments(type === 'comment');
+          } else {
+            setSelectedFriendId(actorId);
+          }
+        }}
+      />
     </div>
   );
 };

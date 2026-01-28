@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import PullToRefresh from 'react-simple-pull-to-refresh';
 import { useHaptic } from "@/hooks/useHaptic";
 import { motion, AnimatePresence } from "framer-motion";
+import ZineFeedPost from "./ZineFeedPost";
 
 // --- Types ---
 interface Profile {
@@ -60,7 +61,6 @@ interface FitCheck {
 type FeedItem = Mood | FitCheck;
 
 interface FriendsFeedProps {
-  isPixelTheme?: boolean;
   onFriendClick?: (id: string) => void;
   highlightMoodId?: string | null;
   highlightCommentId?: string | null;
@@ -108,7 +108,7 @@ function useLongPress(callback: () => void, onClick: () => void, ms = 500) {
   };
 }
 
-const FriendsFeed = ({ isPixelTheme, onFriendClick, highlightMoodId, shouldOpenComments, closeFriendsOnly }: FriendsFeedProps) => {
+const FriendsFeed = ({ onFriendClick, highlightMoodId, shouldOpenComments, closeFriendsOnly }: FriendsFeedProps) => {
   const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<string | null>(null);
@@ -416,147 +416,187 @@ const FriendsFeed = ({ isPixelTheme, onFriendClick, highlightMoodId, shouldOpenC
 
   if (loading) {
     return (
-      <div className="space-y-4 p-4">
+      <div className="space-y-8 px-4 py-6">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="bg-white border border-gray-100 p-4 rounded-xl space-y-3">
-             <div className="flex items-center gap-3"><Skeleton className="h-10 w-10 rounded-full" /><div className="space-y-2"><Skeleton className="h-4 w-32" /><Skeleton className="h-3 w-20" /></div></div>
-             <Skeleton className="h-40 w-full rounded-lg" />
-             <div className="flex gap-2"><Skeleton className="h-4 w-8" /><Skeleton className="h-4 w-8" /></div>
+          <div key={i} className="relative bg-[#1a1a1a] border border-white/10 p-3 mx-auto max-w-[320px] shadow-xl">
+            <div className="absolute -top-3 left-1/4 w-12 h-5 bg-[#C5A059]/70 z-10" style={{ transform: "rotate(3deg)" }} />
+            <Skeleton className="aspect-square w-full bg-white/10" />
+            <div className="pt-3 pb-1 space-y-2">
+              <Skeleton className="h-4 w-24 bg-white/10" />
+              <Skeleton className="h-3 w-full bg-white/10" />
+              <Skeleton className="h-3 w-16 bg-white/10" />
+            </div>
           </div>
         ))}
       </div>
     );
   }
 
-  // Render a mood card
-  const renderMoodCard = (mood: Mood) => (
-    <div key={mood.id} className={`bg-card border border-border p-4 shadow-sm ${isPixelTheme ? '' : 'rounded-xl'}`}>
-      <div className="flex items-start justify-between mb-3">
-        <button className="flex items-center gap-3 cursor-pointer text-left" onClick={() => onFriendClick?.(mood.user.user_id)}>
-          <Avatar className={isPixelTheme ? "rounded-none" : ""}>
-            {mood.user.avatar_url && <AvatarImage src={mood.user.avatar_url} onError={(e) => { e.currentTarget.style.display = 'none'; }} />}
-            <AvatarFallback>{mood.user.username?.[0]?.toUpperCase()}</AvatarFallback>
-          </Avatar>
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className={`font-bold text-sm ${isPixelTheme ? "font-mono" : ""}`}>{mood.user.display_name || mood.user.username}</h3>
-              {mood.user.current_streak && mood.user.current_streak > 0 ? (
-                <Badge variant="secondary" className="bg-orange-50 text-orange-600 border-orange-100 gap-1 px-1.5 h-5 pointer-events-none">
-                  <Flame className="w-3 h-3 fill-orange-500" />{mood.user.current_streak}
-                </Badge>
-              ) : null}
-            </div>
-            <p className="text-xs text-muted-foreground">@{mood.user.username} • {formatDistanceToNow(new Date(mood.created_at), { addSuffix: true })}</p>
-          </div>
-        </button>
-        <div className={`w-8 h-8 flex items-center justify-center font-bold text-white ${isPixelTheme ? "rounded-none" : "rounded-full"}`} style={{ backgroundColor: getMoodColor(mood.rating) }}>{mood.rating}</div>
-      </div>
+  // Render a mood card using ZineFeedPost
+  const renderMoodCard = (mood: Mood) => {
+    const handleLike = () => {
+      if (mood.has_liked) {
+        handleRemoveLike(mood.id);
+      } else {
+        setShowReactionMenu(mood.id);
+      }
+    };
 
-      <div className="pl-12">
-        {mood.note && <p className={`text-foreground mb-3 ${isPixelTheme ? "font-mono text-xs" : "text-sm"}`}>"{mood.note}"</p>}
-        {mood.photo_url && <div className="mb-3 rounded-lg overflow-hidden border border-border"><img src={mood.photo_url} alt="Mood" className="w-full object-cover max-h-64" loading="lazy" onError={(e) => { e.currentTarget.parentElement?.remove(); }} /></div>}
+    const handleComment = () => {
+      haptic('light');
+      setOpenComments(prev => ({ ...prev, [mood.id]: !prev[mood.id] }));
+    };
 
-        <div className="flex items-center gap-4 mt-4 pt-3 border-t border-border relative">
-          <div className="relative">
-            <LikeButton mood={mood} />
-            <AnimatePresence>
-              {showReactionMenu === mood.id && (
-                <>
-                  <div className="fixed inset-0 z-10" onClick={() => setShowReactionMenu(null)} />
-                  <motion.div initial={{ opacity: 0, scale: 0.8, y: 10 }} animate={{ opacity: 1, scale: 1, y: -45 }} exit={{ opacity: 0, scale: 0.8, y: 10 }} className="absolute left-0 bottom-full z-20 flex items-center gap-1 bg-card shadow-xl border border-border rounded-full p-1.5">
-                    {REACTIONS.map((r) => (
-                      <button key={r.type} onClick={(e) => { e.stopPropagation(); handleReaction(mood.id, r.type); }} className="w-8 h-8 flex items-center justify-center text-xl hover:scale-125 transition-transform active:scale-95">{r.emoji}</button>
-                    ))}
-                  </motion.div>
-                </>
-              )}
-            </AnimatePresence>
-          </div>
-          <button onClick={() => { haptic('light'); setOpenComments(prev => ({ ...prev, [mood.id]: !prev[mood.id] })); }} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors p-2 rounded-lg active:bg-secondary">
-            <MessageCircle className="w-4 h-4" />{mood.comments.length > 0 ? `${mood.comments.length}` : 'Comment'}
-          </button>
-        </div>
+    return (
+      <div key={mood.id} className="relative">
+        <ZineFeedPost
+          id={mood.id}
+          username={mood.user.username || "user"}
+          displayName={mood.user.display_name}
+          avatarUrl={mood.user.avatar_url}
+          photoUrl={mood.photo_url}
+          caption={mood.note}
+          rating={mood.rating}
+          likesCount={mood.likes_count}
+          commentsCount={mood.comments_count}
+          hasLiked={mood.has_liked}
+          createdAt={mood.created_at}
+          streak={mood.user.current_streak || 0}
+          type="mood"
+          onLike={handleLike}
+          onComment={handleComment}
+          onPhotoClick={() => {}}
+          onUserClick={() => onFriendClick?.(mood.user.user_id)}
+        />
 
+        {/* Reaction menu overlay */}
+        <AnimatePresence>
+          {showReactionMenu === mood.id && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setShowReactionMenu(null)} />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8, y: 10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.8, y: 10 }}
+                className="absolute left-1/2 -translate-x-1/2 bottom-20 z-50 flex items-center gap-1 bg-black/90 border border-white/20 rounded-full p-2 shadow-2xl"
+              >
+                {REACTIONS.map((r) => (
+                  <button
+                    key={r.type}
+                    onClick={(e) => { e.stopPropagation(); handleReaction(mood.id, r.type); }}
+                    className="w-10 h-10 flex items-center justify-center text-2xl hover:scale-125 transition-transform active:scale-95"
+                  >
+                    {r.emoji}
+                  </button>
+                ))}
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
+
+        {/* Comments section */}
         {(openComments[mood.id] || shouldOpenComments && highlightMoodId === mood.id) && (
-          <div className="mt-3 space-y-3 bg-secondary/50 p-3 rounded-lg animate-in slide-in-from-top-2">
-            {mood.comments.map((comment) => (
-              <div key={comment.id} className="flex gap-2 group">
-                <button onClick={() => onFriendClick?.(comment.user.user_id)} className="shrink-0"><Avatar className="w-6 h-6 mt-0.5 cursor-pointer hover:opacity-80 transition-opacity">{comment.user.avatar_url && <AvatarImage src={comment.user.avatar_url} onError={(e) => { e.currentTarget.style.display = 'none'; }} />}<AvatarFallback className="text-[9px]">{comment.user.username?.[0]}</AvatarFallback></Avatar></button>
-                <div className="flex-1">
-                  <div className="flex items-baseline justify-between"><button onClick={() => onFriendClick?.(comment.user.user_id)} className="text-xs font-semibold mr-2 hover:underline cursor-pointer">{comment.user.display_name || comment.user.username}</button><span className="text-[10px] text-muted-foreground">{formatDistanceToNow(new Date(comment.created_at))} ago</span></div>
-                  <p className="text-xs text-foreground mt-0.5">{comment.content}</p>
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="mx-auto max-w-[320px] -mt-4 pt-6 bg-[#1a1a1a] border border-white/10 border-t-0 px-3 pb-3"
+          >
+            <div className="space-y-3">
+              {mood.comments.map((comment) => (
+                <div key={comment.id} className="flex gap-2 group">
+                  <button onClick={() => onFriendClick?.(comment.user.user_id)} className="shrink-0">
+                    <Avatar className="w-6 h-6">
+                      {comment.user.avatar_url && <AvatarImage src={comment.user.avatar_url} onError={(e) => { e.currentTarget.style.display = 'none'; }} />}
+                      <AvatarFallback className="text-[9px] bg-white/10 text-white">{comment.user.username?.[0]}</AvatarFallback>
+                    </Avatar>
+                  </button>
+                  <div className="flex-1">
+                    <div className="flex items-baseline justify-between">
+                      <button onClick={() => onFriendClick?.(comment.user.user_id)} className="text-xs font-semibold text-white hover:underline">{comment.user.display_name || comment.user.username}</button>
+                      <span className="text-[10px] text-white/40" style={{ fontFamily: "'Space Mono', monospace" }}>{formatDistanceToNow(new Date(comment.created_at))} ago</span>
+                    </div>
+                    <p className="text-xs text-white/70 mt-0.5">{comment.content}</p>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <button onClick={() => handleLikeComment(comment.id, comment.has_liked)} className="p-1 hover:bg-white/10 rounded-full transition-colors active:scale-90">
+                      <Heart className={`w-3 h-3 ${comment.has_liked ? "fill-red-500 text-red-500" : "text-white/40"}`} />
+                    </button>
+                    {comment.likes_count > 0 && (<span className="text-[9px] text-white/40">{comment.likes_count}</span>)}
+                  </div>
                 </div>
-                <div className="flex flex-col items-center"><button onClick={() => handleLikeComment(comment.id, comment.has_liked)} className="p-1 hover:bg-secondary rounded-full transition-colors active:scale-90"><Heart className={`w-3 h-3 ${comment.has_liked ? "fill-red-500 text-red-500" : "text-muted-foreground"}`} /></button>{comment.likes_count > 0 && (<span className="text-[9px] text-muted-foreground">{comment.likes_count}</span>)}</div>
+              ))}
+              <div className="flex gap-2 mt-2">
+                <Input
+                  placeholder="Add a comment..."
+                  className="h-8 text-xs bg-white/5 border-white/10 text-white placeholder:text-white/30"
+                  value={commentText[mood.id] || ""}
+                  onChange={(e) => setCommentText(prev => ({ ...prev, [mood.id]: e.target.value }))}
+                  onKeyDown={(e) => { if (e.key === 'Enter') handlePostComment(mood.id); }}
+                />
+                <Button size="icon" className="h-8 w-8 bg-[#C5A059] hover:bg-[#C5A059]/80" onClick={() => handlePostComment(mood.id)}>
+                  <Send className="w-3 h-3 text-black" />
+                </Button>
               </div>
-            ))}
-            <div className="flex gap-2 mt-2"><Input placeholder="Reply..." className="h-8 text-xs bg-card" value={commentText[mood.id] || ""} onChange={(e) => setCommentText(prev => ({ ...prev, [mood.id]: e.target.value }))} onKeyDown={(e) => { if (e.key === 'Enter') handlePostComment(mood.id); }} /><Button size="icon" className="h-8 w-8" onClick={() => handlePostComment(mood.id)}><Send className="w-3 h-3" /></Button></div>
-          </div>
+            </div>
+          </motion.div>
         )}
       </div>
-    </div>
-  );
+    );
+  };
 
-  // Render a fit check card with purple styling
+  // Render a fit check card using ZineFeedPost
   const renderFitCheckCard = (fitCheck: FitCheck) => (
-    <div
+    <ZineFeedPost
       key={fitCheck.id}
-      className={`bg-purple-500/10 border-2 border-purple-500 p-4 shadow-sm ${isPixelTheme ? '' : 'rounded-xl'}`}
-    >
-      {/* Fit Check badge */}
-      <div className="flex items-center gap-2 mb-3">
-        <div className={`flex items-center gap-1.5 px-2 py-1 bg-purple-500 text-white ${isPixelTheme ? '' : 'rounded-full'}`}>
-          <Shirt className="w-3 h-3" />
-          <span className={`font-semibold ${isPixelTheme ? 'text-[8px]' : 'text-[10px]'}`}>FIT CHECK</span>
-        </div>
-      </div>
-
-      <div className="flex items-start justify-between mb-3">
-        <button className="flex items-center gap-3 cursor-pointer text-left" onClick={() => onFriendClick?.(fitCheck.user.user_id)}>
-          <Avatar className={`ring-2 ring-purple-500 ${isPixelTheme ? "rounded-none" : ""}`}>
-            {fitCheck.user.avatar_url && <AvatarImage src={fitCheck.user.avatar_url} onError={(e) => { e.currentTarget.style.display = 'none'; }} />}
-            <AvatarFallback>{fitCheck.user.username?.[0]?.toUpperCase()}</AvatarFallback>
-          </Avatar>
-          <div>
-            <h3 className={`font-bold text-sm text-purple-600 ${isPixelTheme ? "font-mono" : ""}`}>
-              {fitCheck.user.display_name || fitCheck.user.username}
-            </h3>
-            <p className="text-xs text-purple-500/70">
-              @{fitCheck.user.username} • {formatDistanceToNow(new Date(fitCheck.created_at), { addSuffix: true })}
-            </p>
-          </div>
-        </button>
-      </div>
-
-      {/* Photo */}
-      {fitCheck.photo_url && (
-        <div className={`overflow-hidden border-2 border-purple-500/30 ${isPixelTheme ? '' : 'rounded-lg'}`}>
-          <img
-            src={fitCheck.photo_url}
-            alt="Fit Check"
-            className="w-full object-cover max-h-80"
-            loading="lazy"
-            onError={(e) => { e.currentTarget.parentElement?.remove(); }}
-          />
-        </div>
-      )}
-
-      {/* Caption */}
-      {fitCheck.caption && (
-        <p className={`text-purple-700 mt-3 ${isPixelTheme ? "font-mono text-xs" : "text-sm"}`}>
-          {fitCheck.caption}
-        </p>
-      )}
-    </div>
+      id={fitCheck.id}
+      username={fitCheck.user.username || "user"}
+      displayName={fitCheck.user.display_name}
+      avatarUrl={fitCheck.user.avatar_url}
+      photoUrl={fitCheck.photo_url}
+      caption={fitCheck.caption}
+      likesCount={0}
+      commentsCount={0}
+      hasLiked={false}
+      createdAt={fitCheck.created_at}
+      streak={fitCheck.user.current_streak || 0}
+      type="fitcheck"
+      onLike={() => {}}
+      onComment={() => {}}
+      onPhotoClick={() => {}}
+      onUserClick={() => onFriendClick?.(fitCheck.user.user_id)}
+    />
   );
 
   return (
     <PullToRefresh onRefresh={handleRefresh} className="min-h-[50vh]">
-      <div className="space-y-6 pb-20">
+      <div className="space-y-8 pb-20">
         {feedItems.length === 0 ? (
-          <div className="text-center py-10 text-muted-foreground">
-            <Heart className="w-12 h-12 mx-auto mb-3 opacity-20" />
-            <p>No mood updates yet.</p>
-            <p className="text-sm">Your friends are being quiet!</p>
+          <div className="text-center py-16">
+            <div
+              className="relative mx-auto w-32 h-32 bg-[#1a1a1a] border border-white/10 p-2 mb-6"
+              style={{ transform: "rotate(-2deg)" }}
+            >
+              <div className="w-full h-full bg-white/5 flex items-center justify-center">
+                <Heart className="w-8 h-8 text-white/20" />
+              </div>
+              <div
+                className="absolute -top-3 left-1/2 -translate-x-1/2 w-10 h-4 bg-[#C5A059]/70"
+                style={{ transform: "rotate(2deg)" }}
+              />
+            </div>
+            <p
+              className="text-white/60 text-sm uppercase tracking-wider"
+              style={{ fontFamily: "'Space Mono', monospace" }}
+            >
+              No updates yet
+            </p>
+            <p
+              className="text-white/30 text-xs mt-2 italic"
+              style={{ fontFamily: "'Playfair Display', serif" }}
+            >
+              Your friends are being quiet...
+            </p>
           </div>
         ) : (
           feedItems.map((item) =>
