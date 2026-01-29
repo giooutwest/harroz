@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Lock, Mail, User, ArrowRight } from "lucide-react";
+import { Lock, Mail, User, ArrowRight, UserCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -12,6 +12,7 @@ const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
+  const [displayName, setDisplayName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -45,7 +46,7 @@ const Auth = () => {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password || !username) {
+    if (!email || !password || !username || !displayName) {
       toast.error("Please fill in all fields");
       return;
     }
@@ -57,6 +58,11 @@ const Auth = () => {
 
     if (username.length < 3) {
       toast.error("Username must be at least 3 characters");
+      return;
+    }
+
+    if (displayName.trim().length < 1) {
+      toast.error("Please enter your name");
       return;
     }
 
@@ -82,7 +88,7 @@ const Auth = () => {
         options: {
           data: {
             username: username.toLowerCase().trim(),
-            display_name: username.trim(),
+            display_name: displayName.trim(),
           },
         },
       });
@@ -94,7 +100,7 @@ const Auth = () => {
         const { error: profileError } = await supabase.from("profiles").upsert({
           user_id: data.user.id,
           username: username.toLowerCase().trim(),
-          display_name: username.trim(),
+          display_name: displayName.trim(),
         });
 
         if (profileError) {
@@ -121,6 +127,7 @@ const Auth = () => {
     setEmail("");
     setPassword("");
     setUsername("");
+    setDisplayName("");
   };
 
   return (
@@ -176,6 +183,33 @@ const Auth = () => {
 
       {/* --- FORM --- */}
       <form onSubmit={mode === "signin" ? handleSignIn : handleSignUp} className="w-full z-10 space-y-6 flex-1">
+
+        {/* Name Field (Sign Up Only) */}
+        <AnimatePresence>
+          {mode === "signup" && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="group overflow-hidden"
+            >
+              <div className="relative flex items-center bg-zinc-900/50 border border-zinc-800 focus-within:border-white/40 transition-colors h-14 px-4">
+                <input
+                  type="text"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  maxLength={30}
+                  className="w-full bg-transparent text-white font-mono text-lg outline-none placeholder-zinc-700"
+                  placeholder="Your Name"
+                />
+                <UserCircle className="w-5 h-5 text-zinc-700" />
+              </div>
+              <p className="mt-2 text-[10px] text-zinc-600 font-mono tracking-widest uppercase">
+                :: DISPLAY_NAME (shown on profile)
+              </p>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Username Field (Sign Up Only) */}
         <AnimatePresence>
