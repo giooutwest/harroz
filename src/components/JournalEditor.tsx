@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Camera, X, Save, Trash2, Plus, Image as ImageIcon } from "lucide-react";
+import { Camera, X, Save, Trash2, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { JournalEntry } from "@/hooks/useJournalEntry";
 
@@ -10,7 +10,6 @@ interface JournalEditorProps {
   onSave: (content: string, newPhotos: File[], existingPhotoPaths: string[]) => Promise<boolean>;
   onDelete?: () => Promise<boolean>;
   onCancel: () => void;
-  isPixelTheme?: boolean;
   canEdit?: boolean;
 }
 
@@ -23,7 +22,6 @@ const JournalEditor = ({
   onSave,
   onDelete,
   onCancel,
-  isPixelTheme = false,
   canEdit = true
 }: JournalEditorProps) => {
   const [content, setContent] = useState(existingEntry?.content || "");
@@ -164,11 +162,9 @@ const JournalEditor = ({
           onChange={(e) => setContent(e.target.value.slice(0, MAX_CONTENT_LENGTH))}
           placeholder="Write about your day..."
           disabled={!canEdit}
-          className={`w-full h-full min-h-[200px] p-4 bg-transparent border border-border resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 ${
-            isPixelTheme ? "text-xs" : "text-sm"
-          } ${isPixelTheme ? "" : "rounded-xl"} ${!canEdit ? "opacity-60" : ""}`}
+          className={`w-full h-full min-h-[200px] p-4 bg-transparent border border-border resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm rounded-xl ${!canEdit ? "opacity-60" : ""}`}
         />
-        <div className={`absolute bottom-2 right-2 text-muted-foreground ${isPixelTheme ? "text-[8px]" : "text-xs"}`}>
+        <div className="absolute bottom-2 right-2 text-muted-foreground text-xs">
           {content.length}/{MAX_CONTENT_LENGTH}
         </div>
       </div>
@@ -176,7 +172,7 @@ const JournalEditor = ({
       {/* Photo gallery */}
       {(existingPhotoPaths.length > 0 || newPhotosPreviews.length > 0 || existingPhotoUrls.length > 0) && (
         <div className="mt-4">
-          <div className={`text-muted-foreground mb-2 ${isPixelTheme ? "text-[10px]" : "text-xs"}`}>
+          <div className="text-muted-foreground mb-2 text-xs">
             Photos ({totalPhotos}/{MAX_PHOTOS})
           </div>
           <div className="flex flex-wrap gap-2">
@@ -184,7 +180,7 @@ const JournalEditor = ({
             {existingPhotoUrls.map((url, index) => (
               <div
                 key={`existing-${index}`}
-                className={`relative w-20 h-20 overflow-hidden ${isPixelTheme ? "" : "rounded-lg"}`}
+                className="relative w-20 h-20 overflow-hidden rounded-lg"
               >
                 <img
                   src={url}
@@ -194,7 +190,7 @@ const JournalEditor = ({
                 {canEdit && (
                   <button
                     onClick={() => removeExistingPhoto(index)}
-                    className={`absolute top-1 right-1 p-1 bg-black/50 text-white ${isPixelTheme ? "" : "rounded-full"}`}
+                    className="absolute top-1 right-1 p-1 bg-black/50 text-white rounded-full"
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -206,7 +202,7 @@ const JournalEditor = ({
             {newPhotosPreviews.map((preview, index) => (
               <div
                 key={`new-${index}`}
-                className={`relative w-20 h-20 overflow-hidden ${isPixelTheme ? "" : "rounded-lg"}`}
+                className="relative w-20 h-20 overflow-hidden rounded-lg"
               >
                 <img
                   src={preview}
@@ -216,7 +212,7 @@ const JournalEditor = ({
                 {canEdit && (
                   <button
                     onClick={() => removeNewPhoto(index)}
-                    className={`absolute top-1 right-1 p-1 bg-black/50 text-white ${isPixelTheme ? "" : "rounded-full"}`}
+                    className="absolute top-1 right-1 p-1 bg-black/50 text-white rounded-full"
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -228,9 +224,7 @@ const JournalEditor = ({
             {canEdit && totalPhotos < MAX_PHOTOS && (
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className={`w-20 h-20 border-2 border-dashed border-border flex items-center justify-center text-muted-foreground hover:border-primary hover:text-primary transition-colors ${
-                  isPixelTheme ? "" : "rounded-lg"
-                }`}
+                className="w-20 h-20 border-2 border-dashed border-border flex items-center justify-center text-muted-foreground hover:border-primary hover:text-primary transition-colors rounded-lg"
               >
                 <Plus className="w-6 h-6" />
               </button>
@@ -246,12 +240,10 @@ const JournalEditor = ({
           <motion.button
             whileTap={{ scale: 0.95 }}
             onClick={() => fileInputRef.current?.click()}
-            className={`flex items-center gap-2 px-4 py-2 bg-secondary text-foreground ${
-              isPixelTheme ? "" : "rounded-full"
-            }`}
+            className="flex items-center gap-2 px-4 py-2 bg-secondary text-foreground rounded-full"
           >
             <Camera className="w-4 h-4" />
-            <span className={isPixelTheme ? "text-[10px]" : "text-sm"}>Add Photos</span>
+            <span className="text-sm">Add Photos</span>
           </motion.button>
         )}
 
@@ -271,17 +263,17 @@ const JournalEditor = ({
           <>
             {showDeleteConfirm ? (
               <div className="flex items-center gap-2">
-                <span className={`text-destructive ${isPixelTheme ? "text-[10px]" : "text-xs"}`}>Delete?</span>
+                <span className="text-destructive text-xs">Delete?</span>
                 <button
                   onClick={handleDelete}
                   disabled={isDeleting}
-                  className={`px-3 py-1 bg-destructive text-destructive-foreground ${isPixelTheme ? "text-[10px]" : "text-xs"} ${isPixelTheme ? "" : "rounded-full"}`}
+                  className="px-3 py-1 bg-destructive text-destructive-foreground text-xs rounded-full"
                 >
                   {isDeleting ? "..." : "Yes"}
                 </button>
                 <button
                   onClick={() => setShowDeleteConfirm(false)}
-                  className={`px-3 py-1 bg-secondary ${isPixelTheme ? "text-[10px]" : "text-xs"} ${isPixelTheme ? "" : "rounded-full"}`}
+                  className="px-3 py-1 bg-secondary text-xs rounded-full"
                 >
                   No
                 </button>
@@ -290,7 +282,7 @@ const JournalEditor = ({
               <motion.button
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setShowDeleteConfirm(true)}
-                className={`p-2 text-muted-foreground hover:text-destructive ${isPixelTheme ? "" : "rounded-full"}`}
+                className="p-2 text-muted-foreground hover:text-destructive rounded-full"
               >
                 <Trash2 className="w-5 h-5" />
               </motion.button>
@@ -302,9 +294,9 @@ const JournalEditor = ({
         <motion.button
           whileTap={{ scale: 0.95 }}
           onClick={onCancel}
-          className={`px-4 py-2 bg-secondary text-foreground ${isPixelTheme ? "" : "rounded-full"}`}
+          className="px-4 py-2 bg-secondary text-foreground rounded-full"
         >
-          <span className={isPixelTheme ? "text-[10px]" : "text-sm"}>Cancel</span>
+          <span className="text-sm">Cancel</span>
         </motion.button>
 
         {/* Save button */}
@@ -313,12 +305,10 @@ const JournalEditor = ({
             whileTap={{ scale: 0.95 }}
             onClick={handleSave}
             disabled={isSaving || (!content.trim() && totalPhotos === 0)}
-            className={`flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground disabled:opacity-50 ${
-              isPixelTheme ? "" : "rounded-full"
-            }`}
+            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground disabled:opacity-50 rounded-full"
           >
             <Save className="w-4 h-4" />
-            <span className={isPixelTheme ? "text-[10px]" : "text-sm"}>
+            <span className="text-sm">
               {isSaving ? "Saving..." : "Save"}
             </span>
           </motion.button>

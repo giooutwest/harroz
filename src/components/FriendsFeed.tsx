@@ -30,6 +30,8 @@ interface Comment {
   user: Profile;
   likes_count: number;
   has_liked: boolean;
+  parent_id?: string | null;
+  replies?: Comment[];
 }
 
 interface Mood {
@@ -112,9 +114,11 @@ const FriendsFeed = ({ onFriendClick, highlightMoodId, shouldOpenComments, close
   const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<string | null>(null);
+  const [currentUserProfile, setCurrentUserProfile] = useState<Profile | null>(null);
   const [commentText, setCommentText] = useState<Record<string, string>>({});
   const [openComments, setOpenComments] = useState<Record<string, boolean>>({});
   const [showReactionMenu, setShowReactionMenu] = useState<string | null>(null);
+  const [replyingTo, setReplyingTo] = useState<{ moodId: string; commentId: string; username: string } | null>(null);
 
   const { trigger: haptic } = useHaptic();
 
@@ -123,6 +127,17 @@ const FriendsFeed = ({ onFriendClick, highlightMoodId, shouldOpenComments, close
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       setCurrentUser(user.id);
+
+      // Fetch current user's profile for optimistic updates
+      const { data: userProfile } = await supabase
+        .from('profiles')
+        .select('user_id, username, display_name, avatar_url, current_streak')
+        .eq('user_id', user.id)
+        .single();
+
+      if (userProfile) {
+        setCurrentUserProfile(userProfile);
+      }
 
       let friendIds: string[];
 
@@ -151,7 +166,7 @@ const FriendsFeed = ({ onFriendClick, highlightMoodId, shouldOpenComments, close
       } 
 
       if (friendIds.length === 0) {
-        setMoods([]);
+        setFeedItems([]);
         setLoading(false);
         return;
       }
@@ -222,7 +237,7 @@ const FriendsFeed = ({ onFriendClick, highlightMoodId, shouldOpenComments, close
         const { data: comments } = await supabase
           .from('mood_comments')
           .select(`
-            id, content, created_at, user_id,
+            id, content, created_at, user_id, parent_id,
             user:profiles(user_id, username, display_name, avatar_url, current_streak)
           `)
           .eq('mood_id', m.id)
@@ -232,7 +247,12 @@ const FriendsFeed = ({ onFriendClick, highlightMoodId, shouldOpenComments, close
           const { count: commentLikesCount } = await supabase.from('comment_likes').select('*', { count: 'exact', head: true }).eq('comment_id', c.id);
           const { data: myCommentLike } = await supabase.from('comment_likes').select('id').eq('comment_id', c.id).eq('user_id', user.id).maybeSingle();
 
-          return { ...c, likes_count: commentLikesCount || 0, has_liked: !!myCommentLike };
+          return {
+            ...c,
+            parent_id: c.parent_id || null,
+            likes_count: commentLikesCount || 0,
+            has_liked: !!myCommentLike
+          };
         }));
 
         if (highlightMoodId && m.id === highlightMoodId && shouldOpenComments) {
@@ -357,16 +377,87 @@ const FriendsFeed = ({ onFriendClick, highlightMoodId, shouldOpenComments, close
 
   const handlePostComment = async (moodId: string) => {
     const text = commentText[moodId];
-    if (!text?.trim() || !currentUser) return;
+    if (!text?.trim() || !currentUser || !currentUserProfile) return;
     haptic('success');
 
+    const trimmedText = text.trim();
+    const parentId = replyingTo?.moodId === moodId ? replyingTo.commentId : null;
+
+    // Create optimistic comment
+    const optimisticComment: Comment = {
+      id: `temp-${Date.now()}`,
+      content: trimmedText,
+      created_at: new Date().toISOString(),
+      user_id: currentUser,
+      user: currentUserProfile,
+      likes_count: 0,
+      has_liked: false,
+      parent_id: parentId,
+    };
+
+    // Optimistically update the UI
+    setFeedItems(prev => prev.map(item => {
+      if (item.type === 'mood' && item.id === moodId) {
+        const m = item as Mood;
+        return {
+          ...m,
+          comments: [...m.comments, optimisticComment],
+          comments_count: m.comments_count + 1,
+        };
+      }
+      return item;
+    }));
+
+    // Clear input and reply state
+    setCommentText(prev => ({ ...prev, [moodId]: "" }));
+    setReplyingTo(null);
+
     try {
-      const { error } = await supabase.from('mood_comments').insert({ mood_id: moodId, user_id: currentUser, content: text.trim() });
+      const { data, error } = await supabase
+        .from('mood_comments')
+        .insert({
+          mood_id: moodId,
+          user_id: currentUser,
+          content: trimmedText,
+          parent_id: parentId
+        })
+        .select('id')
+        .single();
+
       if (error) throw error;
-      setCommentText(prev => ({ ...prev, [moodId]: "" }));
+
+      // Update the temp ID with the real ID
+      if (data) {
+        setFeedItems(prev => prev.map(item => {
+          if (item.type === 'mood' && item.id === moodId) {
+            const m = item as Mood;
+            return {
+              ...m,
+              comments: m.comments.map(c =>
+                c.id === optimisticComment.id ? { ...c, id: data.id } : c
+              ),
+            };
+          }
+          return item;
+        }));
+      }
+
       toast.success("Comment posted!");
-      fetchFeed(); 
-    } catch (err) { toast.error("Failed to post comment"); }
+    } catch (err) {
+      // Rollback optimistic update on error
+      setFeedItems(prev => prev.map(item => {
+        if (item.type === 'mood' && item.id === moodId) {
+          const m = item as Mood;
+          return {
+            ...m,
+            comments: m.comments.filter(c => c.id !== optimisticComment.id),
+            comments_count: m.comments_count - 1,
+          };
+        }
+        return item;
+      }));
+      toast.error("Failed to post comment");
+    }
   };
 
   const handleLikeComment = async (commentId: string, hasLiked: boolean) => {
@@ -495,52 +586,130 @@ const FriendsFeed = ({ onFriendClick, highlightMoodId, shouldOpenComments, close
         </AnimatePresence>
 
         {/* Comments section */}
-        {(openComments[mood.id] || shouldOpenComments && highlightMoodId === mood.id) && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            className="mx-auto max-w-[320px] -mt-4 pt-6 bg-[#1a1a1a] border border-white/10 border-t-0 px-3 pb-3"
-          >
-            <div className="space-y-3">
-              {mood.comments.map((comment) => (
-                <div key={comment.id} className="flex gap-2 group">
-                  <button onClick={() => onFriendClick?.(comment.user.user_id)} className="shrink-0">
-                    <Avatar className="w-6 h-6">
-                      {comment.user.avatar_url && <AvatarImage src={comment.user.avatar_url} onError={(e) => { e.currentTarget.style.display = 'none'; }} />}
-                      <AvatarFallback className="text-[9px] bg-white/10 text-white">{comment.user.username?.[0]}</AvatarFallback>
-                    </Avatar>
-                  </button>
-                  <div className="flex-1">
-                    <div className="flex items-baseline justify-between">
-                      <button onClick={() => onFriendClick?.(comment.user.user_id)} className="text-xs font-semibold text-white hover:underline">{comment.user.display_name || comment.user.username}</button>
-                      <span className="text-[10px] text-white/40" style={{ fontFamily: "'Space Mono', monospace" }}>{formatDistanceToNow(new Date(comment.created_at))} ago</span>
+        <AnimatePresence>
+          {(openComments[mood.id] || (shouldOpenComments && highlightMoodId === mood.id)) && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="mx-auto max-w-[320px] -mt-4 pt-6 bg-[#1a1a1a] border border-white/10 border-t-0 px-3 pb-3"
+            >
+              <div className="space-y-3">
+                {mood.comments.length === 0 ? (
+                  <p className="text-white/40 text-xs text-center py-2">No comments yet. Be the first!</p>
+                ) : (
+                  mood.comments
+                    .filter(c => !c.parent_id)
+                    .map((comment) => {
+                      const replies = mood.comments.filter(c => c.parent_id === comment.id);
+                      return (
+                        <div key={comment.id}>
+                          {/* Main comment */}
+                          <div className="flex gap-2 group">
+                            <button onClick={() => onFriendClick?.(comment.user.user_id)} className="shrink-0">
+                              <Avatar className="w-6 h-6">
+                                {comment.user.avatar_url && <AvatarImage src={comment.user.avatar_url} onError={(e) => { e.currentTarget.style.display = 'none'; }} />}
+                                <AvatarFallback className="text-[9px] bg-white/10 text-white">{comment.user.username?.[0]}</AvatarFallback>
+                              </Avatar>
+                            </button>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-baseline justify-between gap-2">
+                                <button onClick={() => onFriendClick?.(comment.user.user_id)} className="text-xs font-semibold text-white hover:underline truncate">{comment.user.display_name || comment.user.username}</button>
+                                <span className="text-[10px] text-white/40 shrink-0" style={{ fontFamily: "'Space Mono', monospace" }}>{formatDistanceToNow(new Date(comment.created_at))} ago</span>
+                              </div>
+                              <p className="text-xs text-white/70 mt-0.5 break-words">{comment.content}</p>
+                              <div className="flex items-center gap-3 mt-1">
+                                <button
+                                  onClick={() => handleLikeComment(comment.id, comment.has_liked)}
+                                  className="flex items-center gap-1 text-[10px] text-white/40 hover:text-red-500 transition-colors"
+                                >
+                                  <Heart className={`w-3 h-3 ${comment.has_liked ? "fill-red-500 text-red-500" : ""}`} />
+                                  {comment.likes_count > 0 && <span>{comment.likes_count}</span>}
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setReplyingTo({ moodId: mood.id, commentId: comment.id, username: comment.user.display_name || comment.user.username || 'user' });
+                                    haptic('light');
+                                  }}
+                                  className="text-[10px] text-white/40 hover:text-[#C5A059] transition-colors"
+                                >
+                                  Reply
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Replies */}
+                          {replies.length > 0 && (
+                            <div className="ml-8 mt-2 space-y-2 border-l border-white/10 pl-3">
+                              {replies.map((reply) => (
+                                <div key={reply.id} className="flex gap-2 group">
+                                  <button onClick={() => onFriendClick?.(reply.user.user_id)} className="shrink-0">
+                                    <Avatar className="w-5 h-5">
+                                      {reply.user.avatar_url && <AvatarImage src={reply.user.avatar_url} onError={(e) => { e.currentTarget.style.display = 'none'; }} />}
+                                      <AvatarFallback className="text-[8px] bg-white/10 text-white">{reply.user.username?.[0]}</AvatarFallback>
+                                    </Avatar>
+                                  </button>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-baseline justify-between gap-2">
+                                      <button onClick={() => onFriendClick?.(reply.user.user_id)} className="text-[11px] font-semibold text-white hover:underline truncate">{reply.user.display_name || reply.user.username}</button>
+                                      <span className="text-[9px] text-white/40 shrink-0" style={{ fontFamily: "'Space Mono', monospace" }}>{formatDistanceToNow(new Date(reply.created_at))} ago</span>
+                                    </div>
+                                    <p className="text-[11px] text-white/70 mt-0.5 break-words">{reply.content}</p>
+                                    <button
+                                      onClick={() => handleLikeComment(reply.id, reply.has_liked)}
+                                      className="flex items-center gap-1 mt-1 text-[10px] text-white/40 hover:text-red-500 transition-colors"
+                                    >
+                                      <Heart className={`w-2.5 h-2.5 ${reply.has_liked ? "fill-red-500 text-red-500" : ""}`} />
+                                      {reply.likes_count > 0 && <span>{reply.likes_count}</span>}
+                                    </button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })
+                )}
+
+                {/* Comment input */}
+                <div className="mt-3 pt-3 border-t border-white/10">
+                  {replyingTo?.moodId === mood.id && (
+                    <div className="flex items-center justify-between mb-2 px-2 py-1 bg-white/5 rounded">
+                      <span className="text-[10px] text-white/60">
+                        Replying to <span className="text-[#C5A059]">@{replyingTo.username}</span>
+                      </span>
+                      <button
+                        onClick={() => setReplyingTo(null)}
+                        className="text-white/40 hover:text-white text-xs"
+                      >
+                        ✕
+                      </button>
                     </div>
-                    <p className="text-xs text-white/70 mt-0.5">{comment.content}</p>
-                  </div>
-                  <div className="flex flex-col items-center">
-                    <button onClick={() => handleLikeComment(comment.id, comment.has_liked)} className="p-1 hover:bg-white/10 rounded-full transition-colors active:scale-90">
-                      <Heart className={`w-3 h-3 ${comment.has_liked ? "fill-red-500 text-red-500" : "text-white/40"}`} />
-                    </button>
-                    {comment.likes_count > 0 && (<span className="text-[9px] text-white/40">{comment.likes_count}</span>)}
+                  )}
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder={replyingTo?.moodId === mood.id ? `Reply to @${replyingTo.username}...` : "Add a comment..."}
+                      className="h-8 text-xs bg-white/5 border-white/10 text-white placeholder:text-white/30"
+                      value={commentText[mood.id] || ""}
+                      onChange={(e) => setCommentText(prev => ({ ...prev, [mood.id]: e.target.value }))}
+                      onKeyDown={(e) => { if (e.key === 'Enter') handlePostComment(mood.id); }}
+                    />
+                    <Button
+                      size="icon"
+                      className="h-8 w-8 bg-[#C5A059] hover:bg-[#C5A059]/80"
+                      onClick={() => handlePostComment(mood.id)}
+                      disabled={!commentText[mood.id]?.trim()}
+                    >
+                      <Send className="w-3 h-3 text-black" />
+                    </Button>
                   </div>
                 </div>
-              ))}
-              <div className="flex gap-2 mt-2">
-                <Input
-                  placeholder="Add a comment..."
-                  className="h-8 text-xs bg-white/5 border-white/10 text-white placeholder:text-white/30"
-                  value={commentText[mood.id] || ""}
-                  onChange={(e) => setCommentText(prev => ({ ...prev, [mood.id]: e.target.value }))}
-                  onKeyDown={(e) => { if (e.key === 'Enter') handlePostComment(mood.id); }}
-                />
-                <Button size="icon" className="h-8 w-8 bg-[#C5A059] hover:bg-[#C5A059]/80" onClick={() => handlePostComment(mood.id)}>
-                  <Send className="w-3 h-3 text-black" />
-                </Button>
               </div>
-            </div>
-          </motion.div>
-        )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     );
   };

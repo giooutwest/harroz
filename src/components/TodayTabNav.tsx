@@ -7,17 +7,15 @@ interface TodayTabNavProps {
   activeSection: TodaySection;
   onSectionChange: (section: TodaySection) => void;
   isJournalLocked?: boolean;
-  isPixelTheme?: boolean;
 }
 
 const TodayTabNav = ({
   activeSection,
   onSectionChange,
-  isJournalLocked = true,
-  isPixelTheme = false
+  isJournalLocked = true
 }: TodayTabNavProps) => {
   return (
-    <div className={`flex bg-secondary p-1 mb-6 ${isPixelTheme ? "" : "rounded-full"}`}>
+    <div className="flex bg-secondary p-1 mb-6 rounded-full">
       {/* Mood Post button */}
       <button
         onClick={() => onSectionChange("post")}
@@ -25,17 +23,17 @@ const TodayTabNav = ({
           activeSection === "post"
             ? "text-foreground"
             : "text-muted-foreground hover:text-foreground"
-        } ${isPixelTheme ? "" : "rounded-full"}`}
+        } rounded-full`}
       >
         {activeSection === "post" && (
           <motion.div
             layoutId="todayNavIndicator"
-            className={`absolute inset-0 bg-background shadow-sm ${isPixelTheme ? "" : "rounded-full"}`}
+            className="absolute inset-0 bg-background shadow-sm rounded-full"
             transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
           />
         )}
-        <Camera className={`w-4 h-4 relative z-10 ${isPixelTheme ? "" : ""}`} />
-        <span className={`relative z-10 font-medium ${isPixelTheme ? "text-[10px]" : "text-sm"}`}>
+        <Camera className="w-4 h-4 relative z-10" />
+        <span className="relative z-10 font-medium text-sm">
           Mood Post
         </span>
       </button>
@@ -47,17 +45,17 @@ const TodayTabNav = ({
           activeSection === "journal"
             ? "text-foreground"
             : "text-muted-foreground hover:text-foreground"
-        } ${isPixelTheme ? "" : "rounded-full"}`}
+        } rounded-full`}
       >
         {activeSection === "journal" && (
           <motion.div
             layoutId="todayNavIndicator"
-            className={`absolute inset-0 bg-background shadow-sm ${isPixelTheme ? "" : "rounded-full"}`}
+            className="absolute inset-0 bg-background shadow-sm rounded-full"
             transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
           />
         )}
-        <BookOpen className={`w-4 h-4 relative z-10`} />
-        <span className={`relative z-10 font-medium ${isPixelTheme ? "text-[10px]" : "text-sm"}`}>
+        <BookOpen className="w-4 h-4 relative z-10" />
+        <span className="relative z-10 font-medium text-sm">
           Journal
         </span>
         {isJournalLocked && (

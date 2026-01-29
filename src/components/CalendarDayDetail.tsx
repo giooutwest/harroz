@@ -1,19 +1,18 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Heart, MessageCircle, Send, User, Reply, CornerDownRight, ChevronDown, ChevronUp } from "lucide-react";
+import { X, Heart, MessageCircle, Send, Reply, CornerDownRight, ChevronDown, ChevronUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "./ui/input";
 import { formatDistanceToNow } from "date-fns";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"; // Using standard Avatar for consistency
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface CalendarDayDetailProps {
   isOpen: boolean;
   onClose: () => void;
   date: string;
-  isPixelTheme?: boolean;
-  onFriendClick?: (friendId: string) => void; // 1. Added Prop
+  onFriendClick?: (friendId: string) => void;
 }
 
 interface MoodEntry {
@@ -65,15 +64,7 @@ const getMoodLabel = (rating: number): string => {
   return "Bright & sunny";
 };
 
-const getMoodEmoji = (rating: number): string => {
-  if (rating <= 2) return "🌧️";
-  if (rating <= 4) return "🌦️";
-  if (rating <= 6) return "⛅";
-  if (rating <= 8) return "🌤️";
-  return "☀️";
-};
-
-const CalendarDayDetail = ({ isOpen, onClose, date, isPixelTheme = false, onFriendClick }: CalendarDayDetailProps) => {
+const CalendarDayDetail = ({ isOpen, onClose, date, onFriendClick }: CalendarDayDetailProps) => {
   const [activeTab, setActiveTab] = useState<"you" | "friends">("you");
   const [myMood, setMyMood] = useState<MoodEntry | null>(null);
   const [friendMoods, setFriendMoods] = useState<MoodEntry[]>([]);
@@ -112,18 +103,18 @@ const CalendarDayDetail = ({ isOpen, onClose, date, isPixelTheme = false, onFrie
         .from('profiles')
         .select('user_id, display_name, avatar_url')
         .in('user_id', userIds);
-      
+
       const profileMap = new Map((profiles || []).map(p => [p.user_id, p]));
-      
+
       const allComments = data.map(comment => ({
         ...comment,
         user_profile: profileMap.get(comment.user_id) || null,
         replies: [] as Comment[]
       }));
-      
+
       const topLevel: Comment[] = [];
       const repliesMap = new Map<string, Comment[]>();
-      
+
       allComments.forEach(comment => {
         if (comment.parent_id) {
           const existing = repliesMap.get(comment.parent_id) || [];
@@ -133,11 +124,11 @@ const CalendarDayDetail = ({ isOpen, onClose, date, isPixelTheme = false, onFrie
           topLevel.push(comment);
         }
       });
-      
+
       topLevel.forEach(comment => {
         comment.replies = repliesMap.get(comment.id) || [];
       });
-      
+
       setComments(prev => ({ ...prev, [moodId]: topLevel }));
     } else {
       setComments(prev => ({ ...prev, [moodId]: [] }));
@@ -177,7 +168,7 @@ const CalendarDayDetail = ({ isOpen, onClose, date, isPixelTheme = false, onFrie
         comments_count: commentsResult.count || 0,
         user_liked: !!userLikeResult.data
       };
-      
+
       setMyMood(myMoodObj);
       setExpandedComments(myMoodObj.id);
       fetchComments(myMoodObj.id);
@@ -284,8 +275,8 @@ const CalendarDayDetail = ({ isOpen, onClose, date, isPixelTheme = false, onFrie
         likes_count: isLiked ? prev.likes_count - 1 : prev.likes_count + 1
       } : null);
     } else {
-      setFriendMoods(prev => prev.map(m => 
-        m.id === moodId 
+      setFriendMoods(prev => prev.map(m =>
+        m.id === moodId
           ? { ...m, user_liked: !isLiked, likes_count: isLiked ? m.likes_count - 1 : m.likes_count + 1 }
           : m
       ));
@@ -302,17 +293,17 @@ const CalendarDayDetail = ({ isOpen, onClose, date, isPixelTheme = false, onFrie
     }
 
     setSubmittingComment(true);
-    
+
     const insertData: { mood_id: string; user_id: string; content: string; parent_id?: string } = {
       mood_id: moodId,
       user_id: user.id,
       content
     };
-    
+
     if (replyingTo && replyingTo.moodId === moodId) {
       insertData.parent_id = replyingTo.commentId;
     }
-    
+
     const { error } = await supabase.from('mood_comments').insert(insertData);
     setSubmittingComment(false);
 
@@ -346,7 +337,7 @@ const CalendarDayDetail = ({ isOpen, onClose, date, isPixelTheme = false, onFrie
     if (myMood?.id === moodId) {
       setMyMood(prev => prev ? { ...prev, comments_count: prev.comments_count + 1 } : null);
     } else {
-      setFriendMoods(prev => prev.map(m => 
+      setFriendMoods(prev => prev.map(m =>
         m.id === moodId ? { ...m, comments_count: m.comments_count + 1 } : m
       ));
     }
@@ -362,47 +353,44 @@ const CalendarDayDetail = ({ isOpen, onClose, date, isPixelTheme = false, onFrie
     setNewComment("");
   };
 
-  const borderRadius = isPixelTheme ? "0" : undefined;
-  const formattedDate = new Date(date + 'T12:00:00').toLocaleDateString('en-US', { 
+  const formattedDate = new Date(date + 'T12:00:00').toLocaleDateString('en-US', {
     weekday: 'long',
-    month: 'long', 
-    day: 'numeric' 
+    month: 'long',
+    day: 'numeric'
   });
 
   const renderComment = (comment: Comment, moodId: string, isReply: boolean = false) => (
     <div key={comment.id} className={`flex gap-2 ${isReply ? "ml-6 pl-2 border-l-2 border-border" : ""}`}>
-      {/* 2. Clickable Avatar */}
       <button onClick={() => onFriendClick?.(comment.user_id)} className="shrink-0">
         <Avatar className="w-6 h-6 mt-0.5 cursor-pointer hover:opacity-80 transition-opacity">
           <AvatarImage src={comment.user_profile?.avatar_url || undefined} />
           <AvatarFallback className="text-[9px]">{comment.user_profile?.display_name?.[0]}</AvatarFallback>
         </Avatar>
       </button>
-      
+
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
-          {/* 3. Clickable Name */}
-          <button 
+          <button
             onClick={() => onFriendClick?.(comment.user_id)}
-            className={`font-medium hover:underline cursor-pointer ${isPixelTheme ? "text-[8px]" : "text-xs"}`}
+            className="font-medium hover:underline cursor-pointer text-xs"
           >
             {comment.user_profile?.display_name || "User"}
           </button>
-          
-          <span className={`text-muted-foreground ${isPixelTheme ? "text-[6px]" : "text-[10px]"}`}>
+
+          <span className="text-muted-foreground text-[10px]">
             {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
           </span>
           {!isReply && !isOldMood && (
             <button
               onClick={() => handleReply(comment.id, comment.user_profile?.display_name || "User", moodId)}
-              className={`text-muted-foreground hover:text-primary transition-colors flex items-center gap-0.5 ${isPixelTheme ? "text-[6px]" : "text-[10px]"}`}
+              className="text-muted-foreground hover:text-primary transition-colors flex items-center gap-0.5 text-[10px]"
             >
               <Reply className="w-3 h-3" />
               Reply
             </button>
           )}
         </div>
-        <p className={`break-words ${isPixelTheme ? "text-[8px]" : "text-sm"}`}>{comment.content}</p>
+        <p className="break-words text-sm">{comment.content}</p>
         {comment.replies && comment.replies.length > 0 && (
           <div className="mt-2 space-y-2">
             {comment.replies.map(reply => renderComment(reply, moodId, true))}
@@ -424,26 +412,24 @@ const CalendarDayDetail = ({ isOpen, onClose, date, isPixelTheme = false, onFrie
         key={mood.id}
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className={`bg-card border border-border overflow-hidden ${isPixelTheme ? "" : "rounded-2xl"}`}
-        style={{ borderRadius }}
+        className="bg-card border border-border overflow-hidden rounded-2xl"
       >
         <div className="p-4 flex items-center gap-3">
-          {/* 4. Clickable User in Card Header */}
-          <button 
-            className="flex items-center gap-3 flex-1 text-left" 
+          <button
+            className="flex items-center gap-3 flex-1 text-left"
             onClick={() => !isOwn && onFriendClick?.(mood.user_id)}
-            disabled={isOwn} // Disable if it's you (optional)
+            disabled={isOwn}
           >
-            <Avatar className={isPixelTheme ? "rounded-none" : ""}>
+            <Avatar>
               <AvatarImage src={mood.user_profile?.avatar_url || undefined} />
               <AvatarFallback>{mood.user_profile?.display_name?.[0]}</AvatarFallback>
             </Avatar>
             <div className="flex-1">
-              <p className={`font-medium ${isPixelTheme ? "text-xs" : ""}`}>
+              <p className="font-medium">
                 {isOwn ? "You" : (mood.user_profile?.display_name || "Friend")}
               </p>
               {showRating && (
-                <p className={`text-muted-foreground ${isPixelTheme ? "text-[8px]" : "text-xs"}`}>
+                <p className="text-muted-foreground text-xs">
                   {getMoodLabel(mood.rating)}
                 </p>
               )}
@@ -451,9 +437,9 @@ const CalendarDayDetail = ({ isOpen, onClose, date, isPixelTheme = false, onFrie
           </button>
 
           {showRating && (
-            <div 
-              className={`px-3 py-1 font-bold text-white ${isPixelTheme ? "text-xs" : "text-sm rounded-full"}`}
-              style={{ backgroundColor: getMoodColor(mood.rating), borderRadius }}
+            <div
+              className="px-3 py-1 font-bold text-white text-sm rounded-full"
+              style={{ backgroundColor: getMoodColor(mood.rating) }}
             >
               {mood.rating}/10
             </div>
@@ -462,12 +448,12 @@ const CalendarDayDetail = ({ isOpen, onClose, date, isPixelTheme = false, onFrie
 
         {showPhoto && mood.photo_signed_url && (
           <div className="w-full aspect-square bg-secondary/20 relative pointer-events-none">
-             <img src={mood.photo_signed_url} alt="Mood" className="w-full h-full object-cover" />
+            <img src={mood.photo_signed_url} alt="Mood" className="w-full h-full object-cover" />
           </div>
         )}
 
         {showCaption && mood.caption && (
-          <p className={`px-4 py-3 ${isPixelTheme ? "text-xs" : "text-sm"}`}>{mood.caption}</p>
+          <p className="px-4 py-3 text-sm">{mood.caption}</p>
         )}
 
         <div className="px-4 py-3 border-t border-border flex items-center gap-4">
@@ -478,14 +464,14 @@ const CalendarDayDetail = ({ isOpen, onClose, date, isPixelTheme = false, onFrie
             }`}
           >
             <Heart className={`w-5 h-5 ${mood.user_liked ? "fill-current" : ""}`} />
-            <span className={isPixelTheme ? "text-[8px]" : "text-sm"}>{mood.likes_count}</span>
+            <span className="text-sm">{mood.likes_count}</span>
           </button>
           <button
             onClick={() => toggleComments(mood.id)}
             className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors"
           >
             <MessageCircle className="w-5 h-5" />
-            <span className={isPixelTheme ? "text-[8px]" : "text-sm"}>{mood.comments_count}</span>
+            <span className="text-sm">{mood.comments_count}</span>
             {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </button>
         </div>
@@ -495,7 +481,7 @@ const CalendarDayDetail = ({ isOpen, onClose, date, isPixelTheme = false, onFrie
             <div className="border-t border-border overflow-hidden">
               <div className="p-4 space-y-3 max-h-60 overflow-y-auto overscroll-contain">
                 {moodComments.length === 0 ? (
-                  <p className={`text-muted-foreground text-center ${isPixelTheme ? "text-[8px]" : "text-sm"}`}>
+                  <p className="text-muted-foreground text-center text-sm">
                     No comments yet. Be the first!
                   </p>
                 ) : (
@@ -505,7 +491,7 @@ const CalendarDayDetail = ({ isOpen, onClose, date, isPixelTheme = false, onFrie
 
               {replyingTo && replyingTo.moodId === mood.id && (
                 <div className="px-3 py-2 bg-secondary/50 border-t border-border flex items-center justify-between">
-                  <span className={`text-muted-foreground flex items-center gap-1 ${isPixelTheme ? "text-[8px]" : "text-xs"}`}>
+                  <span className="text-muted-foreground flex items-center gap-1 text-xs">
                     <CornerDownRight className="w-3 h-3" />
                     Replying to {replyingTo.userName}
                   </span>
@@ -522,8 +508,7 @@ const CalendarDayDetail = ({ isOpen, onClose, date, isPixelTheme = false, onFrie
                     value={expandedComments === mood.id ? newComment : ""}
                     onChange={(e) => setNewComment(e.target.value)}
                     maxLength={500}
-                    className={`flex-1 ${isPixelTheme ? "text-xs" : ""}`}
-                    style={{ borderRadius }}
+                    className="flex-1"
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && !e.shiftKey) {
                         e.preventDefault();
@@ -534,8 +519,7 @@ const CalendarDayDetail = ({ isOpen, onClose, date, isPixelTheme = false, onFrie
                   <button
                     onClick={() => handleSubmitComment(mood.id, mood.user_id)}
                     disabled={!newComment.trim() || submittingComment}
-                    className={`p-2 bg-primary text-primary-foreground disabled:opacity-50 ${isPixelTheme ? "" : "rounded-full"}`}
-                    style={{ borderRadius }}
+                    className="p-2 bg-primary text-primary-foreground disabled:opacity-50 rounded-full"
                   >
                     <Send className="w-4 h-4" />
                   </button>
@@ -563,18 +547,15 @@ const CalendarDayDetail = ({ isOpen, onClose, date, isPixelTheme = false, onFrie
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
             onClick={(e) => e.stopPropagation()}
-            className={`bg-card border border-border w-full max-w-lg h-auto max-h-[80vh] flex flex-col shadow-2xl ${
-              isPixelTheme ? "" : "rounded-3xl"
-            }`}
-            style={{ borderRadius }}
+            className="bg-card border border-border w-full max-w-lg h-auto max-h-[80vh] flex flex-col shadow-2xl rounded-3xl"
           >
             <div className="flex items-center justify-between p-4 border-b border-border flex-shrink-0">
-              <h3 className={`font-semibold ${isPixelTheme ? "text-xs" : "text-lg"}`}>
+              <h3 className="font-semibold text-lg">
                 {formattedDate}
               </h3>
-              <button 
+              <button
                 onClick={onClose}
-                className={`p-2 bg-secondary touch-manipulation ${isPixelTheme ? "" : "rounded-full"}`}
+                className="p-2 bg-secondary touch-manipulation rounded-full"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -584,20 +565,20 @@ const CalendarDayDetail = ({ isOpen, onClose, date, isPixelTheme = false, onFrie
               <button
                 onClick={() => setActiveTab("you")}
                 className={`flex-1 py-3 text-center transition-colors ${
-                  activeTab === "you" 
-                    ? "text-primary border-b-2 border-primary font-medium" 
+                  activeTab === "you"
+                    ? "text-primary border-b-2 border-primary font-medium"
                     : "text-muted-foreground"
-                } ${isPixelTheme ? "text-xs" : "text-sm"}`}
+                } text-sm`}
               >
                 Your Mood
               </button>
               <button
                 onClick={() => setActiveTab("friends")}
                 className={`flex-1 py-3 text-center transition-colors ${
-                  activeTab === "friends" 
-                    ? "text-primary border-b-2 border-primary font-medium" 
+                  activeTab === "friends"
+                    ? "text-primary border-b-2 border-primary font-medium"
                     : "text-muted-foreground"
-                } ${isPixelTheme ? "text-xs" : "text-sm"}`}
+                } text-sm`}
               >
                 Friends ({friendMoods.length})
               </button>
@@ -619,7 +600,7 @@ const CalendarDayDetail = ({ isOpen, onClose, date, isPixelTheme = false, onFrie
                   </div>
                 ) : (
                   <div className="text-center py-12 text-muted-foreground">
-                    <p className={isPixelTheme ? "text-xs" : ""}>No mood logged for this day</p>
+                    <p>No mood logged for this day</p>
                   </div>
                 )
               ) : (
@@ -630,7 +611,7 @@ const CalendarDayDetail = ({ isOpen, onClose, date, isPixelTheme = false, onFrie
                 ) : (
                   <div className="text-center py-12 text-muted-foreground">
                     <Heart className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                    <p className={isPixelTheme ? "text-xs" : ""}>No friend moods for this day</p>
+                    <p>No friend moods for this day</p>
                   </div>
                 )
               )}

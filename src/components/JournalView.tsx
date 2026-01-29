@@ -11,7 +11,6 @@ interface JournalViewProps {
   onClose: () => void;
   onEdit?: () => void;
   canEdit?: boolean;
-  isPixelTheme?: boolean;
 }
 
 const JournalView = ({
@@ -19,8 +18,7 @@ const JournalView = ({
   entry,
   onClose,
   onEdit,
-  canEdit = false,
-  isPixelTheme = false
+  canEdit = false
 }: JournalViewProps) => {
   const [signedPhotoUrls, setSignedPhotoUrls] = useState<string[]>([]);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
@@ -89,20 +87,18 @@ const JournalView = ({
           initial={{ scale: 0.9, opacity: 0, y: 20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.9, opacity: 0, y: 20 }}
-          className={`bg-card border border-border w-full max-w-lg max-h-[85vh] flex flex-col overflow-hidden ${
-            isPixelTheme ? "" : "rounded-2xl"
-          }`}
+          className="bg-card border border-border w-full max-w-lg max-h-[85vh] flex flex-col overflow-hidden rounded-2xl"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-border flex-shrink-0">
             <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 bg-primary/10 flex items-center justify-center ${isPixelTheme ? "" : "rounded-full"}`}>
+              <div className="w-10 h-10 bg-primary/10 flex items-center justify-center rounded-full">
                 <BookOpen className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <h3 className={`font-bold ${isPixelTheme ? "text-xs" : "text-sm"}`}>Journal Entry</h3>
-                <p className={`text-muted-foreground ${isPixelTheme ? "text-[8px]" : "text-xs"}`}>
+                <h3 className="font-bold text-sm">Journal Entry</h3>
+                <p className="text-muted-foreground text-xs">
                   {formattedDate}
                 </p>
               </div>
@@ -111,14 +107,14 @@ const JournalView = ({
               {canEdit && onEdit && (
                 <button
                   onClick={onEdit}
-                  className={`p-2 text-muted-foreground hover:text-primary transition-colors ${isPixelTheme ? "" : "rounded-full"}`}
+                  className="p-2 text-muted-foreground hover:text-primary transition-colors rounded-full"
                 >
                   <Pencil className="w-5 h-5" />
                 </button>
               )}
               <button
                 onClick={onClose}
-                className={`p-2 text-muted-foreground hover:text-foreground transition-colors ${isPixelTheme ? "" : "rounded-full"}`}
+                className="p-2 text-muted-foreground hover:text-foreground transition-colors rounded-full"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -151,17 +147,13 @@ const JournalView = ({
                       <>
                         <button
                           onClick={prevPhoto}
-                          className={`absolute left-2 top-1/2 -translate-y-1/2 p-2 bg-black/50 text-white ${
-                            isPixelTheme ? "" : "rounded-full"
-                          }`}
+                          className="absolute left-2 top-1/2 -translate-y-1/2 p-2 bg-black/50 text-white rounded-full"
                         >
                           <ChevronLeft className="w-5 h-5" />
                         </button>
                         <button
                           onClick={nextPhoto}
-                          className={`absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-black/50 text-white ${
-                            isPixelTheme ? "" : "rounded-full"
-                          }`}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-black/50 text-white rounded-full"
                         >
                           <ChevronRight className="w-5 h-5" />
                         </button>
@@ -172,9 +164,9 @@ const JournalView = ({
                             <button
                               key={index}
                               onClick={() => setCurrentPhotoIndex(index)}
-                              className={`w-2 h-2 transition-colors ${
+                              className={`w-2 h-2 transition-colors rounded-full ${
                                 index === currentPhotoIndex ? "bg-white" : "bg-white/50"
-                              } ${isPixelTheme ? "" : "rounded-full"}`}
+                              }`}
                             />
                           ))}
                         </div>
@@ -188,11 +180,11 @@ const JournalView = ({
             {/* Text content */}
             <div className="p-4">
               {entry.content ? (
-                <p className={`text-foreground whitespace-pre-wrap ${isPixelTheme ? "text-xs" : "text-sm"}`}>
+                <p className="text-foreground whitespace-pre-wrap text-sm">
                   {entry.content}
                 </p>
               ) : (
-                <p className={`text-muted-foreground italic ${isPixelTheme ? "text-xs" : "text-sm"}`}>
+                <p className="text-muted-foreground italic text-sm">
                   No text content
                 </p>
               )}
@@ -201,7 +193,7 @@ const JournalView = ({
 
           {/* Footer */}
           <div className="p-4 border-t border-border flex-shrink-0">
-            <p className={`text-muted-foreground text-center ${isPixelTheme ? "text-[8px]" : "text-xs"}`}>
+            <p className="text-muted-foreground text-center text-xs">
               {signedPhotoUrls.length > 0 && `${signedPhotoUrls.length} photo${signedPhotoUrls.length > 1 ? 's' : ''} • `}
               {entry.content?.length || 0} characters
             </p>
