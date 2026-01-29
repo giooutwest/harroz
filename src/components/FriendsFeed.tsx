@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, RefObject } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -119,6 +119,7 @@ const FriendsFeed = ({ onFriendClick, highlightMoodId, shouldOpenComments, close
   const [openComments, setOpenComments] = useState<Record<string, boolean>>({});
   const [showReactionMenu, setShowReactionMenu] = useState<string | null>(null);
   const [replyingTo, setReplyingTo] = useState<{ moodId: string; commentId: string; username: string } | null>(null);
+  const commentInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   const { trigger: haptic } = useHaptic();
 
@@ -413,14 +414,19 @@ const FriendsFeed = ({ onFriendClick, highlightMoodId, shouldOpenComments, close
     setReplyingTo(null);
 
     try {
+      // Build insert object - only include parent_id if it's a reply
+      const insertData: { mood_id: string; user_id: string; content: string; parent_id?: string } = {
+        mood_id: moodId,
+        user_id: currentUser,
+        content: trimmedText,
+      };
+      if (parentId) {
+        insertData.parent_id = parentId;
+      }
+
       const { data, error } = await supabase
         .from('mood_comments')
-        .insert({
-          mood_id: moodId,
-          user_id: currentUser,
-          content: trimmedText,
-          parent_id: parentId
-        })
+        .insert(insertData)
         .select('id')
         .single();
 
@@ -630,6 +636,10 @@ const FriendsFeed = ({ onFriendClick, highlightMoodId, shouldOpenComments, close
                                   onClick={() => {
                                     setReplyingTo({ moodId: mood.id, commentId: comment.id, username: comment.user.display_name || comment.user.username || 'user' });
                                     haptic('light');
+                                    // Focus the input after a short delay to ensure state is updated
+                                    setTimeout(() => {
+                                      commentInputRefs.current[mood.id]?.focus();
+                                    }, 100);
                                   }}
                                   className="text-[10px] text-white/40 hover:text-[#C5A059] transition-colors"
                                 >
@@ -690,6 +700,7 @@ const FriendsFeed = ({ onFriendClick, highlightMoodId, shouldOpenComments, close
                   )}
                   <div className="flex gap-2">
                     <Input
+                      ref={(el) => { commentInputRefs.current[mood.id] = el; }}
                       placeholder={replyingTo?.moodId === mood.id ? `Reply to @${replyingTo.username}...` : "Add a comment..."}
                       className="h-8 text-xs bg-white/5 border-white/10 text-white placeholder:text-white/30"
                       value={commentText[mood.id] || ""}
