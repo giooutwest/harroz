@@ -52,14 +52,25 @@ const NotificationsSheet = ({ isOpen, onClose, onNotificationClick }: Notificati
       .order('created_at', { ascending: false })
       .limit(50);
 
-    if (data) {
-      const enriched = await Promise.all(
-        data.map(async (notif) => {
-          const { data: profile } = await supabase.from('profiles').select('display_name, avatar_url').eq('user_id', notif.actor_id).maybeSingle();
-          return { ...notif, actor_profile: profile } as Notification;
-        })
-      );
+    if (data && data.length > 0) {
+      // OPTIMIZED: Batch fetch all actor profiles at once instead of N+1 queries
+      const actorIds = [...new Set(data.map(n => n.actor_id))];
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, display_name, avatar_url')
+        .in('user_id', actorIds);
+
+      // Create lookup map for O(1) access
+      const profileMap = new Map((profiles || []).map(p => [p.user_id, p]));
+
+      const enriched = data.map(notif => ({
+        ...notif,
+        actor_profile: profileMap.get(notif.actor_id) || null
+      })) as Notification[];
+
       setNotifications(enriched);
+    } else {
+      setNotifications([]);
     }
     setLoading(false);
   }, [user]);

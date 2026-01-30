@@ -250,7 +250,7 @@ const Index = () => {
   // Show "What's New" modal for version 2.0 features
   useEffect(() => {
     if (user && !showOnboarding) {
-      const whatsNewVersion = "2.0"; // Update this when adding new features
+      const whatsNewVersion = "2.1"; // Update this when adding new features
       const whatsNewKey = `moodmemos-whatsnew-${whatsNewVersion}-${user.id}`;
       const hasSeen = localStorage.getItem(whatsNewKey);
 

@@ -67,11 +67,14 @@ const FriendsTab = ({ initialSelectedFriendId, initialSelectedMoodId, initialSel
 
   useEffect(() => {
     if (user) {
-      fetchFriends();
-      fetchPendingRequests();
-      fetchCloseFriends();
-      fetchMyUsername();
-      fetchNudges();
+      // Parallelize all initial data fetches for faster load
+      Promise.all([
+        fetchFriends(),
+        fetchPendingRequests(),
+        fetchCloseFriends(),
+        fetchMyUsername(),
+        fetchNudges()
+      ]);
     }
   }, [user]);
 
@@ -298,17 +301,14 @@ const FriendsTab = ({ initialSelectedFriendId, initialSelectedMoodId, initialSel
       <div className="flex items-start justify-between mb-8">
         <div>
           <h1
-            className="text-5xl font-black text-[#C5A059] uppercase tracking-tight"
-            style={{ fontFamily: "'Abril Fatface', serif" }}
+            className="text-5xl font-black text-white uppercase tracking-tight"
+            style={{
+              fontFamily: "'Abril Fatface', serif",
+              textShadow: "2px 2px 0px #C5A059, 4px 4px 0px rgba(0,0,0,0.3)"
+            }}
           >
-            Hi, ROZ
+            FRIENDS
           </h1>
-          <p
-            className="text-[10px] text-white/40 uppercase tracking-[0.2em] mt-1"
-            style={{ fontFamily: "'Space Mono', monospace" }}
-          >
-            Latest updates from friends
-          </p>
         </div>
         <div className="flex items-center gap-2">
           <motion.button

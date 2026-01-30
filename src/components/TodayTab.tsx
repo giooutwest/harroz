@@ -3,14 +3,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Heart, CloudRain, Cloud, Sun, Star, Camera, X, MessageCircle, User, Lock, Pencil, Flame, Share2, Users, BookOpen } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { PixelStorm, PixelRain, PixelCloudy, PixelPartlyCloudy, PixelSunny, PixelHeart } from "./PixelIcons";
+import { PixelStorm, PixelRain, PixelCloudy, PixelPartlyCloudy, PixelSunny } from "./PixelIcons";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
-import { z } from "zod";
 import { getLocalDateString } from "@/hooks/useTimeWindow";
 import { useTimeWindowStatic } from "@/hooks/useTimeWindowStatic";
-import PhotoViewerModal from "./PhotoViewerModal";
 import CountdownTimer from "./CountdownTimer";
 import MoodEngagementSheet from "./MoodEngagementSheet";
 import { Badge } from "@/components/ui/badge";
@@ -20,14 +18,12 @@ import PinEntryModal from "./PinEntryModal";
 import JournalEditor from "./JournalEditor";
 import { useJournalPin } from "@/hooks/useJournalPin";
 import { useJournalEntry } from "@/hooks/useJournalEntry";
+import { useStreak } from "@/hooks/useStreak";
 import RoutineTags from "./RoutineTags";
 import FitCheckChallenge from "./FitCheckChallenge";
 import ZineLockedView from "./ZineLockedView";
 import ZineOpenView from "./ZineOpenView";
-import ZineMoodEntry from "./ZineMoodEntry";
-import ZinePostView from "./ZinePostView";
-
-const captionSchema = z.string().max(500, "Caption must be 500 characters or less").trim();
+import MoodCamera from "./MoodCamera";
 
 type Visibility = "private" | "friends" | "close_friends";
 
@@ -112,7 +108,6 @@ const TodayTab = ({}: TodayTabProps) => {
   const [isUploading, setIsUploading] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
   const [displayName, setDisplayName] = useState<string | null>(null);
-  const [currentStreak, setCurrentStreak] = useState(0);
   const [likesCount, setLikesCount] = useState(0);
   const [commentsCount, setCommentsCount] = useState(0);
   const [recentLikers, setRecentLikers] = useState<Liker[]>([]);
@@ -145,12 +140,15 @@ const TodayTab = ({}: TodayTabProps) => {
     return stored === "true";
   });
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  // Mood camera state
+  const [showMoodCamera, setShowMoodCamera] = useState(false);
+
   const shareRef = useRef<HTMLDivElement>(null);
 
   const { toast } = useToast();
   const { user } = useAuth();
   const timeWindow = useTimeWindowStatic();
+  const { currentStreak } = useStreak();
 
   // Journal hooks
   const journalPin = useJournalPin();
@@ -159,9 +157,12 @@ const TodayTab = ({}: TodayTabProps) => {
 
   useEffect(() => {
     if (user) {
-      checkTodaysMood();
-      fetchDisplayName();
-      checkYesterdaysMood();
+      // Parallelize all initial data fetches for faster load
+      Promise.all([
+        checkTodaysMood(),
+        fetchDisplayName(),
+        checkYesterdaysMood()
+      ]);
     }
   }, [user]);
 
@@ -203,11 +204,10 @@ const TodayTab = ({}: TodayTabProps) => {
 
   const fetchDisplayName = async () => {
     if (!user) return;
-    const { data } = await supabase.from('profiles').select('display_name, default_visibility, current_streak').eq('user_id', user.id).maybeSingle();
+    const { data } = await supabase.from('profiles').select('display_name, default_visibility').eq('user_id', user.id).maybeSingle();
     if (data) {
       if (data.display_name) setDisplayName(data.display_name);
       if (data.default_visibility) setVisibility(data.default_visibility as Visibility);
-      if (data.current_streak) setCurrentStreak(data.current_streak);
     }
   };
 
@@ -257,21 +257,11 @@ const TodayTab = ({}: TodayTabProps) => {
     return quotes[Math.floor(Math.random() * quotes.length)];
   };
 
-  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      toast({ title: "File too large", description: "Please select an image under 5MB", variant: "destructive" });
-      return;
-    }
-    if (!['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(file.type)) {
-      toast({ title: "Invalid file type", variant: "destructive" });
-      return;
-    }
+  const handleCameraCapture = (imageBlob: Blob, previewUrl: string) => {
+    // Convert blob to File for upload
+    const file = new File([imageBlob], `mood-${Date.now()}.jpg`, { type: "image/jpeg" });
     setPhoto(file);
-    const reader = new FileReader();
-    reader.onloadend = () => setPhotoPreview(reader.result as string);
-    reader.readAsDataURL(file);
+    setPhotoPreview(previewUrl);
   };
 
   const removePhoto = () => {
@@ -279,7 +269,6 @@ const TodayTab = ({}: TodayTabProps) => {
     setPhotoPreview(null);
     setExistingPhotoPath(null);
     setCaption("");
-    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const uploadPhoto = async (): Promise<string | null> => {
@@ -585,11 +574,10 @@ const TodayTab = ({}: TodayTabProps) => {
             <Slider value={[rating]} onValueChange={(value) => setRating(value[0])} min={1} max={10} step={1} className="w-full touch-manipulation mb-6" />
             <motion.div className="w-full mb-6">
               {!photoPreview ? (
-                <button onClick={() => fileInputRef.current?.click()} className={`w-full py-4 border-2 border-dashed border-primary/50 bg-primary/5 flex items-center justify-center gap-2 text-primary hover:bg-primary/10 transition-colors rounded-xl`}><Camera className="w-5 h-5" /><span className="font-semibold">Add Required Photo</span></button>
+                <button onClick={() => setShowMoodCamera(true)} className={`w-full py-4 border-2 border-dashed border-primary/50 bg-primary/5 flex items-center justify-center gap-2 text-primary hover:bg-primary/10 transition-colors rounded-xl`}><Camera className="w-5 h-5" /><span className="font-semibold">Take a Photo</span></button>
               ) : (
                 <div className="relative"><img src={photoPreview} alt="Selected" className={`w-full h-40 object-cover rounded-xl`} /><button onClick={removePhoto} className={`absolute top-2 right-2 p-1 bg-background/80 rounded-full`}><X className="w-4 h-4" /></button></div>
               )}
-              <input ref={fileInputRef} type="file" accept="image/*" onChange={handlePhotoSelect} className="hidden" />
             </motion.div>
             <Input type="text" placeholder="Caption (optional)" value={caption} onChange={(e) => setCaption(e.target.value)} maxLength={500} className={`mb-2 `} />
 
@@ -723,6 +711,13 @@ const TodayTab = ({}: TodayTabProps) => {
           rating={yesterdaysMood.rating}
         />
       )}
+
+      {/* Mood Camera */}
+      <MoodCamera
+        isOpen={showMoodCamera}
+        onClose={() => setShowMoodCamera(false)}
+        onCapture={handleCameraCapture}
+      />
     </div>
   );
 };

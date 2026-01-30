@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef, RefObject } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import PullToRefresh from 'react-simple-pull-to-refresh';
 import { useHaptic } from "@/hooks/useHaptic";
+import { useLongPress } from "@/hooks/useLongPress";
 import { motion, AnimatePresence } from "framer-motion";
 import ZineFeedPost from "./ZineFeedPost";
 
@@ -78,37 +79,6 @@ const REACTIONS = [
   { type: 'flex', emoji: '💪' },
   { type: 'star', emoji: '🌟' },
 ];
-
-// --- Custom Hook for Long Press ---
-function useLongPress(callback: () => void, onClick: () => void, ms = 500) {
-  const [startLongPress, setStartLongPress] = useState(false);
-  const timerRef = useRef<NodeJS.Timeout>();
-
-  useEffect(() => {
-    if (startLongPress) {
-      timerRef.current = setTimeout(() => {
-        callback();
-        setStartLongPress(false);
-      }, ms);
-    } else {
-      clearTimeout(timerRef.current);
-    }
-    return () => clearTimeout(timerRef.current);
-  }, [startLongPress, callback, ms]);
-
-  return {
-    onMouseDown: () => setStartLongPress(true),
-    onMouseUp: () => {
-      if (startLongPress) { onClick(); }
-      setStartLongPress(false);
-    },
-    onTouchStart: () => setStartLongPress(true),
-    onTouchEnd: () => {
-      if (startLongPress) { onClick(); }
-      setStartLongPress(false);
-    }
-  };
-}
 
 const FriendsFeed = ({ onFriendClick, highlightMoodId, shouldOpenComments, closeFriendsOnly }: FriendsFeedProps) => {
   const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
@@ -204,9 +174,63 @@ const FriendsFeed = ({ onFriendClick, highlightMoodId, shouldOpenComments, close
 
       if (error) throw error;
 
-      const moodsWithDetails: Mood[] = await Promise.all(moodData.map(async (m: any) => {
+      // OPTIMIZED: Batch fetch all related data instead of N+1 queries
+      const moodIds = moodData.map((m: any) => m.id);
 
-        // Get signed URL for photo if it exists
+      // Batch fetch all likes for all moods at once
+      const { data: allMoodLikes } = await supabase
+        .from('mood_likes')
+        // @ts-ignore
+        .select('mood_id, user_id, reaction_type')
+        .in('mood_id', moodIds);
+
+      // Batch fetch all comments for all moods at once
+      const { data: allComments } = await supabase
+        .from('mood_comments')
+        .select(`
+          id, content, created_at, user_id, parent_id, mood_id,
+          user:profiles(user_id, username, display_name, avatar_url, current_streak)
+        `)
+        .in('mood_id', moodIds)
+        .order('created_at', { ascending: true });
+
+      // Get all comment IDs for batch fetching comment likes
+      const commentIds = (allComments || []).map((c: any) => c.id);
+
+      // Batch fetch all comment likes at once
+      const { data: allCommentLikes } = commentIds.length > 0
+        ? await supabase.from('comment_likes').select('comment_id, user_id').in('comment_id', commentIds)
+        : { data: [] };
+
+      // Create lookup maps for O(1) access
+      const likesCountByMood = new Map<string, number>();
+      const userLikeByMood = new Map<string, any>();
+      (allMoodLikes || []).forEach((like: any) => {
+        likesCountByMood.set(like.mood_id, (likesCountByMood.get(like.mood_id) || 0) + 1);
+        if (like.user_id === user.id) {
+          userLikeByMood.set(like.mood_id, like);
+        }
+      });
+
+      const commentsByMood = new Map<string, any[]>();
+      (allComments || []).forEach((c: any) => {
+        const moodComments = commentsByMood.get(c.mood_id) || [];
+        moodComments.push(c);
+        commentsByMood.set(c.mood_id, moodComments);
+      });
+
+      const commentLikesCount = new Map<string, number>();
+      const userCommentLikes = new Set<string>();
+      (allCommentLikes || []).forEach((cl: any) => {
+        commentLikesCount.set(cl.comment_id, (commentLikesCount.get(cl.comment_id) || 0) + 1);
+        if (cl.user_id === user.id) {
+          userCommentLikes.add(cl.comment_id);
+        }
+      });
+
+      // Process moods with batched data (only signed URLs need individual calls)
+      const moodsWithDetails: Mood[] = await Promise.all(moodData.map(async (m: any) => {
+        // Get signed URL for photo if it exists (storage URLs need individual calls)
         let signedPhotoUrl = null;
         if (m.photo_url) {
           try {
@@ -221,52 +245,30 @@ const FriendsFeed = ({ onFriendClick, highlightMoodId, shouldOpenComments, close
           }
         }
 
-        const { count: moodLikesCount } = await supabase
-          .from('mood_likes')
-          .select('*', { count: 'exact', head: true })
-          .eq('mood_id', m.id);
+        // Get data from lookup maps (O(1) access)
+        const moodLikesCount = likesCountByMood.get(m.id) || 0;
+        const myMoodLike = userLikeByMood.get(m.id);
+        const moodComments = commentsByMood.get(m.id) || [];
 
-        // 🔥 FIXED: Explicit cast to bypass TS error on 'reaction_type'
-        const { data: myMoodLike } = await supabase
-          .from('mood_likes')
-          // @ts-ignore
-          .select('reaction_type')
-          .eq('mood_id', m.id)
-          .eq('user_id', user.id)
-          .maybeSingle();
-
-        const { data: comments } = await supabase
-          .from('mood_comments')
-          .select(`
-            id, content, created_at, user_id, parent_id,
-            user:profiles(user_id, username, display_name, avatar_url, current_streak)
-          `)
-          .eq('mood_id', m.id)
-          .order('created_at', { ascending: true });
-
-        const commentsWithLikes = await Promise.all((comments || []).map(async (c: any) => {
-          const { count: commentLikesCount } = await supabase.from('comment_likes').select('*', { count: 'exact', head: true }).eq('comment_id', c.id);
-          const { data: myCommentLike } = await supabase.from('comment_likes').select('id').eq('comment_id', c.id).eq('user_id', user.id).maybeSingle();
-
-          return {
-            ...c,
-            parent_id: c.parent_id || null,
-            likes_count: commentLikesCount || 0,
-            has_liked: !!myCommentLike
-          };
+        // Process comments with batched likes data
+        const commentsWithLikes = moodComments.map((c: any) => ({
+          ...c,
+          parent_id: c.parent_id || null,
+          likes_count: commentLikesCount.get(c.id) || 0,
+          has_liked: userCommentLikes.has(c.id)
         }));
 
         if (highlightMoodId && m.id === highlightMoodId && shouldOpenComments) {
-           setOpenComments(prev => ({ ...prev, [m.id]: true }));
+          setOpenComments(prev => ({ ...prev, [m.id]: true }));
         }
 
         return {
           ...m,
           note: m.note,
           photo_url: signedPhotoUrl,
-          likes_count: moodLikesCount || 0,
+          likes_count: moodLikesCount,
           has_liked: !!myMoodLike,
-          reaction_type: (myMoodLike as any)?.reaction_type || null,
+          reaction_type: myMoodLike?.reaction_type || null,
           comments_count: commentsWithLikes.length,
           comments: commentsWithLikes,
           type: 'mood' as const

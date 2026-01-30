@@ -1,6 +1,13 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Users, User, ChevronLeft, ChevronRight } from "lucide-react"; 
+import { ChevronLeft, ChevronRight } from "lucide-react";
+
+// Get day of week letter (M, T, W, T, F, S, S)
+const getDayLetter = (dateStr: string): string => {
+  const date = new Date(dateStr + "T12:00:00");
+  const days = ["S", "M", "T", "W", "T", "F", "S"];
+  return days[date.getDay()];
+};
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { getLocalDateString } from "@/hooks/useTimeWindow";
@@ -167,10 +174,21 @@ const CalendarTab = () => {
   const today = getLocalDateString();
 
   return (
-    <div className="relative min-h-screen bg-[#050505] text-white overflow-hidden flex flex-col">
-      
+    <div className="relative min-h-screen text-white overflow-hidden flex flex-col"
+      style={{
+        background: "linear-gradient(180deg, #0a0a0a 0%, #111 50%, #0a0a0a 100%)",
+      }}
+    >
+      {/* Subtle texture overlay */}
+      <div
+        className="absolute inset-0 pointer-events-none opacity-[0.03]"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+        }}
+      />
+
       {/* --- HEADER (Fixed at top) --- */}
-      <div className="relative z-30 px-6 pt-12 pb-4 flex justify-between items-start bg-[#050505]/90 backdrop-blur-md border-b border-white/5">
+      <div className="relative z-30 px-6 pt-12 pb-4 flex justify-between items-start bg-black/80 backdrop-blur-md border-b border-white/10">
         <div className="flex items-center gap-4">
             {/* Navigation Arrows */}
             <button onClick={() => navigateMonth(-1)} className="p-2 hover:bg-white/10 rounded-full transition-colors">
@@ -193,17 +211,10 @@ const CalendarTab = () => {
                 <ChevronRight className="w-6 h-6" />
             </button>
         </div>
-        
-        {/* Friends Icon */}
-        <div className="flex flex-col items-center gap-1 opacity-70">
-          <span className="font-handwriting text-xs -rotate-6">FRNDS</span>
-          <Users className="w-6 h-6" />
-        </div>
       </div>
 
       {/* --- SCROLLABLE CONTENT AREA --- */}
-      {/* We use overflow-y-auto here so the snake path can scroll */}
-      <div className="flex-1 relative overflow-y-auto pb-48">
+      <div className="flex-1 relative overflow-y-auto pb-32">
           
           {/* --- TOGGLES (Sticky-ish) --- */}
           <div className="sticky top-4 w-full flex justify-center gap-4 z-20 pointer-events-none mb-10">
@@ -232,10 +243,10 @@ const CalendarTab = () => {
           </div>
 
           {/* --- THE SNAKE PATH --- */}
-          {/* Height is calculated dynamically based on days so nothing is cut off */}
-          <div 
-            className="relative w-full" 
-            style={{ height: `${totalDays * 100 + 200}px` }}
+          {/* Height is calculated dynamically based on days - capped to not scroll past last day */}
+          <div
+            className="relative w-full"
+            style={{ height: `${totalDays * 100 + 80}px` }}
           >
             {/* Background Path Line */}
             <svg className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-20" style={{ zIndex: 0 }}>
@@ -286,9 +297,16 @@ const CalendarTab = () => {
                 className="flex flex-col items-center justify-center group z-10"
                 >
                 <div className={`
-                    relative flex items-center justify-center w-12 h-16
+                    relative flex flex-col items-center justify-center w-12 h-20
                     transition-transform duration-200 group-active:scale-95
                 `}>
+                    {/* Day Letter */}
+                    <span
+                      className={`text-[10px] font-bold uppercase tracking-wider ${isToday ? 'text-cyan-400' : 'text-zinc-500'}`}
+                      style={{ fontFamily: "'Space Mono', monospace" }}
+                    >
+                      {getDayLetter(dateStr)}
+                    </span>
                     {/* Day Number */}
                     <span className={`text-2xl font-bold ${isToday ? 'text-cyan-400' : 'text-zinc-400'}`}>
                     {String(dayNum).padStart(2, '0')}
@@ -312,11 +330,6 @@ const CalendarTab = () => {
             })}
          </div>
 
-         {/* --- FOOTER ICON (At bottom of scroll) --- */}
-        <div className="flex flex-col items-center gap-1 opacity-70 pb-10">
-            <User className="w-8 h-8" />
-            <span className="font-handwriting text-xs -rotate-6">YOU</span>
-        </div>
       </div>
 
 
