@@ -6,7 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import FriendsFeed from "./FriendsFeed";
+import DailyReel from "./DailyReel";
 import FriendProfileModal from "./FriendProfileModal";
 import NotificationsSheet from "./NotificationsSheet";
 import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
@@ -369,7 +369,7 @@ const FriendsTab = ({ initialSelectedFriendId, initialSelectedMoodId, initialSel
       <AnimatePresence mode="wait">
         {activeSection === "feed" && (
           <motion.div key="feed" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <FriendsFeed
+            <DailyReel
               onFriendClick={setSelectedFriendId}
               highlightMoodId={highlightMoodId}
               highlightCommentId={highlightCommentId}
@@ -446,7 +446,7 @@ const FriendsTab = ({ initialSelectedFriendId, initialSelectedMoodId, initialSel
 
         {activeSection === "close" && (
           <motion.div key="close" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <FriendsFeed onFriendClick={setSelectedFriendId} closeFriendsOnly={true} />
+            <DailyReel onFriendClick={setSelectedFriendId} closeFriendsOnly={true} />
           </motion.div>
         )}
 
