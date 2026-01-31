@@ -14,6 +14,7 @@ import BetaPrompt from "@/components/BetaPrompt";
 import FitCheckCamera from "@/components/FitCheckCamera";
 import CameraSelectionModal from "@/components/CameraSelectionModal";
 import WhatsNewModal from "@/components/WhatsNewModal";
+import DailyReelWhatsNew from "@/components/DailyReelWhatsNew";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useUnreadUpdates } from "@/hooks/useUnreadUpdates";
@@ -46,6 +47,7 @@ const Index = () => {
   const [showFitCheck, setShowFitCheck] = useState(false);
   const [showCameraSelection, setShowCameraSelection] = useState(false);
   const [showWhatsNew, setShowWhatsNew] = useState(false);
+  const [showDailyReelWhatsNew, setShowDailyReelWhatsNew] = useState(false);
   const [displayName, setDisplayName] = useState<string | null>(null);
   
   const [selectedFriendFromNotification, setSelectedFriendFromNotification] = useState<string | null>(null);
@@ -265,6 +267,22 @@ const Index = () => {
     }
   }, [user, showOnboarding]);
 
+  // Show DailyReel feature announcement (separate from main What's New)
+  useEffect(() => {
+    if (user && !showOnboarding && !showWhatsNew) {
+      const dailyReelKey = `moodmemos-dailyreel-v1-${user.id}`;
+      const hasSeen = localStorage.getItem(dailyReelKey);
+
+      if (!hasSeen) {
+        const timer = setTimeout(() => {
+          setShowDailyReelWhatsNew(true);
+          localStorage.setItem(dailyReelKey, "true");
+        }, 1200);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [user, showOnboarding, showWhatsNew]);
+
   if (loading) return <div className="min-h-screen bg-background flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin" /></div>;
   if (!user) return null;
   if (showOnboarding) return <Onboarding onComplete={handleOnboardingComplete} />;
@@ -416,6 +434,11 @@ const Index = () => {
         isOpen={showWhatsNew}
         onClose={() => setShowWhatsNew(false)}
         onTryFeature={handleTryFeature}
+      />
+      <DailyReelWhatsNew
+        isOpen={showDailyReelWhatsNew}
+        onClose={() => setShowDailyReelWhatsNew(false)}
+        onTryIt={() => setActiveTab("friends")}
       />
     </div>
   );
