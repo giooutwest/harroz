@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Moon, Sparkles, Cherry, User, Check, Eye, Image, MessageSquare, Activity, Camera, Loader2, Search, AtSign, Bell, Smartphone, BellRing, BellOff, MessageCircle, MessageSquareHeart, LogOut, BookOpen, Lock, KeyRound } from "lucide-react";
+import { X, Moon, Sparkles, Cherry, User, Check, Eye, Image, MessageSquare, Activity, Camera, Loader2, Search, AtSign, Bell, Smartphone, BellRing, BellOff, MessageCircle, MessageSquareHeart, LogOut, BookOpen, Lock, KeyRound, Award } from "lucide-react";
 import { PixelStar } from "./PixelIcons";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import FeedbackSheet from "./FeedbackSheet";
 import { useNavigate } from "react-router-dom";
 import PinEntryModal from "./PinEntryModal";
 import { useJournalPin } from "@/hooks/useJournalPin";
+import BadgesSection from "./BadgesSection";
 
 type DefaultVisibility = "private" | "friends" | "close_friends";
 
@@ -32,7 +33,7 @@ interface SettingsSheetProps {
   onClose: () => void;
 }
 
-type SettingsTab = "settings" | "updates";
+type SettingsTab = "settings" | "updates" | "badges";
 
 const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
   // 1. ALL HOOKS MUST BE DECLARED HERE AT THE TOP (UNCONDITIONALLY)
@@ -319,7 +320,7 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
             <div className="flex gap-2 mb-6">
               <button
                 onClick={() => setActiveTab("settings")}
-                className={`flex-1 py-2 px-4 font-medium text-sm transition-colors ${
+                className={`flex-1 py-2 px-3 font-medium text-xs transition-colors ${
                   activeTab === "settings"
                     ? "bg-white text-black"
                     : "bg-white/10 text-white/60 hover:bg-white/20"
@@ -329,8 +330,22 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                 Config
               </button>
               <button
+                onClick={() => setActiveTab("badges")}
+                className={`flex-1 py-2 px-3 font-medium text-xs transition-colors ${
+                  activeTab === "badges"
+                    ? "bg-white text-black"
+                    : "bg-white/10 text-white/60 hover:bg-white/20"
+                }`}
+                style={{ fontFamily: "'Space Mono', monospace" }}
+              >
+                <span className="flex items-center justify-center gap-1">
+                  <Award className="w-3 h-3" />
+                  Badges
+                </span>
+              </button>
+              <button
                 onClick={() => { setActiveTab("updates"); refreshUnread(); }}
-                className={`flex-1 py-2 px-4 font-medium text-sm transition-colors relative ${
+                className={`flex-1 py-2 px-3 font-medium text-xs transition-colors relative ${
                   activeTab === "updates"
                     ? "bg-white text-black"
                     : "bg-white/10 text-white/60 hover:bg-white/20"
@@ -338,7 +353,7 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                 style={{ fontFamily: "'Space Mono', monospace" }}
               >
                 <span className="flex items-center justify-center gap-1">
-                  <Bell className="w-4 h-4" />
+                  <Bell className="w-3 h-3" />
                   Updates
                   {hasUnread && activeTab !== "updates" && (
                     <span className="w-2 h-2 bg-green-500 absolute top-1 right-1" />
@@ -349,6 +364,8 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
 
             {activeTab === "updates" ? (
               <UpdatesTab />
+            ) : activeTab === "badges" ? (
+              <BadgesSection />
             ) : (
               <>
                 {/* Profile Section */}

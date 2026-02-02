@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { UserPlus, Users, Star, Check, X, Mail, Newspaper, User, Bell, Zap } from "lucide-react";
+import { UserPlus, Users, Star, Check, X, Mail, Newspaper, User, Bell, Zap, Award } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -11,6 +11,7 @@ import FriendProfileModal from "./FriendProfileModal";
 import NotificationsSheet from "./NotificationsSheet";
 import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
 import { formatDistanceToNow } from "date-fns";
+import { useBadges } from "@/hooks/useBadges";
 
 interface FriendsTabProps {
   initialSelectedFriendId?: string | null;
@@ -38,7 +39,7 @@ interface Nudge {
 }
 
 const FriendsTab = ({ initialSelectedFriendId, initialSelectedMoodId, initialSelectedCommentId, initialShowRequests, initialOpenComments, onClearInitialFriend }: FriendsTabProps) => {
-  const [activeSection, setActiveSection] = useState<"feed" | "friends" | "close" | "requests">("feed");
+  const [activeSection, setActiveSection] = useState<"feed" | "friends" | "close" | "requests" | "community">("feed");
   const [friends, setFriends] = useState<Friendship[]>([]);
   const [pendingRequests, setPendingRequests] = useState<Friendship[]>([]);
   const [closeFriends, setCloseFriends] = useState<CloseFriend[]>([]);
@@ -64,6 +65,10 @@ const FriendsTab = ({ initialSelectedFriendId, initialSelectedMoodId, initialSel
   
   const { user } = useAuth();
   const { toast } = useToast();
+  const { earnedBadges } = useBadges();
+
+  // Get user's equipped badges for community tab
+  const equippedBadgeIds = earnedBadges.filter(b => b.is_equipped).map(b => b.badge_id);
 
   useEffect(() => {
     if (user) {
@@ -447,18 +452,23 @@ const FriendsTab = ({ initialSelectedFriendId, initialSelectedMoodId, initialSel
       <div className="flex gap-2 mb-6 overflow-x-auto no-scrollbar">
         {[
           { id: "feed", label: "Feed", icon: Newspaper, count: null },
+          { id: "community", label: "Tribe", icon: Award, count: null, disabled: equippedBadgeIds.length === 0 },
           { id: "friends", label: "All", icon: Users, count: friends.length },
           { id: "close", label: "Close", icon: Star, count: closeFriends.length },
           { id: "requests", label: "Inbox", icon: Mail, count: pendingRequests.length + nudges.length }
         ].map((s) => (
           <button
             key={s.id}
-            onClick={() => setActiveSection(s.id as any)}
+            onClick={() => !s.disabled && setActiveSection(s.id as any)}
+            disabled={s.disabled}
             className={`flex-1 py-2 px-3 flex items-center justify-center gap-1 border transition-all ${
-              activeSection === s.id
+              s.disabled
+                ? "bg-transparent border-white/10 text-white/30 cursor-not-allowed"
+                : activeSection === s.id
                 ? "bg-white text-black border-white"
                 : "bg-transparent border-white/20 text-white/60 hover:border-white/40"
             }`}
+            title={s.disabled ? "Equip a badge in Settings to unlock" : undefined}
           >
             {/* @ts-ignore */}
             <s.icon className="w-4 h-4" />
@@ -482,6 +492,31 @@ const FriendsTab = ({ initialSelectedFriendId, initialSelectedMoodId, initialSel
               onClearHighlight={() => { setHighlightMoodId(null); setHighlightCommentId(null); }}
               shouldOpenComments={shouldOpenComments}
             />
+          </motion.div>
+        )}
+
+        {activeSection === "community" && (
+          <motion.div key="community" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            {equippedBadgeIds.length > 0 ? (
+              <>
+                <div className="mb-4 p-3 bg-[#C5A059]/10 border border-[#C5A059]/30">
+                  <p className="text-[10px] text-[#C5A059] uppercase tracking-wider" style={{ fontFamily: "'Space Mono', monospace" }}>
+                    Showing posts from users with your equipped badges
+                  </p>
+                </div>
+                <DailyReel
+                  onFriendClick={setSelectedFriendId}
+                  communityBadgeIds={equippedBadgeIds}
+                />
+              </>
+            ) : (
+              <div className="text-center py-12">
+                <Award className="w-12 h-12 mx-auto mb-3 text-white/20" />
+                <p className="text-white/40" style={{ fontFamily: "'Space Mono', monospace" }}>
+                  Equip a badge in Settings to see your tribe
+                </p>
+              </div>
+            )}
           </motion.div>
         )}
 

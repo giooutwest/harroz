@@ -5,14 +5,14 @@ import {
   ChevronRight,
   ChevronLeft,
   Sparkles,
-  Activity,
-  Clock,
-  Palette,
-  Shirt,
   CheckCircle2,
   Camera,
-  UserCircle
+  Award
 } from "lucide-react";
+
+// Version key for tracking which What's New users have seen
+// Increment this when adding new features to show the modal again
+export const WHATS_NEW_VERSION = "v2.1";
 
 interface Feature {
   id: string;
@@ -30,6 +30,7 @@ interface WhatsNewModalProps {
   onTryFeature: (action: "today" | "stats" | "settings" | "fitcheck" | "friends") => void;
 }
 
+// Only include the latest features users haven't seen
 const features: Feature[] = [
   {
     id: "gallery-upload",
@@ -41,59 +42,14 @@ const features: Feature[] = [
     illustration: "📸🖼️✨"
   },
   {
-    id: "subject-dossier",
-    title: "Subject Dossier",
-    description: "Friend profiles got a spy-themed makeover! See real-time activity status (green = active, yellow = recent, red = inactive), send nudges, and manage close friends — all in one sleek dossier.",
-    icon: UserCircle,
+    id: "badges-quests",
+    title: "Badges & Quests",
+    description: "Earn badges by completing quests like maintaining streaks, posting at night, or inviting friends. Equip badges to show them next to your name and unlock the Tribe feed!",
+    icon: Award,
     color: "hsl(45, 80%, 50%)",
-    tryItAction: "friends",
-    illustration: "🕵️📋🟢"
-  },
-  {
-    id: "routine-tags",
-    title: "Activity Tags",
-    description: "Track what you do each day with simple toggles. See how activities like working out or reading affect your mood over time!",
-    icon: Activity,
-    color: "hsl(210, 80%, 55%)",
-    tryItAction: "today",
-    illustration: "💪✨📚🧘💧"
-  },
-  {
-    id: "time-travel",
-    title: "Time Travel",
-    description: "Look back at what you wrote exactly one month ago, or see how your previous week went. Gain perspective on your journey!",
-    icon: Clock,
-    color: "hsl(280, 70%, 55%)",
-    tryItAction: "stats",
-    illustration: "📅⏰🔮"
-  },
-  {
-    id: "fit-check",
-    title: "Daily Fit Check Challenge",
-    description: "Get a notification at a random time each day. You have 20 minutes to snap a photo of your fit! Earn purple shirt badges for completing on time.",
-    icon: Shirt,
-    color: "hsl(270, 60%, 55%)",
-    tryItAction: "fitcheck",
-    illustration: "👔📸🏆"
-  },
-  {
-    id: "grunge-theme",
-    title: "Y2K Grunge Theme",
-    description: "New aesthetic! Typewriter fonts, paper textures, and a chaotic red/black color palette. For when you want that vintage rebellion vibe.",
-    icon: Palette,
-    color: "hsl(0, 70%, 45%)",
     tryItAction: "settings",
-    illustration: "🎸📰✒️"
+    illustration: "🏆✓🦸"
   },
-  {
-    id: "activity-insights",
-    title: "Activity Insights",
-    description: "See charts showing how your activities correlate with your mood. Discover what makes you feel better and do more of it!",
-    icon: Sparkles,
-    color: "hsl(45, 90%, 50%)",
-    tryItAction: "stats",
-    illustration: "📊📈💡"
-  }
 ];
 
 const WhatsNewModal = ({ isOpen, onClose, onTryFeature }: WhatsNewModalProps) => {

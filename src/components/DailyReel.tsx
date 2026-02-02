@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { useHaptic } from "@/hooks/useHaptic";
 import { motion, AnimatePresence } from "framer-motion";
+import BadgeDisplay from "./BadgeDisplay";
 
 // --- Types ---
 interface Profile {
@@ -16,6 +17,7 @@ interface Profile {
   display_name: string | null;
   avatar_url: string | null;
   current_streak: number | null;
+  equipped_badges?: string[];
 }
 
 interface Comment {
@@ -65,6 +67,7 @@ interface DailyReelProps {
   onClearHighlight?: () => void;
   shouldOpenComments?: boolean;
   closeFriendsOnly?: boolean;
+  communityBadgeIds?: string[]; // Filter to users with any of these equipped badges
 }
 
 const REACTIONS = [
@@ -75,7 +78,7 @@ const REACTIONS = [
   { type: 'star', emoji: '🌟' },
 ];
 
-const DailyReel = ({ onFriendClick, highlightMoodId, shouldOpenComments, closeFriendsOnly }: DailyReelProps) => {
+const DailyReel = ({ onFriendClick, highlightMoodId, shouldOpenComments, closeFriendsOnly, communityBadgeIds }: DailyReelProps) => {
   const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<string | null>(null);
@@ -127,7 +130,21 @@ const DailyReel = ({ onFriendClick, highlightMoodId, shouldOpenComments, closeFr
 
       let friendIds: string[];
 
-      if (closeFriendsOnly) {
+      if (communityBadgeIds && communityBadgeIds.length > 0) {
+        // Community mode: Get all users who have any of the specified badges equipped
+        // @ts-ignore
+        const { data: badgeUsers } = await supabase
+          .from('user_badges')
+          .select('user_id')
+          .in('badge_id', communityBadgeIds)
+          .eq('is_equipped', true);
+
+        friendIds = badgeUsers?.map(b => b.user_id) || [];
+        // Include self
+        if (!friendIds.includes(user.id)) {
+          friendIds.push(user.id);
+        }
+      } else if (closeFriendsOnly) {
         const { data: closeFriendsList } = await supabase
           .from('close_friends')
           .select('friend_id')
@@ -228,6 +245,22 @@ const DailyReel = ({ onFriendClick, highlightMoodId, shouldOpenComments, closeFr
         }
       });
 
+      // Fetch equipped badges for all users in the feed
+      const userIdsInFeed = [...new Set(moodData.map((m: any) => m.user_id))];
+      // @ts-ignore
+      const { data: allBadges } = await supabase
+        .from('user_badges')
+        .select('user_id, badge_id')
+        .in('user_id', userIdsInFeed)
+        .eq('is_equipped', true);
+
+      const badgesByUser = new Map<string, string[]>();
+      (allBadges || []).forEach((b: any) => {
+        const userBadges = badgesByUser.get(b.user_id) || [];
+        userBadges.push(b.badge_id);
+        badgesByUser.set(b.user_id, userBadges);
+      });
+
       const moodsWithDetails: Mood[] = await Promise.all(moodData.map(async (m: any) => {
         let signedPhotoUrl = null;
         if (m.photo_url) {
@@ -267,7 +300,11 @@ const DailyReel = ({ onFriendClick, highlightMoodId, shouldOpenComments, closeFr
           reaction_type: myMoodLike?.reaction_type || null,
           comments_count: commentsWithLikes.length,
           comments: commentsWithLikes,
-          type: 'mood' as const
+          type: 'mood' as const,
+          user: {
+            ...m.user,
+            equipped_badges: badgesByUser.get(m.user_id) || []
+          }
         };
       }));
 
@@ -329,7 +366,7 @@ const DailyReel = ({ onFriendClick, highlightMoodId, shouldOpenComments, closeFr
     } finally {
       setLoading(false);
     }
-  }, [highlightMoodId, shouldOpenComments, closeFriendsOnly]);
+  }, [highlightMoodId, shouldOpenComments, closeFriendsOnly, communityBadgeIds]);
 
   useEffect(() => { fetchFeed(); }, [fetchFeed]);
 
@@ -565,10 +602,13 @@ const DailyReel = ({ onFriendClick, highlightMoodId, shouldOpenComments, closeFr
                 Director:
               </span>
               <span
-                className="text-white text-xl group-hover:text-[#C5A059] transition-colors"
+                className="text-white text-xl group-hover:text-[#C5A059] transition-colors flex items-center gap-1"
                 style={{ fontFamily: "'Playfair Display', serif" }}
               >
                 {item.user.display_name || item.user.username}
+                {item.user.equipped_badges && item.user.equipped_badges.length > 0 && (
+                  <BadgeDisplay badgeIds={item.user.equipped_badges} size="md" />
+                )}
               </span>
               {isOwnPost && (
                 <span

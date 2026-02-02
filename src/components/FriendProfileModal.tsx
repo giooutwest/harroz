@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow, differenceInMinutes, differenceInHours } from "date-fns";
+import BadgeDisplay from "./BadgeDisplay";
 
 interface FriendProfileModalProps {
   friendId: string | null;
@@ -19,6 +20,7 @@ interface FriendProfile {
   username: string | null;
   avatar_url: string | null;
   current_streak: number | null;
+  equipped_badges: string[];
 }
 
 interface RecentMood {
@@ -91,16 +93,27 @@ const FriendProfileModal = ({ friendId, onClose, onMessage, onFriendRemoved }: F
     setShowSettings(false);
     setConfirmDelete(false);
 
-    // Fetch profile
-    const { data: profileData } = await supabase
-      .from('profiles')
-      .select('user_id, display_name, username, avatar_url, current_streak')
-      .eq('user_id', friendId)
-      .maybeSingle();
+    // Fetch profile and badges in parallel
+    const [{ data: profileData }, { data: badgesData }] = await Promise.all([
+      supabase
+        .from('profiles')
+        .select('user_id, display_name, username, avatar_url, current_streak')
+        .eq('user_id', friendId)
+        .maybeSingle(),
+      // @ts-ignore
+      supabase
+        .from('user_badges')
+        .select('badge_id')
+        .eq('user_id', friendId)
+        .eq('is_equipped', true)
+    ]);
 
     if (profileData) {
-      // @ts-ignore
-      setProfile(profileData);
+      const equippedBadges = (badgesData || []).map((b: any) => b.badge_id);
+      setProfile({
+        ...profileData,
+        equipped_badges: equippedBadges
+      });
     }
 
     // Check if close friend
@@ -349,8 +362,11 @@ const FriendProfileModal = ({ friendId, onClose, onMessage, onFriendRemoved }: F
 
                 {/* Name and status info */}
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-white font-bold text-lg truncate" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                  <h3 className="text-white font-bold text-lg truncate flex items-center gap-2" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
                     {profile.display_name || "UNKNOWN"}
+                    {profile.equipped_badges && profile.equipped_badges.length > 0 && (
+                      <BadgeDisplay badgeIds={profile.equipped_badges} size="md" />
+                    )}
                   </h3>
                   {profile.username && (
                     <p className="text-white/40 text-xs mb-2">@{profile.username}</p>

@@ -12,6 +12,7 @@ import PWAInstallTutorial from "@/components/PWAInstallTutorial";
 import NotificationPrompt from "@/components/NotificationPrompt";
 import BetaPrompt from "@/components/BetaPrompt";
 import FitCheckCamera from "@/components/FitCheckCamera";
+import WhatsNewModal, { WHATS_NEW_VERSION } from "@/components/WhatsNewModal";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useUnreadUpdates } from "@/hooks/useUnreadUpdates";
@@ -40,6 +41,7 @@ const Index = () => {
   const [showNotificationPrompt, setShowNotificationPrompt] = useState(false);
   const [showBetaPrompt, setShowBetaPrompt] = useState(false);
   const [showFitCheck, setShowFitCheck] = useState(false);
+  const [showWhatsNew, setShowWhatsNew] = useState(false);
   const [displayName, setDisplayName] = useState<string | null>(null);
   
   const [selectedFriendFromNotification, setSelectedFriendFromNotification] = useState<string | null>(null);
