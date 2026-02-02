@@ -141,7 +141,113 @@ const FriendsTab = ({ initialSelectedFriendId, initialSelectedMoodId, initialSel
     } else { setNudges([]); }
   };
 
-  const fetchFriendSuggestions = async () => { if (!user) return; setLoadingSuggestions(false); };
+  const fetchFriendSuggestions = async () => {
+    if (!user) return;
+    setLoadingSuggestions(true);
+
+    try {
+      // Step 1: Get all my accepted friendships
+      const { data: myFriendships } = await supabase
+        .from('friendships')
+        .select('requester_id, addressee_id')
+        .eq('status', 'accepted')
+        .or(`requester_id.eq.${user.id},addressee_id.eq.${user.id}`);
+
+      if (!myFriendships || myFriendships.length === 0) {
+        setFriendSuggestions([]);
+        setLoadingSuggestions(false);
+        return;
+      }
+
+      // Get my friend IDs
+      const myFriendIds = myFriendships.map(f =>
+        f.requester_id === user.id ? f.addressee_id : f.requester_id
+      );
+
+      // Step 2: Get all friendships of my friends (friends of friends)
+      const { data: friendsOfFriends } = await supabase
+        .from('friendships')
+        .select('requester_id, addressee_id')
+        .eq('status', 'accepted')
+        .or(myFriendIds.map(id => `requester_id.eq.${id},addressee_id.eq.${id}`).join(','));
+
+      if (!friendsOfFriends) {
+        setFriendSuggestions([]);
+        setLoadingSuggestions(false);
+        return;
+      }
+
+      // Step 3: Get pending requests (to exclude)
+      const { data: pendingData } = await supabase
+        .from('friendships')
+        .select('requester_id, addressee_id')
+        .or(`requester_id.eq.${user.id},addressee_id.eq.${user.id}`)
+        .in('status', ['pending', 'rejected']);
+
+      const pendingUserIds = new Set(
+        (pendingData || []).flatMap(p => [p.requester_id, p.addressee_id])
+      );
+
+      // Build a map of potential suggestions with their mutual friend
+      const suggestionMap = new Map<string, { userId: string; mutualFriendId: string }>();
+      const excludeIds = new Set([user.id, ...myFriendIds]);
+
+      for (const friendship of friendsOfFriends) {
+        const mutualFriendId = myFriendIds.includes(friendship.requester_id)
+          ? friendship.requester_id
+          : friendship.addressee_id;
+        const potentialFriendId = friendship.requester_id === mutualFriendId
+          ? friendship.addressee_id
+          : friendship.requester_id;
+
+        // Skip if it's me, already my friend, or has pending request
+        if (excludeIds.has(potentialFriendId) || pendingUserIds.has(potentialFriendId)) {
+          continue;
+        }
+
+        // Only add if not already in map (keep first mutual friend found)
+        if (!suggestionMap.has(potentialFriendId)) {
+          suggestionMap.set(potentialFriendId, { userId: potentialFriendId, mutualFriendId });
+        }
+      }
+
+      if (suggestionMap.size === 0) {
+        setFriendSuggestions([]);
+        setLoadingSuggestions(false);
+        return;
+      }
+
+      // Step 4: Fetch profiles for suggestions and mutual friends
+      const suggestionIds = Array.from(suggestionMap.keys());
+      const mutualFriendIdsToFetch = [...new Set(Array.from(suggestionMap.values()).map(s => s.mutualFriendId))];
+
+      const [{ data: suggestionProfiles }, { data: mutualProfiles }] = await Promise.all([
+        supabase.from('profiles').select('user_id, display_name, username, avatar_url').in('user_id', suggestionIds.slice(0, 10)),
+        supabase.from('profiles').select('user_id, display_name, username').in('user_id', mutualFriendIdsToFetch)
+      ]);
+
+      const mutualProfileMap = new Map((mutualProfiles || []).map(p => [p.user_id, p]));
+
+      const suggestions: FriendSuggestion[] = (suggestionProfiles || []).map(profile => {
+        const suggestion = suggestionMap.get(profile.user_id);
+        const mutualFriend = suggestion ? mutualProfileMap.get(suggestion.mutualFriendId) : null;
+        return {
+          user_id: profile.user_id,
+          display_name: profile.display_name,
+          username: profile.username,
+          avatar_url: profile.avatar_url,
+          mutual_friend_name: mutualFriend?.display_name || mutualFriend?.username || null
+        };
+      });
+
+      setFriendSuggestions(suggestions);
+    } catch (error) {
+      console.error('Error fetching friend suggestions:', error);
+      setFriendSuggestions([]);
+    }
+
+    setLoadingSuggestions(false);
+  };
   
   useEffect(() => { if (showAddFriend && user) fetchFriendSuggestions(); }, [showAddFriend, user]);
 
@@ -597,6 +703,75 @@ const FriendsTab = ({ initialSelectedFriendId, initialSelectedMoodId, initialSel
                   >
                     {isSearching ? "Sending..." : "Add"}
                   </Button>
+                </div>
+              )}
+
+              {/* People You May Know */}
+              {!searchResult && (
+                <div className="mt-6">
+                  <h4
+                    className="text-xs font-bold text-white/50 uppercase tracking-wider mb-3"
+                    style={{ fontFamily: "'Space Mono', monospace" }}
+                  >
+                    People You May Know
+                  </h4>
+                  {loadingSuggestions ? (
+                    <div className="py-4 text-center">
+                      <p className="text-white/40 text-sm">Loading suggestions...</p>
+                    </div>
+                  ) : friendSuggestions.length > 0 ? (
+                    <div className="space-y-2 max-h-60 overflow-y-auto">
+                      {friendSuggestions.map(suggestion => (
+                        <div
+                          key={suggestion.user_id}
+                          className="p-3 bg-white/5 border border-white/10 flex items-center justify-between"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-white/10 overflow-hidden">
+                              {suggestion.avatar_url ? (
+                                <img src={suggestion.avatar_url} alt="" className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center">
+                                  <User className="w-5 h-5 text-white/40" />
+                                </div>
+                              )}
+                            </div>
+                            <div>
+                              <p className="font-bold text-white text-sm">
+                                {suggestion.display_name || `@${suggestion.username}`}
+                              </p>
+                              {suggestion.mutual_friend_name && (
+                                <p className="text-white/40 text-xs" style={{ fontFamily: "'Space Mono', monospace" }}>
+                                  Friends with {suggestion.mutual_friend_name}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          <Button
+                            onClick={() => handleSendSuggestionRequest(suggestion)}
+                            size="sm"
+                            className="bg-[#C5A059] text-black hover:bg-[#C5A059]/80 text-xs"
+                          >
+                            Add
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : friends.length > 0 ? (
+                    <div className="py-4 text-center">
+                      <Users className="w-8 h-8 mx-auto mb-2 text-white/20" />
+                      <p className="text-white/40 text-xs" style={{ fontFamily: "'Space Mono', monospace" }}>
+                        No suggestions right now
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="py-4 text-center">
+                      <Users className="w-8 h-8 mx-auto mb-2 text-white/20" />
+                      <p className="text-white/40 text-xs" style={{ fontFamily: "'Space Mono', monospace" }}>
+                        Add some friends to see suggestions
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
