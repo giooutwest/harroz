@@ -779,7 +779,14 @@ const FriendsTab = ({ initialSelectedFriendId, initialSelectedMoodId, initialSel
         )}
       </AnimatePresence>
 
-      <FriendProfileModal friendId={selectedFriendId} onClose={() => setSelectedFriendId(null)} />
+      <FriendProfileModal
+        friendId={selectedFriendId}
+        onClose={() => setSelectedFriendId(null)}
+        onFriendRemoved={() => {
+          fetchFriends();
+          fetchCloseFriends();
+        }}
+      />
 
       <NotificationsSheet
         isOpen={showNotifications}

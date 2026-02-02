@@ -170,11 +170,9 @@ const DailyReel = ({ onFriendClick, highlightMoodId, shouldOpenComments, closeFr
         .in('user_id', friendIds)
         .gte('created_at', yesterdayISO);
 
-      if (closeFriendsOnly) {
-        query = query.eq('visibility', 'close_friends');
-      } else {
-        query = query.in('visibility', ['friends', 'close_friends']);
-      }
+      // Both feeds show friends + close_friends visibility
+      // RLS handles permission checks for close_friends visibility posts
+      query = query.in('visibility', ['friends', 'close_friends']);
 
       const { data: moodData, error } = await query
         .order('created_at', { ascending: false })

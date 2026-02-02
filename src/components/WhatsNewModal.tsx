@@ -10,7 +10,8 @@ import {
   Palette,
   Shirt,
   CheckCircle2,
-  Camera
+  Camera,
+  UserCircle
 } from "lucide-react";
 
 interface Feature {
@@ -19,25 +20,34 @@ interface Feature {
   description: string;
   icon: React.ElementType;
   color: string;
-  tryItAction: "today" | "stats" | "settings" | "fitcheck";
+  tryItAction: "today" | "stats" | "settings" | "fitcheck" | "friends";
   illustration: string;
 }
 
 interface WhatsNewModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onTryFeature: (action: "today" | "stats" | "settings" | "fitcheck") => void;
+  onTryFeature: (action: "today" | "stats" | "settings" | "fitcheck" | "friends") => void;
 }
 
 const features: Feature[] = [
   {
     id: "gallery-upload",
     title: "Gallery Uploads Are Back!",
-    description: "Due to popular demand, you can now upload photos AND videos from your gallery again! Videos can be up to 5 seconds — longer clips can be trimmed right in the app.",
+    description: "Due to popular demand, you can now upload photos from your gallery again! Tap 'Add Photo' and choose between taking a new photo or uploading from your library.",
     icon: Camera,
     color: "hsl(340, 75%, 55%)",
     tryItAction: "today",
-    illustration: "📸🎬✨"
+    illustration: "📸🖼️✨"
+  },
+  {
+    id: "subject-dossier",
+    title: "Subject Dossier",
+    description: "Friend profiles got a spy-themed makeover! See real-time activity status (green = active, yellow = recent, red = inactive), send nudges, and manage close friends — all in one sleek dossier.",
+    icon: UserCircle,
+    color: "hsl(45, 80%, 50%)",
+    tryItAction: "friends",
+    illustration: "🕵️📋🟢"
   },
   {
     id: "routine-tags",

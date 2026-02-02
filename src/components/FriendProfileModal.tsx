@@ -1,15 +1,16 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, User, Star, Calendar, Activity, Flame, MessageCircle } from "lucide-react";
+import { X, User, Star, Calendar, Flame, MessageCircle, Zap, Settings, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { formatDistanceToNow } from "date-fns";
-import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
+import { formatDistanceToNow, differenceInMinutes, differenceInHours } from "date-fns";
 
 interface FriendProfileModalProps {
   friendId: string | null;
   onClose: () => void;
   onMessage?: (friendId: string, friendName: string, friendAvatar: string | null) => void;
+  onFriendRemoved?: () => void;
 }
 
 interface FriendProfile {
@@ -27,12 +28,34 @@ interface RecentMood {
   created_at: string;
 }
 
-const getMoodColor = (rating: number): string => {
-  if (rating <= 2) return "hsl(0, 70%, 50%)";
-  if (rating <= 4) return "hsl(30, 80%, 55%)";
-  if (rating <= 6) return "hsl(50, 90%, 55%)";
-  if (rating <= 8) return "hsl(140, 55%, 45%)";
-  return "hsl(210, 80%, 55%)";
+type ActivityStatus = "active" | "recent" | "inactive";
+
+const getActivityStatus = (lastActivity: string | null): ActivityStatus => {
+  if (!lastActivity) return "inactive";
+  const now = new Date();
+  const lastDate = new Date(lastActivity);
+  const minutesAgo = differenceInMinutes(now, lastDate);
+  const hoursAgo = differenceInHours(now, lastDate);
+
+  if (minutesAgo < 15) return "active";
+  if (hoursAgo < 1) return "recent";
+  return "inactive";
+};
+
+const getStatusColor = (status: ActivityStatus): string => {
+  switch (status) {
+    case "active": return "#22c55e"; // green
+    case "recent": return "#eab308"; // yellow
+    case "inactive": return "#ef4444"; // red
+  }
+};
+
+const getStatusLabel = (status: ActivityStatus): string => {
+  switch (status) {
+    case "active": return "ACTIVE";
+    case "recent": return "RECENT";
+    case "inactive": return "INACTIVE";
+  }
 };
 
 const getMoodEmoji = (rating: number): string => {
@@ -43,13 +66,18 @@ const getMoodEmoji = (rating: number): string => {
   return "☀️";
 };
 
-const FriendProfileModal = ({ friendId, onClose, onMessage }: FriendProfileModalProps) => {
+const FriendProfileModal = ({ friendId, onClose, onMessage, onFriendRemoved }: FriendProfileModalProps) => {
   const [profile, setProfile] = useState<FriendProfile | null>(null);
   const [recentMoods, setRecentMoods] = useState<RecentMood[]>([]);
   const [isCloseFriend, setIsCloseFriend] = useState(false);
+  const [friendshipId, setFriendshipId] = useState<string | null>(null);
   const [friendshipDate, setFriendshipDate] = useState<string | null>(null);
+  const [lastActivity, setLastActivity] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showSettings, setShowSettings] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const { user } = useAuth();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (friendId && user) {
@@ -60,8 +88,10 @@ const FriendProfileModal = ({ friendId, onClose, onMessage }: FriendProfileModal
   const fetchProfileData = async () => {
     if (!friendId || !user) return;
     setLoading(true);
+    setShowSettings(false);
+    setConfirmDelete(false);
 
-    // Fetch profile (Now includes current_streak)
+    // Fetch profile
     const { data: profileData } = await supabase
       .from('profiles')
       .select('user_id, display_name, username, avatar_url, current_streak')
@@ -83,19 +113,20 @@ const FriendProfileModal = ({ friendId, onClose, onMessage }: FriendProfileModal
 
     setIsCloseFriend(!!closeData);
 
-    // Get friendship date
+    // Get friendship data
     const { data: friendshipData } = await supabase
       .from('friendships')
-      .select('created_at')
+      .select('id, created_at')
       .eq('status', 'accepted')
       .or(`and(requester_id.eq.${user.id},addressee_id.eq.${friendId}),and(requester_id.eq.${friendId},addressee_id.eq.${user.id})`)
       .maybeSingle();
 
     if (friendshipData) {
+      setFriendshipId(friendshipData.id);
       setFriendshipDate(friendshipData.created_at);
     }
 
-    // Fetch recent moods (visible to current user)
+    // Fetch recent moods (for activity status and display)
     const { data: moodsData } = await supabase
       .from('moods')
       .select('id, rating, caption, created_at')
@@ -104,14 +135,87 @@ const FriendProfileModal = ({ friendId, onClose, onMessage }: FriendProfileModal
       .order('created_at', { ascending: false })
       .limit(5);
 
-    if (moodsData) {
+    if (moodsData && moodsData.length > 0) {
       setRecentMoods(moodsData);
+      setLastActivity(moodsData[0].created_at);
+    } else {
+      setRecentMoods([]);
+      setLastActivity(null);
     }
 
     setLoading(false);
   };
 
+  const handleToggleCloseFriend = async () => {
+    if (!user || !friendId) return;
+
+    if (isCloseFriend) {
+      const { error } = await supabase
+        .from('close_friends')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('friend_id', friendId);
+
+      if (!error) {
+        setIsCloseFriend(false);
+        toast({ title: "Removed from close friends" });
+      }
+    } else {
+      const { error } = await supabase
+        .from('close_friends')
+        .insert({ user_id: user.id, friend_id: friendId });
+
+      if (!error) {
+        setIsCloseFriend(true);
+        toast({ title: "Added to close friends!" });
+      }
+    }
+    setShowSettings(false);
+  };
+
+  const handleRemoveFriend = async () => {
+    if (!friendshipId) return;
+
+    const { error } = await supabase
+      .from('friendships')
+      .delete()
+      .eq('id', friendshipId);
+
+    if (!error) {
+      // Also remove from close friends if applicable
+      if (user && friendId) {
+        await supabase
+          .from('close_friends')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('friend_id', friendId);
+      }
+      toast({ title: "Friend removed" });
+      onFriendRemoved?.();
+      onClose();
+    } else {
+      toast({ title: "Failed to remove friend", variant: "destructive" });
+    }
+  };
+
+  const handleNudge = async () => {
+    if (!user || !friendId) return;
+
+    // @ts-ignore
+    const { error } = await supabase
+      .from('nudges')
+      .insert({ sender_id: user.id, receiver_id: friendId });
+
+    if (!error) {
+      toast({ title: `Nudged ${profile?.display_name || profile?.username}!` });
+    } else {
+      toast({ title: "Could not send nudge", variant: "destructive" });
+    }
+  };
+
   if (!friendId) return null;
+
+  const activityStatus = getActivityStatus(lastActivity);
 
   return (
     <AnimatePresence>
@@ -119,141 +223,242 @@ const FriendProfileModal = ({ friendId, onClose, onMessage }: FriendProfileModal
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-6"
+        className="fixed inset-0 bg-black/95 backdrop-blur-sm z-50 flex items-center justify-center p-4"
         onClick={onClose}
       >
         <motion.div
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0.9, opacity: 0 }}
+          initial={{ scale: 0.9, opacity: 0, y: 20 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          exit={{ scale: 0.9, opacity: 0, y: 20 }}
           onClick={(e) => e.stopPropagation()}
-          className="bg-card border border-border p-6 w-full max-w-sm max-h-[80vh] overflow-y-auto rounded-3xl"
+          className="bg-[#0a0a0a] border border-white/10 w-full max-w-sm max-h-[85vh] overflow-y-auto"
+          style={{ fontFamily: "'Space Mono', monospace" }}
         >
-          {/* Header */}
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="font-semibold text-lg">
-              Profile
-            </h3>
-            <button
-              onClick={onClose}
-              className="p-2 bg-secondary touch-manipulation rounded-full"
-            >
-              <X className="w-5 h-5" />
-            </button>
+          {/* Header - Classified style */}
+          <div className="border-b border-white/10 p-4 flex items-center justify-between bg-[#111]">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] text-red-500 uppercase tracking-[0.2em] font-bold">
+                Subject Dossier
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowSettings(!showSettings)}
+                className="p-2 hover:bg-white/5 transition-colors"
+              >
+                <Settings className="w-4 h-4 text-white/40" />
+              </button>
+              <button
+                onClick={onClose}
+                className="p-2 hover:bg-white/5 transition-colors"
+              >
+                <X className="w-4 h-4 text-white/40" />
+              </button>
+            </div>
           </div>
 
+          {/* Settings dropdown */}
+          <AnimatePresence>
+            {showSettings && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                className="border-b border-white/10 overflow-hidden"
+              >
+                <div className="p-3 space-y-1">
+                  <button
+                    onClick={handleToggleCloseFriend}
+                    className="w-full flex items-center gap-3 p-3 hover:bg-white/5 text-left transition-colors"
+                  >
+                    <Star className={`w-4 h-4 ${isCloseFriend ? "text-[#C5A059] fill-current" : "text-white/40"}`} />
+                    <span className="text-sm text-white/80">
+                      {isCloseFriend ? "Remove from Close Friends" : "Add to Close Friends"}
+                    </span>
+                  </button>
+                  {!confirmDelete ? (
+                    <button
+                      onClick={() => setConfirmDelete(true)}
+                      className="w-full flex items-center gap-3 p-3 hover:bg-red-500/10 text-left transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4 text-red-500/60" />
+                      <span className="text-sm text-red-500/80">Remove Friend</span>
+                    </button>
+                  ) : (
+                    <div className="p-3 bg-red-500/10 border border-red-500/20">
+                      <p className="text-xs text-red-400 mb-2">Confirm removal?</p>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={handleRemoveFriend}
+                          className="flex-1 py-2 bg-red-500 text-white text-xs font-bold"
+                        >
+                          REMOVE
+                        </button>
+                        <button
+                          onClick={() => setConfirmDelete(false)}
+                          className="flex-1 py-2 bg-white/10 text-white/60 text-xs"
+                        >
+                          CANCEL
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {loading ? (
-            <div className="flex items-center justify-center py-12">
+            <div className="flex items-center justify-center py-16">
               <motion.div
                 animate={{ rotate: 360 }}
                 transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-                className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full"
+                className="w-6 h-6 border-2 border-[#C5A059] border-t-transparent rounded-full"
               />
             </div>
           ) : profile ? (
-            <div className="space-y-6">
-              {/* Avatar & Name */}
-              <div className="flex flex-col items-center text-center">
-                <div className="w-24 h-24 bg-secondary flex items-center justify-center overflow-hidden mb-3 rounded-full">
-                  {profile.avatar_url ? (
-                    <img
-                      src={profile.avatar_url}
-                      alt=""
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <User className="w-10 h-10 text-muted-foreground" />
-                  )}
+            <div className="p-5 space-y-5">
+              {/* Avatar with status indicator */}
+              <div className="flex items-start gap-4">
+                <div className="relative">
+                  <div className="w-20 h-20 bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden">
+                    {profile.avatar_url ? (
+                      <img
+                        src={profile.avatar_url}
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <User className="w-8 h-8 text-white/20" />
+                    )}
+                  </div>
+                  {/* Status indicator */}
+                  <motion.div
+                    animate={{
+                      opacity: activityStatus === "active" ? [1, 0.4, 1] : 1,
+                      scale: activityStatus === "active" ? [1, 1.1, 1] : 1
+                    }}
+                    transition={{
+                      repeat: activityStatus === "active" ? Infinity : 0,
+                      duration: 1.5
+                    }}
+                    className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-[#0a0a0a] flex items-center justify-center"
+                    style={{ backgroundColor: getStatusColor(activityStatus) }}
+                  />
                 </div>
 
-                <h4 className="font-bold flex items-center gap-2 text-xl">
-                  {profile.display_name || "Unknown"}
-                </h4>
+                {/* Name and status info */}
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-white font-bold text-lg truncate" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                    {profile.display_name || "UNKNOWN"}
+                  </h3>
+                  {profile.username && (
+                    <p className="text-white/40 text-xs mb-2">@{profile.username}</p>
+                  )}
 
-                {/* Streak Badge */}
-                {profile.current_streak && profile.current_streak > 0 ? (
-                  <Badge variant="secondary" className="mt-2 bg-orange-50 text-orange-600 border-orange-100 gap-1.5 px-2 py-0.5">
-                    <Flame className="w-3 h-3 fill-orange-500" />
-                    <span className="font-bold">{profile.current_streak} Day Streak</span>
-                  </Badge>
-                ) : null}
-
-                {profile.username && (
-                  <p className="text-muted-foreground mt-1 text-sm">
-                    @{profile.username}
-                  </p>
-                )}
-
-                {isCloseFriend && (
-                  <div className="flex items-center gap-1 text-primary mt-2 text-sm">
-                    <Star className="w-4 h-4 fill-current" />
-                    Close Friend
+                  {/* Status badge */}
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="text-[10px] uppercase tracking-wider px-2 py-0.5"
+                      style={{
+                        backgroundColor: `${getStatusColor(activityStatus)}20`,
+                        color: getStatusColor(activityStatus)
+                      }}
+                    >
+                      {getStatusLabel(activityStatus)}
+                    </span>
+                    {isCloseFriend && (
+                      <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 bg-[#C5A059]/20 text-[#C5A059] flex items-center gap-1">
+                        <Star className="w-3 h-3 fill-current" />
+                        CLOSE
+                      </span>
+                    )}
                   </div>
-                )}
+                </div>
+              </div>
 
-                {/* Message Button */}
+              {/* Stats grid */}
+              <div className="grid grid-cols-2 gap-2">
+                {/* Streak */}
+                <div className="bg-white/5 border border-white/10 p-3">
+                  <div className="flex items-center gap-2 text-orange-500 mb-1">
+                    <Flame className="w-4 h-4 fill-current" />
+                    <span className="text-[10px] uppercase tracking-wider">Streak</span>
+                  </div>
+                  <p className="text-2xl font-bold text-white" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                    {profile.current_streak || 0}
+                    <span className="text-xs text-white/40 ml-1">days</span>
+                  </p>
+                </div>
+
+                {/* Friends since */}
+                <div className="bg-white/5 border border-white/10 p-3">
+                  <div className="flex items-center gap-2 text-white/40 mb-1">
+                    <Calendar className="w-4 h-4" />
+                    <span className="text-[10px] uppercase tracking-wider">Connected</span>
+                  </div>
+                  <p className="text-sm text-white/80">
+                    {friendshipDate
+                      ? formatDistanceToNow(new Date(friendshipDate), { addSuffix: false })
+                      : "Recently"}
+                  </p>
+                </div>
+              </div>
+
+              {/* Action buttons */}
+              <div className="grid grid-cols-2 gap-2">
                 {onMessage && (
                   <button
                     onClick={() => {
                       onMessage(profile.user_id, profile.display_name || profile.username || 'Friend', profile.avatar_url);
                       onClose();
                     }}
-                    className="mt-3 w-full py-2 px-4 bg-primary text-primary-foreground font-medium flex items-center justify-center gap-2 rounded-xl"
+                    className="flex items-center justify-center gap-2 py-3 bg-[#C5A059] text-black font-bold text-xs uppercase tracking-wider"
                   >
                     <MessageCircle className="w-4 h-4" />
-                    Send Message
+                    Contact
                   </button>
                 )}
+                <button
+                  onClick={handleNudge}
+                  className={`flex items-center justify-center gap-2 py-3 border border-yellow-500/30 bg-yellow-500/10 text-yellow-500 font-bold text-xs uppercase tracking-wider hover:bg-yellow-500/20 transition-colors ${!onMessage ? 'col-span-2' : ''}`}
+                >
+                  <Zap className="w-4 h-4 fill-current" />
+                  Nudge
+                </button>
               </div>
 
-              {/* Stats */}
-              <div className="bg-secondary p-4 rounded-xl">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Calendar className="w-4 h-4" />
-                  <span className="text-sm">
-                    Friends since {friendshipDate ? formatDistanceToNow(new Date(friendshipDate), { addSuffix: false }) : "recently"}
-                  </span>
-                </div>
-              </div>
-
-              {/* Recent Moods */}
+              {/* Recent activity */}
               <div>
-                <h5 className="font-medium mb-3 flex items-center gap-2 text-sm">
-                  <Activity className="w-4 h-4" />
-                  Recent Moods
-                </h5>
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="h-px flex-1 bg-white/10" />
+                  <span className="text-[10px] text-white/30 uppercase tracking-[0.2em]">Recent Intel</span>
+                  <div className="h-px flex-1 bg-white/10" />
+                </div>
 
                 {recentMoods.length === 0 ? (
-                  <p className="text-muted-foreground text-center py-4 text-sm">
-                    No shared moods yet
-                  </p>
+                  <div className="text-center py-6 border border-dashed border-white/10">
+                    <p className="text-white/30 text-xs uppercase tracking-wider">No recent transmissions</p>
+                  </div>
                 ) : (
                   <div className="space-y-2">
                     {recentMoods.map((mood) => (
                       <div
                         key={mood.id}
-                        className="bg-secondary p-3 flex items-center gap-3 rounded-xl"
+                        className="bg-white/5 border border-white/10 p-3 flex items-center gap-3"
                       >
-                        <div
-                          className="w-8 h-8 flex items-center justify-center rounded-full"
-                          style={{ backgroundColor: getMoodColor(mood.rating) }}
-                        >
-                          <span className="text-sm">{getMoodEmoji(mood.rating)}</span>
-                        </div>
+                        <span className="text-xl">{getMoodEmoji(mood.rating)}</span>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <span
-                              className="font-bold text-sm"
-                              style={{ color: getMoodColor(mood.rating) }}
-                            >
+                            <span className="text-white/80 text-sm font-bold">
                               {mood.rating}/10
                             </span>
-                            <span className="text-muted-foreground text-xs">
+                            <span className="text-white/30 text-[10px] uppercase">
                               {formatDistanceToNow(new Date(mood.created_at), { addSuffix: true })}
                             </span>
                           </div>
                           {mood.caption && (
-                            <p className="text-muted-foreground truncate text-xs">
+                            <p className="text-white/50 text-xs truncate mt-0.5">
                               {mood.caption}
                             </p>
                           )}
@@ -265,7 +470,9 @@ const FriendProfileModal = ({ friendId, onClose, onMessage }: FriendProfileModal
               </div>
             </div>
           ) : (
-            <p className="text-muted-foreground text-center py-8">Profile not found</p>
+            <div className="p-8 text-center">
+              <p className="text-white/30 text-xs uppercase tracking-wider">Subject not found</p>
+            </div>
           )}
         </motion.div>
       </motion.div>
