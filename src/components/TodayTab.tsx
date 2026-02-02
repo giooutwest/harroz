@@ -103,6 +103,7 @@ const TodayTab = ({}: TodayTabProps) => {
   const [photo, setPhoto] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [existingPhotoPath, setExistingPhotoPath] = useState<string | null>(null);
+  const [isVideoMedia, setIsVideoMedia] = useState(false);
   const [caption, setCaption] = useState("");
   const [visibility, setVisibility] = useState<Visibility>("friends");
   const [isUploading, setIsUploading] = useState(false);
@@ -257,11 +258,14 @@ const TodayTab = ({}: TodayTabProps) => {
     return quotes[Math.floor(Math.random() * quotes.length)];
   };
 
-  const handleCameraCapture = (imageBlob: Blob, previewUrl: string) => {
+  const handleCameraCapture = (blob: Blob, previewUrl: string, isVideo?: boolean) => {
     // Convert blob to File for upload
-    const file = new File([imageBlob], `mood-${Date.now()}.jpg`, { type: "image/jpeg" });
+    const ext = isVideo ? 'mp4' : 'jpg';
+    const mimeType = isVideo ? 'video/mp4' : 'image/jpeg';
+    const file = new File([blob], `mood-${Date.now()}.${ext}`, { type: mimeType });
     setPhoto(file);
     setPhotoPreview(previewUrl);
+    setIsVideoMedia(!!isVideo);
   };
 
   const removePhoto = () => {
@@ -269,6 +273,7 @@ const TodayTab = ({}: TodayTabProps) => {
     setPhotoPreview(null);
     setExistingPhotoPath(null);
     setCaption("");
+    setIsVideoMedia(false);
   };
 
   const uploadPhoto = async (): Promise<string | null> => {
@@ -284,7 +289,7 @@ const TodayTab = ({}: TodayTabProps) => {
   const handleSubmit = async () => {
     if (!user) return;
     if (!photo && !photoPreview) {
-      toast({ title: "Photo required 📸", description: "Show your friends what you did today!", variant: "destructive" });
+      toast({ title: "Photo or video required 📸", description: "Show your friends what you did today!", variant: "destructive" });
       return;
     }
     
@@ -574,9 +579,17 @@ const TodayTab = ({}: TodayTabProps) => {
             <Slider value={[rating]} onValueChange={(value) => setRating(value[0])} min={1} max={10} step={1} className="w-full touch-manipulation mb-6" />
             <motion.div className="w-full mb-6">
               {!photoPreview ? (
-                <button onClick={() => setShowMoodCamera(true)} className={`w-full py-4 border-2 border-dashed border-primary/50 bg-primary/5 flex items-center justify-center gap-2 text-primary hover:bg-primary/10 transition-colors rounded-xl`}><Camera className="w-5 h-5" /><span className="font-semibold">Take a Photo</span></button>
+                <button onClick={() => setShowMoodCamera(true)} className={`w-full py-4 border-2 border-dashed border-primary/50 bg-primary/5 flex items-center justify-center gap-2 text-primary hover:bg-primary/10 transition-colors rounded-xl`}><Camera className="w-5 h-5" /><span className="font-semibold">Add Photo or Video</span></button>
               ) : (
-                <div className="relative"><img src={photoPreview} alt="Selected" className={`w-full h-40 object-cover rounded-xl`} /><button onClick={removePhoto} className={`absolute top-2 right-2 p-1 bg-background/80 rounded-full`}><X className="w-4 h-4" /></button></div>
+                <div className="relative">
+                  {isVideoMedia ? (
+                    <video src={photoPreview} className="w-full h-40 object-cover rounded-xl" autoPlay loop muted playsInline />
+                  ) : (
+                    <img src={photoPreview} alt="Selected" className="w-full h-40 object-cover rounded-xl" />
+                  )}
+                  <button onClick={removePhoto} className="absolute top-2 right-2 p-1 bg-background/80 rounded-full"><X className="w-4 h-4" /></button>
+                  {isVideoMedia && <span className="absolute bottom-2 left-2 px-2 py-1 bg-black/70 text-white text-xs rounded">Video</span>}
+                </div>
               )}
             </motion.div>
             <Input type="text" placeholder="Caption (optional)" value={caption} onChange={(e) => setCaption(e.target.value)} maxLength={500} className={`mb-2 `} />

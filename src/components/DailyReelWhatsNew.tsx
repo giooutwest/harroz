@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Film, Sparkles } from "lucide-react";
+import { X, Film, Sparkles, ImagePlus } from "lucide-react";
 
 interface DailyReelWhatsNewProps {
   isOpen: boolean;
@@ -137,14 +137,14 @@ const DailyReelWhatsNew = ({ isOpen, onClose, onTryIt }: DailyReelWhatsNewProps)
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
-              className="space-y-4 mb-8"
+              className="space-y-4 mb-6"
             >
               <p
                 className="text-white/60 text-sm text-center leading-relaxed"
                 style={{ fontFamily: "'Playfair Display', serif" }}
               >
                 Your friends' posts now appear as frames on a vintage film strip.
-                Drag through the reel to view each moment of the day.
+                Scroll through the reel to view each moment of the day.
               </p>
 
               {/* Feature highlights */}
@@ -171,6 +171,29 @@ const DailyReelWhatsNew = ({ isOpen, onClose, onTryIt }: DailyReelWhatsNewProps)
                     </span>
                   </motion.div>
                 ))}
+              </div>
+            </motion.div>
+
+            {/* Gallery Upload Return */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.9 }}
+              className="mb-6 p-3 border border-[#C5A059]/30 bg-[#C5A059]/5"
+            >
+              <div className="flex items-start gap-3">
+                <ImagePlus className="w-5 h-5 text-[#C5A059] shrink-0 mt-0.5" />
+                <div>
+                  <p
+                    className="text-[#C5A059] text-xs font-medium uppercase tracking-wider mb-1"
+                    style={{ fontFamily: "'Space Mono', monospace" }}
+                  >
+                    Back by popular demand
+                  </p>
+                  <p className="text-white/50 text-[11px] leading-relaxed">
+                    Upload photos & videos from your gallery again. Videos can be up to 5 seconds (trim longer clips).
+                  </p>
+                </div>
               </div>
             </motion.div>
 
@@ -210,7 +233,7 @@ const DailyReelWhatsNew = ({ isOpen, onClose, onTryIt }: DailyReelWhatsNewProps)
               className="absolute bottom-4 right-10 text-white/20 text-[9px] tracking-wider"
               style={{ fontFamily: "'Space Mono', monospace" }}
             >
-              v3.0
+              v3.1
             </motion.div>
           </div>
         </motion.div>

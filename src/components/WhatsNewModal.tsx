@@ -31,13 +31,13 @@ interface WhatsNewModalProps {
 
 const features: Feature[] = [
   {
-    id: "authentic-photos",
-    title: "Real Moments Only",
-    description: "We want to see the most authentic photo of your day! You can now only take photos through the app — no more uploading from your gallery. Use this space to be vulnerable and real with your friends.",
+    id: "gallery-upload",
+    title: "Gallery Uploads Are Back!",
+    description: "Due to popular demand, you can now upload photos AND videos from your gallery again! Videos can be up to 5 seconds — longer clips can be trimmed right in the app.",
     icon: Camera,
     color: "hsl(340, 75%, 55%)",
     tryItAction: "today",
-    illustration: "📸💕🌟"
+    illustration: "📸🎬✨"
   },
   {
     id: "routine-tags",

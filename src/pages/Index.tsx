@@ -270,7 +270,7 @@ const Index = () => {
   // Show DailyReel feature announcement (separate from main What's New)
   useEffect(() => {
     if (user && !showOnboarding && !showWhatsNew) {
-      const dailyReelKey = `moodmemos-dailyreel-v1-${user.id}`;
+      const dailyReelKey = `moodmemos-dailyreel-v2-${user.id}`;
       const hasSeen = localStorage.getItem(dailyReelKey);
 
       if (!hasSeen) {
