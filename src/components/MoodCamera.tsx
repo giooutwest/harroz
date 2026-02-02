@@ -7,11 +7,12 @@ interface MoodCameraProps {
   isOpen: boolean;
   onClose: () => void;
   onCapture: (blob: Blob, previewUrl: string, isVideo?: boolean) => void;
+  initialMode?: "camera" | "gallery";
 }
 
 const MAX_VIDEO_DURATION = 5; // seconds
 
-const MoodCamera = ({ isOpen, onClose, onCapture }: MoodCameraProps) => {
+const MoodCamera = ({ isOpen, onClose, onCapture, initialMode = "camera" }: MoodCameraProps) => {
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [capturedBlob, setCapturedBlob] = useState<Blob | null>(null);
@@ -38,15 +39,23 @@ const MoodCamera = ({ isOpen, onClose, onCapture }: MoodCameraProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const trimVideoRef = useRef<HTMLVideoElement>(null);
 
-  // Start camera when modal opens
+  // Start camera or open gallery when modal opens
   useEffect(() => {
     if (isOpen && !capturedImage && !selectedVideo) {
-      startCamera();
+      if (initialMode === "gallery") {
+        // Small delay to allow modal to render, then open file picker
+        const timer = setTimeout(() => {
+          fileInputRef.current?.click();
+        }, 100);
+        return () => clearTimeout(timer);
+      } else {
+        startCamera();
+      }
     }
     return () => {
       stopCamera();
     };
-  }, [isOpen, facingMode]);
+  }, [isOpen, facingMode, initialMode]);
 
   // Cleanup video preview URL
   useEffect(() => {

@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Plus, X, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 interface DefaultTag {
   id: string;
@@ -26,9 +27,10 @@ interface MoodTag {
 interface RoutineTagsProps {
   moodId: string | null;
   onTagsChange?: (tags: MoodTag[]) => void;
+  pendingTags?: MoodTag[];
 }
 
-const RoutineTags = ({ moodId, onTagsChange }: RoutineTagsProps) => {
+const RoutineTags = ({ moodId, onTagsChange, pendingTags = [] }: RoutineTagsProps) => {
   const [defaultTags, setDefaultTags] = useState<DefaultTag[]>([]);
   const [userTags, setUserTags] = useState<UserTag[]>([]);
   const [selectedTags, setSelectedTags] = useState<MoodTag[]>([]);
@@ -49,9 +51,10 @@ const RoutineTags = ({ moodId, onTagsChange }: RoutineTagsProps) => {
     if (moodId) {
       fetchMoodTags();
     } else {
-      setSelectedTags([]);
+      // Use pending tags from parent when no moodId
+      setSelectedTags(pendingTags);
     }
-  }, [moodId]);
+  }, [moodId, pendingTags]);
 
   const fetchTags = async () => {
     setIsLoading(true);
@@ -95,35 +98,47 @@ const RoutineTags = ({ moodId, onTagsChange }: RoutineTagsProps) => {
   };
 
   const toggleTag = async (tagId: string, tagType: "default" | "custom") => {
-    if (!moodId) return;
-
     const isSelected = selectedTags.some(t => t.tag_id === tagId && t.tag_type === tagType);
+
+    // Find tag name for feedback
+    const tag = tagType === "default"
+      ? defaultTags.find(t => t.id === tagId)
+      : userTags.find(t => t.id === tagId);
 
     if (isSelected) {
       // Remove tag
-      await supabase
-        .from("mood_routine_tags")
-        .delete()
-        .eq("mood_id", moodId)
-        .eq("tag_id", tagId)
-        .eq("tag_type", tagType);
+      if (moodId) {
+        await supabase
+          .from("mood_routine_tags")
+          .delete()
+          .eq("mood_id", moodId)
+          .eq("tag_id", tagId)
+          .eq("tag_type", tagType);
+      }
 
       const newTags = selectedTags.filter(t => !(t.tag_id === tagId && t.tag_type === tagType));
       setSelectedTags(newTags);
       onTagsChange?.(newTags);
     } else {
       // Add tag
-      await supabase
-        .from("mood_routine_tags")
-        .insert({
-          mood_id: moodId,
-          tag_id: tagId,
-          tag_type: tagType
-        });
+      if (moodId) {
+        await supabase
+          .from("mood_routine_tags")
+          .insert({
+            mood_id: moodId,
+            tag_id: tagId,
+            tag_type: tagType
+          });
+      }
 
       const newTags = [...selectedTags, { tag_id: tagId, tag_type: tagType }];
       setSelectedTags(newTags);
       onTagsChange?.(newTags);
+
+      // Show feedback for adding tag
+      if (tag) {
+        toast.success(`${tag.icon} ${tag.name} added!`, { duration: 1500 });
+      }
     }
   };
 
@@ -178,12 +193,11 @@ const RoutineTags = ({ moodId, onTagsChange }: RoutineTagsProps) => {
             key={`default-${tag.id}`}
             whileTap={{ scale: 0.95 }}
             onClick={() => toggleTag(tag.id, "default")}
-            disabled={!moodId}
             className={`flex items-center gap-1.5 px-3 py-1.5 border transition-all ${
               isTagSelected(tag.id, "default")
                 ? "bg-primary text-primary-foreground border-primary"
                 : "bg-card border-border hover:border-primary/50"
-            } ${!moodId ? "opacity-50 cursor-not-allowed" : ""} rounded-full`}
+            } rounded-full`}
           >
             <span className="text-sm">{tag.icon}</span>
             <span className="text-xs">{tag.name}</span>
@@ -202,12 +216,11 @@ const RoutineTags = ({ moodId, onTagsChange }: RoutineTagsProps) => {
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={() => toggleTag(tag.id, "custom")}
-              disabled={!moodId}
               className={`flex items-center gap-1.5 px-3 py-1.5 border transition-all ${
                 isTagSelected(tag.id, "custom")
                   ? "bg-primary text-primary-foreground border-primary"
                   : "bg-card border-border hover:border-primary/50"
-              } ${!moodId ? "opacity-50 cursor-not-allowed" : ""} rounded-full`}
+              } rounded-full`}
             >
               <span className="text-sm">{tag.icon}</span>
               <span className="text-xs">{tag.name}</span>

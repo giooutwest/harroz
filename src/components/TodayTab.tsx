@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Heart, CloudRain, Cloud, Sun, Star, Camera, X, MessageCircle, User, Lock, Pencil, Flame, Share2, Users, BookOpen } from "lucide-react";
+import { Sparkles, Heart, CloudRain, Cloud, Sun, Star, Camera, X, MessageCircle, User, Lock, Pencil, Flame, Share2, Users, BookOpen, ImagePlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { PixelStorm, PixelRain, PixelCloudy, PixelPartlyCloudy, PixelSunny } from "./PixelIcons";
@@ -24,6 +24,7 @@ import FitCheckChallenge from "./FitCheckChallenge";
 import ZineLockedView from "./ZineLockedView";
 import ZineOpenView from "./ZineOpenView";
 import MoodCamera from "./MoodCamera";
+import { useFeatureDiscovery } from "@/hooks/useFeatureDiscovery";
 
 type Visibility = "private" | "friends" | "close_friends";
 
@@ -143,6 +144,15 @@ const TodayTab = ({}: TodayTabProps) => {
 
   // Mood camera state
   const [showMoodCamera, setShowMoodCamera] = useState(false);
+  const [showPhotoOptions, setShowPhotoOptions] = useState(false);
+  const [cameraMode, setCameraMode] = useState<"camera" | "gallery">("camera");
+  const [showGalleryFeature, setShowGalleryFeature] = useState(false);
+
+  // Tags state (before mood is created)
+  const [pendingTags, setPendingTags] = useState<{tag_id: string; tag_type: "default" | "custom"}[]>([]);
+
+  // Feature discovery
+  const { shouldShowTooltip, markDiscovered } = useFeatureDiscovery();
 
   const shareRef = useRef<HTMLDivElement>(null);
 
@@ -268,6 +278,29 @@ const TodayTab = ({}: TodayTabProps) => {
     setIsVideoMedia(!!isVideo);
   };
 
+  // Open camera with specified mode
+  const openPhotoCapture = (mode: "camera" | "gallery") => {
+    setCameraMode(mode);
+    setShowPhotoOptions(false);
+    setShowMoodCamera(true);
+  };
+
+  // Handle add photo button click - show feature discovery first time
+  const handleAddPhotoClick = () => {
+    if (shouldShowTooltip("gallery-upload")) {
+      setShowGalleryFeature(true);
+    } else {
+      setShowPhotoOptions(true);
+    }
+  };
+
+  // After seeing gallery feature discovery, show options
+  const handleGalleryFeatureDismiss = () => {
+    markDiscovered("gallery-upload");
+    setShowGalleryFeature(false);
+    setShowPhotoOptions(true);
+  };
+
   const removePhoto = () => {
     setPhoto(null);
     setPhotoPreview(null);
@@ -308,27 +341,49 @@ const TodayTab = ({}: TodayTabProps) => {
     }
     
     // 🔥 FIXED: Removed 'note' column
-    const { error } = await supabase
+    const { data: upsertedMood, error } = await supabase
       .from('moods')
-      .upsert({ 
-        rating, 
+      .upsert({
+        rating,
         date: today,
         user_id: user.id,
         photo_url: finalPhotoPath,
         caption: caption || null,
         visibility
-      }, { 
-        onConflict: 'user_id,date' 
-      });
-
-    setIsUploading(false);
+      }, {
+        onConflict: 'user_id,date'
+      })
+      .select('id')
+      .single();
 
     if (error) {
+      setIsUploading(false);
       console.error(error);
       toast({ title: "Oops!", description: "Couldn't save your mood.", variant: "destructive" });
       return;
     }
 
+    // Save pending tags if any
+    if (upsertedMood?.id && pendingTags.length > 0) {
+      const tagsToInsert = pendingTags.map(tag => ({
+        mood_id: upsertedMood.id,
+        tag_id: tag.tag_id,
+        tag_type: tag.tag_type
+      }));
+
+      // First delete existing tags for this mood, then insert new ones
+      // @ts-ignore - mood_routine_tags table exists but not in generated types
+      await supabase.from('mood_routine_tags').delete().eq('mood_id', upsertedMood.id);
+      // @ts-ignore - mood_routine_tags table exists but not in generated types
+      await supabase.from('mood_routine_tags').insert(tagsToInsert);
+
+      // Update todaysMoodId so RoutineTags can work with it
+      setTodaysMoodId(upsertedMood.id);
+    } else if (upsertedMood?.id) {
+      setTodaysMoodId(upsertedMood.id);
+    }
+
+    setIsUploading(false);
     fetchDisplayName();
     setSubmittedRating(rating);
     setQuote(getRandomQuote(rating));
@@ -579,7 +634,7 @@ const TodayTab = ({}: TodayTabProps) => {
             <Slider value={[rating]} onValueChange={(value) => setRating(value[0])} min={1} max={10} step={1} className="w-full touch-manipulation mb-6" />
             <motion.div className="w-full mb-6">
               {!photoPreview ? (
-                <button onClick={() => setShowMoodCamera(true)} className={`w-full py-4 border-2 border-dashed border-primary/50 bg-primary/5 flex items-center justify-center gap-2 text-primary hover:bg-primary/10 transition-colors rounded-xl`}><Camera className="w-5 h-5" /><span className="font-semibold">Add Photo or Video</span></button>
+                <button onClick={handleAddPhotoClick} className={`w-full py-4 border-2 border-dashed border-primary/50 bg-primary/5 flex items-center justify-center gap-2 text-primary hover:bg-primary/10 transition-colors rounded-xl`}><Camera className="w-5 h-5" /><span className="font-semibold">Add Photo or Video</span></button>
               ) : (
                 <div className="relative">
                   {isVideoMedia ? (
@@ -596,7 +651,11 @@ const TodayTab = ({}: TodayTabProps) => {
 
             {/* Routine Tags */}
             <div className="w-full mb-4">
-              <RoutineTags moodId={todaysMoodId} />
+              <RoutineTags
+                moodId={todaysMoodId}
+                pendingTags={pendingTags}
+                onTagsChange={setPendingTags}
+              />
             </div>
 
             {/* Visibility Selector */}
@@ -725,11 +784,127 @@ const TodayTab = ({}: TodayTabProps) => {
         />
       )}
 
+      {/* Photo Options Dialog */}
+      <AnimatePresence>
+        {showPhotoOptions && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end justify-center"
+            onClick={() => setShowPhotoOptions(false)}
+          >
+            <motion.div
+              initial={{ y: 300, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 300, opacity: 0 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-md bg-card border-t border-border rounded-t-3xl p-6 pb-10"
+            >
+              <div className="w-12 h-1 bg-muted-foreground/30 rounded-full mx-auto mb-6" />
+              <h3 className="font-bold text-lg text-center mb-6">Add Photo or Video</h3>
+              <div className="space-y-3">
+                <button
+                  onClick={() => openPhotoCapture("camera")}
+                  className="w-full py-4 bg-primary text-primary-foreground font-semibold flex items-center justify-center gap-3 rounded-xl"
+                >
+                  <Camera className="w-5 h-5" />
+                  Take a Photo
+                </button>
+                <button
+                  onClick={() => openPhotoCapture("gallery")}
+                  className="w-full py-4 bg-secondary text-foreground font-semibold flex items-center justify-center gap-3 rounded-xl"
+                >
+                  <ImagePlus className="w-5 h-5" />
+                  Upload from Gallery
+                </button>
+              </div>
+              <button
+                onClick={() => setShowPhotoOptions(false)}
+                className="w-full py-3 text-muted-foreground text-sm mt-4"
+              >
+                Cancel
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Gallery Upload Feature Discovery */}
+      <AnimatePresence>
+        {showGalleryFeature && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-background/90 backdrop-blur-md z-50 flex items-center justify-center p-6"
+            onClick={handleGalleryFeatureDismiss}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-card border border-border w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl"
+            >
+              <div className="p-6 flex flex-col items-center text-center">
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.2, type: "spring" }}
+                  className="w-20 h-20 flex items-center justify-center mb-4 rounded-2xl"
+                  style={{ backgroundColor: "hsl(340, 75%, 95%)" }}
+                >
+                  <ImagePlus className="w-10 h-10 text-pink-500" />
+                </motion.div>
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.3 }}
+                  className="text-3xl mb-4"
+                >
+                  📸🎬✨
+                </motion.p>
+                <motion.h3
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="font-bold text-xl mb-2"
+                >
+                  Gallery Uploads Are Back!
+                </motion.h3>
+                <motion.p
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="text-muted-foreground text-sm leading-relaxed mb-6"
+                >
+                  You can now upload photos AND videos from your gallery! Videos can be up to 5 seconds — longer clips can be trimmed right in the app.
+                </motion.p>
+                <motion.button
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 }}
+                  onClick={handleGalleryFeatureDismiss}
+                  className="w-full py-3 bg-primary text-primary-foreground font-semibold rounded-xl"
+                  whileTap={{ scale: 0.98 }}
+                >
+                  Got it!
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Mood Camera */}
       <MoodCamera
         isOpen={showMoodCamera}
         onClose={() => setShowMoodCamera(false)}
         onCapture={handleCameraCapture}
+        initialMode={cameraMode}
       />
     </div>
   );
