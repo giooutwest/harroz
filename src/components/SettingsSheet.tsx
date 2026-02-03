@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Moon, Sparkles, Cherry, User, Check, Eye, Image, MessageSquare, Activity, Camera, Loader2, Search, AtSign, Bell, Smartphone, BellRing, BellOff, MessageCircle, MessageSquareHeart, LogOut, BookOpen, Lock, KeyRound, Award } from "lucide-react";
+import { X, Moon, Sparkles, Cherry, User, Check, Eye, Image, MessageSquare, Activity, Camera, Loader2, Search, AtSign, Bell, Smartphone, BellRing, BellOff, MessageCircle, MessageSquareHeart, LogOut, BookOpen, Lock, KeyRound, Award, Share2, Copy } from "lucide-react";
 import { PixelStar } from "./PixelIcons";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,7 @@ import { useNavigate } from "react-router-dom";
 import PinEntryModal from "./PinEntryModal";
 import { useJournalPin } from "@/hooks/useJournalPin";
 import BadgesSection from "./BadgesSection";
+import { useBadges } from "@/hooks/useBadges";
 
 type DefaultVisibility = "private" | "friends" | "close_friends";
 
@@ -70,8 +71,11 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
   const { hasUnread, refresh: refreshUnread } = useUnreadUpdates();
   const pushNotifications = usePushNotifications();
   const journalPin = useJournalPin();
+  const { referralCode, applyReferralCode } = useBadges();
   const [showJournalPinModal, setShowJournalPinModal] = useState(false);
   const [journalPinMode, setJournalPinMode] = useState<"setup" | "change">("setup");
+  const [referralInput, setReferralInput] = useState("");
+  const [isApplyingReferral, setIsApplyingReferral] = useState(false);
 
   useEffect(() => {
     if (isOpen && user) {
@@ -255,6 +259,30 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
     navigate("/auth");
   };
 
+  const handleCopyReferral = async () => {
+    if (!referralCode) return;
+    try {
+      await navigator.clipboard.writeText(referralCode);
+      toast({ title: "Copied!", description: "Share this code with friends" });
+    } catch {
+      toast({ title: "Couldn't copy", variant: "destructive" });
+    }
+  };
+
+  const handleApplyReferral = async () => {
+    if (!referralInput.trim()) return;
+    setIsApplyingReferral(true);
+    const result = await applyReferralCode(referralInput.trim());
+    setIsApplyingReferral(false);
+
+    if (result.success) {
+      toast({ title: result.message });
+      setReferralInput("");
+    } else {
+      toast({ title: result.message, variant: "destructive" });
+    }
+  };
+
   const hasNameChanged = displayName.trim() !== originalName;
   const hasUsernameChanged = username.trim() !== originalUsername;
 
@@ -296,7 +324,7 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                   className="text-[10px] text-white/40 uppercase tracking-[0.2em]"
                   style={{ fontFamily: "'Space Mono', monospace" }}
                 >
-                  System Settings v2.0
+                  System Settings v4.0
                 </p>
               </div>
               <button
@@ -606,6 +634,57 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                         style={{ fontFamily: "'Space Mono', monospace" }}
                       >
                         {journalPin.hasPin ? "Change" : "Set_PIN"}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Referral Section */}
+                <div className="mt-6">
+                  <h4
+                    className="text-[10px] text-white/40 uppercase tracking-[0.2em] mb-3 flex items-center gap-2"
+                    style={{ fontFamily: "'Space Mono', monospace" }}
+                  >
+                    <Share2 className="w-3 h-3" /> Invite_Friends
+                  </h4>
+                  <div className="p-4 bg-white/5 border border-white/10 mb-3">
+                    <p className="text-white/60 text-xs mb-2" style={{ fontFamily: "'Space Mono', monospace" }}>
+                      Your referral code
+                    </p>
+                    <div className="flex gap-2">
+                      <div className="flex-1 bg-white/10 border border-white/20 px-3 py-2 flex items-center justify-between">
+                        <span className="text-white font-bold tracking-wider" style={{ fontFamily: "'Space Mono', monospace" }}>
+                          {referralCode || "..."}
+                        </span>
+                        <button onClick={handleCopyReferral} className="p-1 hover:bg-white/10">
+                          <Copy className="w-4 h-4 text-white/60" />
+                        </button>
+                      </div>
+                    </div>
+                    <p className="text-white/40 text-[10px] mt-2" style={{ fontFamily: "'Space Mono', monospace" }}>
+                      Share to unlock Community Champion badge!
+                    </p>
+                  </div>
+                  <div className="p-4 bg-white/5 border border-white/10">
+                    <p className="text-white/60 text-xs mb-2" style={{ fontFamily: "'Space Mono', monospace" }}>
+                      Have a friend's code?
+                    </p>
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Enter code"
+                        value={referralInput}
+                        onChange={(e) => setReferralInput(e.target.value.toUpperCase())}
+                        maxLength={8}
+                        className="flex-1 bg-white/5 border-white/10 text-white placeholder:text-white/30 uppercase"
+                        style={{ fontFamily: "'Space Mono', monospace" }}
+                      />
+                      <Button
+                        onClick={handleApplyReferral}
+                        disabled={!referralInput.trim() || isApplyingReferral}
+                        size="sm"
+                        className="bg-[#C5A059] text-black hover:bg-[#C5A059]/80"
+                      >
+                        {isApplyingReferral ? "..." : "Apply"}
                       </Button>
                     </div>
                   </div>

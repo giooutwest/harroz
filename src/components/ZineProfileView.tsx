@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Settings, Flame } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import BadgeDisplay from "./BadgeDisplay";
 
 interface ZineProfileViewProps {
   displayName: string | null;
@@ -11,6 +12,7 @@ interface ZineProfileViewProps {
   totalGoodDays: number;
   totalEntries: number;
   yearlyAverage: number;
+  equippedBadges?: string[];
   onEditClick: () => void;
   onSettingsClick: () => void;
 }
@@ -24,6 +26,7 @@ const ZineProfileView = ({
   totalGoodDays,
   totalEntries,
   yearlyAverage,
+  equippedBadges = [],
   onEditClick,
   onSettingsClick,
 }: ZineProfileViewProps) => {
@@ -109,10 +112,13 @@ const ZineProfileView = ({
         </h1>
 
         <p
-          className="text-sm text-black/50 mt-2"
+          className="text-sm text-black/50 mt-2 flex items-center gap-2"
           style={{ fontFamily: "'Space Mono', monospace" }}
         >
           @{username || "unknown"}
+          {equippedBadges.length > 0 && (
+            <BadgeDisplay badgeIds={equippedBadges} size="md" />
+          )}
         </p>
 
         <button

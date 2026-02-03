@@ -12,6 +12,7 @@ import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { Textarea } from "./ui/textarea";
 import ZineProfileView from "./ZineProfileView";
+import { useBadges } from "@/hooks/useBadges";
 
 interface Stats {
   bestStreak: number;
@@ -61,6 +62,10 @@ const StatsTab = ({ onSettingsClick }: StatsTabProps) => {
   const [uploading, setUploading] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
+  const { earnedBadges } = useBadges();
+
+  // Get equipped badges for the current user
+  const equippedBadges = earnedBadges.filter(b => b.is_equipped).map(b => b.badge_id);
 
   useEffect(() => {
     if (user) {
@@ -284,6 +289,7 @@ const StatsTab = ({ onSettingsClick }: StatsTabProps) => {
         totalGoodDays={stats.totalGoodDays}
         totalEntries={stats.totalEntries}
         yearlyAverage={stats.yearlyAverage}
+        equippedBadges={equippedBadges}
         onEditClick={() => setIsEditing(true)}
         onSettingsClick={onSettingsClick || (() => {})}
       />

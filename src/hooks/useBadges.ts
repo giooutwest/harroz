@@ -335,7 +335,7 @@ export const useBadges = () => {
     }
   }, [user, progress, earnedBadges, awardBadge]);
 
-  // Toggle badge equipped status
+  // Toggle badge equipped status - only ONE badge can be equipped at a time
   const toggleEquipped = useCallback(
     async (badgeId: string) => {
       if (!user) return;
@@ -343,12 +343,24 @@ export const useBadges = () => {
       const badge = earnedBadges.find((b) => b.badge_id === badgeId);
       if (!badge) return;
 
+      const isCurrentlyEquipped = badge.is_equipped;
+
+      // First, unequip ALL badges
       // @ts-ignore
       await supabase
         .from("user_badges")
-        .update({ is_equipped: !badge.is_equipped })
-        .eq("user_id", user.id)
-        .eq("badge_id", badgeId);
+        .update({ is_equipped: false })
+        .eq("user_id", user.id);
+
+      // If the badge wasn't equipped before, equip it (single selection)
+      if (!isCurrentlyEquipped) {
+        // @ts-ignore
+        await supabase
+          .from("user_badges")
+          .update({ is_equipped: true })
+          .eq("user_id", user.id)
+          .eq("badge_id", badgeId);
+      }
 
       await fetchEarnedBadges();
     },

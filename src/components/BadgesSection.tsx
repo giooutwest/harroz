@@ -1,41 +1,11 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Award, Check, Lock, Share2, Copy, ChevronDown, ChevronUp } from "lucide-react";
+import { Award, Check, Lock, ChevronDown, ChevronUp } from "lucide-react";
 import { useBadges, BADGES, Badge } from "@/hooks/useBadges";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
 
 const BadgesSection = () => {
-  const { earnedBadges, progress, loading, referralCode, toggleEquipped, applyReferralCode } = useBadges();
-  const [referralInput, setReferralInput] = useState("");
-  const [isApplying, setIsApplying] = useState(false);
+  const { earnedBadges, progress, loading, toggleEquipped } = useBadges();
   const [showQuests, setShowQuests] = useState(true);
-  const { toast } = useToast();
-
-  const handleCopyReferral = async () => {
-    if (!referralCode) return;
-    try {
-      await navigator.clipboard.writeText(referralCode);
-      toast({ title: "Copied!", description: "Share this code with friends" });
-    } catch {
-      toast({ title: "Couldn't copy", variant: "destructive" });
-    }
-  };
-
-  const handleApplyReferral = async () => {
-    if (!referralInput.trim()) return;
-    setIsApplying(true);
-    const result = await applyReferralCode(referralInput.trim());
-    setIsApplying(false);
-
-    if (result.success) {
-      toast({ title: result.message });
-      setReferralInput("");
-    } else {
-      toast({ title: result.message, variant: "destructive" });
-    }
-  };
 
   const isEarned = (badgeId: string) => earnedBadges.some(b => b.badge_id === badgeId);
   const isEquipped = (badgeId: string) => earnedBadges.find(b => b.badge_id === badgeId)?.is_equipped || false;
@@ -64,60 +34,15 @@ const BadgesSection = () => {
 
   return (
     <div className="space-y-4">
-      {/* Your Referral Code */}
-      <div className="p-4 bg-white/5 border border-white/10">
-        <div className="flex items-center gap-2 mb-3">
-          <Share2 className="w-4 h-4 text-[#C5A059]" />
-          <span className="text-white text-sm" style={{ fontFamily: "'Space Mono', monospace" }}>
-            Your_Referral_Code
-          </span>
-        </div>
-        <div className="flex gap-2">
-          <div className="flex-1 bg-white/10 border border-white/20 px-3 py-2 flex items-center justify-between">
-            <span className="text-white font-bold tracking-wider" style={{ fontFamily: "'Space Mono', monospace" }}>
-              {referralCode || "..."}
-            </span>
-            <button onClick={handleCopyReferral} className="p-1 hover:bg-white/10">
-              <Copy className="w-4 h-4 text-white/60" />
-            </button>
-          </div>
-        </div>
-        <p className="text-white/40 text-xs mt-2" style={{ fontFamily: "'Space Mono', monospace" }}>
-          Share with friends to unlock Community Champion!
-        </p>
-      </div>
-
-      {/* Apply Referral Code */}
-      <div className="p-4 bg-white/5 border border-white/10">
-        <p className="text-white/60 text-xs mb-2" style={{ fontFamily: "'Space Mono', monospace" }}>
-          Have a friend's code?
-        </p>
-        <div className="flex gap-2">
-          <Input
-            placeholder="Enter code"
-            value={referralInput}
-            onChange={(e) => setReferralInput(e.target.value.toUpperCase())}
-            maxLength={8}
-            className="flex-1 bg-white/5 border-white/10 text-white placeholder:text-white/30 uppercase"
-            style={{ fontFamily: "'Space Mono', monospace" }}
-          />
-          <Button
-            onClick={handleApplyReferral}
-            disabled={!referralInput.trim() || isApplying}
-            size="sm"
-            className="bg-[#C5A059] text-black hover:bg-[#C5A059]/80"
-          >
-            {isApplying ? "..." : "Apply"}
-          </Button>
-        </div>
-      </div>
-
-      {/* Equipped Badges */}
-      {earnedBadgesList.length > 0 && (
+      {/* Your Badges */}
+      {earnedBadgesList.length > 0 ? (
         <div>
-          <h5 className="text-[10px] text-white/40 uppercase tracking-[0.2em] mb-3" style={{ fontFamily: "'Space Mono', monospace" }}>
+          <h5 className="text-[10px] text-white/40 uppercase tracking-[0.2em] mb-2" style={{ fontFamily: "'Space Mono', monospace" }}>
             Your_Badges ({earnedBadgesList.length})
           </h5>
+          <p className="text-white/30 text-[10px] mb-3" style={{ fontFamily: "'Space Mono', monospace" }}>
+            Tap to equip. One badge shows on your profile.
+          </p>
           <div className="grid grid-cols-2 gap-2">
             {earnedBadgesList.map((badge) => (
               <motion.button
@@ -159,6 +84,14 @@ const BadgesSection = () => {
               </motion.button>
             ))}
           </div>
+        </div>
+      ) : (
+        <div className="p-4 bg-white/5 border border-white/10 text-center">
+          <Award className="w-8 h-8 mx-auto mb-2 text-white/30" />
+          <p className="text-white/40 text-sm" style={{ fontFamily: "'Space Mono', monospace" }}>
+            No badges yet
+          </p>
+          <p className="text-white/30 text-xs mt-1">Complete quests below to earn badges!</p>
         </div>
       )}
 
