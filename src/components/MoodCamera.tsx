@@ -357,7 +357,7 @@ const MoodCamera = ({ isOpen, onClose, onCapture, initialMode = "camera" }: Mood
 
   if (!isOpen) return null;
 
-  // Mode Selection Screen - shown first
+  // Mode Selection Screen - shown as bottom sheet
   if (showModeSelection && !capturedImage && !selectedVideo) {
     return (
       <AnimatePresence>
@@ -365,7 +365,9 @@ const MoodCamera = ({ isOpen, onClose, onCapture, initialMode = "camera" }: Mood
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black z-50 flex flex-col"
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end justify-center"
+          style={{ zIndex: 99999 }}
+          onClick={handleClose}
         >
           {/* Hidden file input */}
           <input
@@ -379,48 +381,59 @@ const MoodCamera = ({ isOpen, onClose, onCapture, initialMode = "camera" }: Mood
             className="hidden"
           />
 
-          {/* Header */}
-          <div className="shrink-0 p-4 flex items-center justify-between">
-            <button onClick={handleClose} className="p-2 text-white">
-              <X className="w-6 h-6" />
-            </button>
-            <h2 className="font-bold text-white text-lg">Add Photo</h2>
-            <div className="w-10" />
-          </div>
+          {/* Bottom Sheet */}
+          <motion.div
+            initial={{ y: 300, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 300, opacity: 0 }}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            onClick={(e) => e.stopPropagation()}
+            className="w-full bg-zinc-900 rounded-t-3xl"
+            style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 100px)' }}
+          >
+            {/* Handle */}
+            <div className="flex justify-center pt-3 pb-2">
+              <div className="w-10 h-1 bg-white/30 rounded-full" />
+            </div>
 
-          {/* Mode Selection Buttons */}
-          <div className="flex-1 flex flex-col items-center justify-center px-6 gap-4">
-            <motion.button
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              onClick={selectCameraMode}
-              className="w-full max-w-sm py-6 bg-white text-black rounded-2xl flex flex-col items-center gap-3"
-            >
-              <Camera className="w-12 h-12" />
-              <div className="text-center">
-                <p className="font-bold text-lg">Take a Photo</p>
-                <p className="text-sm text-black/60">Use your camera</p>
-              </div>
-            </motion.button>
+            {/* Title */}
+            <h2 className="font-bold text-white text-lg text-center mb-6">Add Photo or Video</h2>
 
-            <motion.button
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              onClick={selectGalleryMode}
-              className="w-full max-w-sm py-6 bg-white/10 border-2 border-white/30 text-white rounded-2xl flex flex-col items-center gap-3"
-            >
-              <ImagePlus className="w-12 h-12" />
-              <div className="text-center">
-                <p className="font-bold text-lg">Upload from Gallery</p>
-                <p className="text-sm text-white/60">Photos & videos (up to 5s)</p>
-              </div>
-            </motion.button>
-          </div>
+            {/* Mode Selection Buttons */}
+            <div className="px-6 space-y-3">
+              <motion.button
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.1 }}
+                onClick={selectCameraMode}
+                className="w-full py-4 bg-white text-black rounded-2xl flex items-center justify-center gap-3"
+              >
+                <Camera className="w-6 h-6" />
+                <span className="font-semibold text-lg">Take a Photo</span>
+              </motion.button>
 
-          {/* Bottom padding for safe area */}
-          <div className="shrink-0 h-12" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }} />
+              <motion.button
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.15 }}
+                onClick={selectGalleryMode}
+                className="w-full py-4 bg-white/10 border border-white/20 text-white rounded-2xl flex items-center justify-center gap-3"
+              >
+                <ImagePlus className="w-6 h-6" />
+                <span className="font-semibold text-lg">Upload from Gallery</span>
+              </motion.button>
+
+              <motion.button
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.2 }}
+                onClick={handleClose}
+                className="w-full py-4 text-white/50 text-center"
+              >
+                Cancel
+              </motion.button>
+            </div>
+          </motion.div>
         </motion.div>
       </AnimatePresence>
     );
@@ -432,7 +445,8 @@ const MoodCamera = ({ isOpen, onClose, onCapture, initialMode = "camera" }: Mood
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black z-50 flex flex-col overflow-hidden"
+        className="fixed inset-0 bg-black flex flex-col overflow-hidden"
+        style={{ zIndex: 99999 }}
       >
         {/* Hidden file input */}
         <input
