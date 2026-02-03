@@ -39,7 +39,7 @@ const ZineProfileView = ({
     "/".repeat(currentStreak % 5);
 
   return (
-    <div className="relative min-h-[calc(100vh-140px)] bg-[#f5f0e8] text-black overflow-hidden">
+    <div className="relative min-h-[calc(100vh-140px)] bg-[#f5f0e8] text-black overflow-hidden extend-to-status-bar">
       {/* Grid pattern overlay */}
       <div
         className="absolute inset-0 opacity-30 pointer-events-none"

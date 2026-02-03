@@ -219,7 +219,7 @@ const Index = () => {
   if (showOnboarding) return <Onboarding onComplete={handleOnboardingComplete} />;
 
   return (
-    <div className="min-h-screen bg-background text-foreground safe-area-top">
+    <div className="min-h-screen bg-background text-foreground">
       {hasUnread && <UpdateBanner />}
 
       <main className="relative pb-32">

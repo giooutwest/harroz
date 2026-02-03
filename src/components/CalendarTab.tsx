@@ -174,7 +174,7 @@ const CalendarTab = () => {
   const today = getLocalDateString();
 
   return (
-    <div className="relative min-h-screen text-white overflow-hidden flex flex-col"
+    <div className="relative min-h-screen text-white overflow-hidden flex flex-col extend-to-status-bar"
       style={{
         background: "linear-gradient(180deg, #0a0a0a 0%, #111 50%, #0a0a0a 100%)",
       }}

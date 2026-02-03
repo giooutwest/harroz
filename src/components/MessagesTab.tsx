@@ -658,7 +658,7 @@ const MessagesTab = ({ onFriendClick }: MessagesTabProps) => {
   // Conversations list - Zine INBOX style
   return (
     <>
-      <div className="min-h-screen bg-[#f5f0e8] pb-28">
+      <div className="min-h-screen bg-[#f5f0e8] pb-28 extend-to-status-bar">
         {/* Zine INBOX Header */}
         <div className="px-6 pt-6 pb-4">
           <div className="flex items-start justify-between">
