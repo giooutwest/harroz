@@ -33,29 +33,49 @@ const MoodCamera = ({ isOpen, onClose, onCapture, initialMode = "camera" }: Mood
   const [isPlaying, setIsPlaying] = useState(false);
   const [isTrimming, setIsTrimming] = useState(false);
   const [isVideo, setIsVideo] = useState(false);
+  const [showModeSelection, setShowModeSelection] = useState(true);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const trimVideoRef = useRef<HTMLVideoElement>(null);
 
-  // Start camera or open gallery when modal opens
+  // Reset mode selection when modal opens
   useEffect(() => {
-    if (isOpen && !capturedImage && !selectedVideo) {
+    if (isOpen) {
+      // If initialMode is gallery, skip mode selection and open gallery
       if (initialMode === "gallery") {
-        // Small delay to allow modal to render, then open file picker
+        setShowModeSelection(false);
         const timer = setTimeout(() => {
           fileInputRef.current?.click();
         }, 100);
         return () => clearTimeout(timer);
       } else {
-        startCamera();
+        // Show mode selection first
+        setShowModeSelection(true);
       }
     }
     return () => {
       stopCamera();
     };
-  }, [isOpen, facingMode, initialMode]);
+  }, [isOpen, initialMode]);
+
+  // Start camera when mode selection is dismissed for camera mode
+  useEffect(() => {
+    if (isOpen && !showModeSelection && !capturedImage && !selectedVideo && initialMode !== "gallery") {
+      startCamera();
+    }
+  }, [isOpen, showModeSelection, facingMode, capturedImage, selectedVideo, initialMode]);
+
+  const selectCameraMode = () => {
+    setShowModeSelection(false);
+    startCamera();
+  };
+
+  const selectGalleryMode = () => {
+    setShowModeSelection(false);
+    fileInputRef.current?.click();
+  };
 
   // Cleanup video preview URL
   useEffect(() => {
@@ -283,6 +303,7 @@ const MoodCamera = ({ isOpen, onClose, onCapture, initialMode = "camera" }: Mood
   };
 
   const retakePhoto = () => {
+    stopCamera();
     setCapturedImage(null);
     setCapturedBlob(null);
     setSelectedVideo(null);
@@ -290,7 +311,7 @@ const MoodCamera = ({ isOpen, onClose, onCapture, initialMode = "camera" }: Mood
     setNeedsTrimming(false);
     setIsVideo(false);
     setVideoDuration(0);
-    startCamera();
+    setShowModeSelection(true);
   };
 
   const switchCamera = () => {
@@ -320,6 +341,7 @@ const MoodCamera = ({ isOpen, onClose, onCapture, initialMode = "camera" }: Mood
     setIsVideo(false);
     setVideoDuration(0);
     setError(null);
+    setShowModeSelection(true);
     onClose();
   };
 
@@ -334,6 +356,75 @@ const MoodCamera = ({ isOpen, onClose, onCapture, initialMode = "camera" }: Mood
   };
 
   if (!isOpen) return null;
+
+  // Mode Selection Screen - shown first
+  if (showModeSelection && !capturedImage && !selectedVideo) {
+    return (
+      <AnimatePresence>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black z-50 flex flex-col"
+        >
+          {/* Hidden file input */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*,video/*"
+            onChange={(e) => {
+              setShowModeSelection(false);
+              handleFileSelect(e);
+            }}
+            className="hidden"
+          />
+
+          {/* Header */}
+          <div className="shrink-0 p-4 flex items-center justify-between">
+            <button onClick={handleClose} className="p-2 text-white">
+              <X className="w-6 h-6" />
+            </button>
+            <h2 className="font-bold text-white text-lg">Add Photo</h2>
+            <div className="w-10" />
+          </div>
+
+          {/* Mode Selection Buttons */}
+          <div className="flex-1 flex flex-col items-center justify-center px-6 gap-4">
+            <motion.button
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              onClick={selectCameraMode}
+              className="w-full max-w-sm py-6 bg-white text-black rounded-2xl flex flex-col items-center gap-3"
+            >
+              <Camera className="w-12 h-12" />
+              <div className="text-center">
+                <p className="font-bold text-lg">Take a Photo</p>
+                <p className="text-sm text-black/60">Use your camera</p>
+              </div>
+            </motion.button>
+
+            <motion.button
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              onClick={selectGalleryMode}
+              className="w-full max-w-sm py-6 bg-white/10 border-2 border-white/30 text-white rounded-2xl flex flex-col items-center gap-3"
+            >
+              <ImagePlus className="w-12 h-12" />
+              <div className="text-center">
+                <p className="font-bold text-lg">Upload from Gallery</p>
+                <p className="text-sm text-white/60">Photos & videos (up to 5s)</p>
+              </div>
+            </motion.button>
+          </div>
+
+          {/* Bottom padding for safe area */}
+          <div className="shrink-0 h-12" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }} />
+        </motion.div>
+      </AnimatePresence>
+    );
+  }
 
   return (
     <AnimatePresence>
