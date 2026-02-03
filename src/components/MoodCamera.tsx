@@ -341,7 +341,7 @@ const MoodCamera = ({ isOpen, onClose, onCapture, initialMode = "camera" }: Mood
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black z-50 flex flex-col"
+        className="fixed inset-0 bg-black z-50 flex flex-col overflow-hidden"
       >
         {/* Hidden file input */}
         <input
@@ -352,8 +352,8 @@ const MoodCamera = ({ isOpen, onClose, onCapture, initialMode = "camera" }: Mood
           className="hidden"
         />
 
-        {/* Header */}
-        <div className="absolute top-0 left-0 right-0 z-10 p-4 flex items-center justify-between bg-gradient-to-b from-black/60 to-transparent">
+        {/* Header - Fixed at top */}
+        <div className="shrink-0 p-4 flex items-center justify-between bg-black z-10">
           <button onClick={handleClose} className="p-2 text-white">
             <X className="w-6 h-6" />
           </button>
@@ -363,8 +363,10 @@ const MoodCamera = ({ isOpen, onClose, onCapture, initialMode = "camera" }: Mood
           <div className="w-10" />
         </div>
 
-        {/* Camera/Preview/Trimmer */}
-        <div className="flex-1 relative bg-black">
+        {/* Scrollable content area */}
+        <div className="flex-1 flex flex-col overflow-y-auto">
+          {/* Camera/Preview/Trimmer */}
+          <div className="flex-1 relative bg-black min-h-[300px]">
           {error ? (
             <div className="absolute inset-0 flex items-center justify-center p-8">
               <div className="text-center">
@@ -379,83 +381,14 @@ const MoodCamera = ({ isOpen, onClose, onCapture, initialMode = "camera" }: Mood
               </div>
             </div>
           ) : needsTrimming && videoPreviewUrl ? (
-            // Video trimming UI
-            <div className="absolute inset-0 flex flex-col">
-              <div className="flex-1 relative">
-                <video
-                  ref={trimVideoRef}
-                  src={videoPreviewUrl}
-                  className="w-full h-full object-contain"
-                  playsInline
-                  muted
-                />
-              </div>
-
-              {/* Trim controls */}
-              <div className="p-4 bg-black/80 space-y-4">
-                <div className="flex items-center justify-between text-white text-sm">
-                  <span>{formatTime(trimStart)}</span>
-                  <span className="text-white/60">Duration: {formatTime(trimEnd - trimStart)}</span>
-                  <span>{formatTime(trimEnd)}</span>
-                </div>
-
-                {/* Trim slider */}
-                <div className="relative">
-                  <div className="h-2 bg-white/20 rounded-full">
-                    <div
-                      className="h-full bg-white rounded-full"
-                      style={{
-                        marginLeft: `${(trimStart / videoDuration) * 100}%`,
-                        width: `${((trimEnd - trimStart) / videoDuration) * 100}%`
-                      }}
-                    />
-                  </div>
-
-                  {/* Start handle */}
-                  <input
-                    type="range"
-                    min={0}
-                    max={videoDuration}
-                    step={0.1}
-                    value={trimStart}
-                    onChange={(e) => {
-                      const val = parseFloat(e.target.value);
-                      if (val < trimEnd - 0.5) {
-                        setTrimStart(val);
-                        if (trimVideoRef.current) {
-                          trimVideoRef.current.currentTime = val;
-                        }
-                      }
-                    }}
-                    className="absolute inset-0 w-full opacity-0 cursor-pointer"
-                  />
-                </div>
-
-                {/* End time adjuster */}
-                <div className="flex items-center gap-4">
-                  <span className="text-white/60 text-sm">End:</span>
-                  <input
-                    type="range"
-                    min={trimStart + 0.5}
-                    max={Math.min(videoDuration, trimStart + MAX_VIDEO_DURATION)}
-                    step={0.1}
-                    value={trimEnd}
-                    onChange={(e) => setTrimEnd(parseFloat(e.target.value))}
-                    className="flex-1"
-                  />
-                  <span className="text-white text-sm w-12">{formatTime(trimEnd)}</span>
-                </div>
-
-                {/* Play preview button */}
-                <button
-                  onClick={isPlaying ? pauseVideo : playTrimPreview}
-                  className="w-full py-3 bg-white/10 text-white rounded-xl flex items-center justify-center gap-2"
-                >
-                  {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
-                  {isPlaying ? "Pause" : "Preview Trim"}
-                </button>
-              </div>
-            </div>
+            // Video trimming UI - video preview only
+            <video
+              ref={trimVideoRef}
+              src={videoPreviewUrl}
+              className="w-full h-full object-contain"
+              playsInline
+              muted
+            />
           ) : capturedImage ? (
             <img
               src={capturedImage}
@@ -505,17 +438,80 @@ const MoodCamera = ({ isOpen, onClose, onCapture, initialMode = "camera" }: Mood
             </>
           )}
 
-          <canvas ref={canvasRef} className="hidden" />
-        </div>
+            <canvas ref={canvasRef} className="hidden" />
+          </div>
 
-        {/* Controls */}
-        <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 to-transparent">
+          {/* Controls - Fixed at bottom of scrollable area with safe area padding */}
+          <div className="shrink-0 p-6 pb-12 bg-black" style={{ paddingBottom: 'max(3rem, env(safe-area-inset-bottom, 0px) + 1.5rem)' }}>
           {needsTrimming ? (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="space-y-3"
+              className="space-y-4"
             >
+              {/* Trim controls */}
+              <div className="space-y-4 bg-white/5 p-4 rounded-xl">
+                <div className="flex items-center justify-between text-white text-sm">
+                  <span>{formatTime(trimStart)}</span>
+                  <span className="text-white/60">Duration: {formatTime(trimEnd - trimStart)}</span>
+                  <span>{formatTime(trimEnd)}</span>
+                </div>
+
+                {/* Trim slider */}
+                <div className="relative">
+                  <div className="h-2 bg-white/20 rounded-full">
+                    <div
+                      className="h-full bg-white rounded-full"
+                      style={{
+                        marginLeft: `${(trimStart / videoDuration) * 100}%`,
+                        width: `${((trimEnd - trimStart) / videoDuration) * 100}%`
+                      }}
+                    />
+                  </div>
+                  <input
+                    type="range"
+                    min={0}
+                    max={videoDuration}
+                    step={0.1}
+                    value={trimStart}
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value);
+                      if (val < trimEnd - 0.5) {
+                        setTrimStart(val);
+                        if (trimVideoRef.current) {
+                          trimVideoRef.current.currentTime = val;
+                        }
+                      }
+                    }}
+                    className="absolute inset-0 w-full opacity-0 cursor-pointer"
+                  />
+                </div>
+
+                {/* End time adjuster */}
+                <div className="flex items-center gap-4">
+                  <span className="text-white/60 text-sm">End:</span>
+                  <input
+                    type="range"
+                    min={trimStart + 0.5}
+                    max={Math.min(videoDuration, trimStart + MAX_VIDEO_DURATION)}
+                    step={0.1}
+                    value={trimEnd}
+                    onChange={(e) => setTrimEnd(parseFloat(e.target.value))}
+                    className="flex-1"
+                  />
+                  <span className="text-white text-sm w-12">{formatTime(trimEnd)}</span>
+                </div>
+
+                {/* Play preview button */}
+                <button
+                  onClick={isPlaying ? pauseVideo : playTrimPreview}
+                  className="w-full py-3 bg-white/10 text-white rounded-xl flex items-center justify-center gap-2"
+                >
+                  {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
+                  {isPlaying ? "Pause" : "Preview Trim"}
+                </button>
+              </div>
+
               <div className="flex gap-3">
                 <button
                   onClick={retakePhoto}
@@ -590,6 +586,7 @@ const MoodCamera = ({ isOpen, onClose, onCapture, initialMode = "camera" }: Mood
               </button>
             </div>
           )}
+          </div>
         </div>
       </motion.div>
     </AnimatePresence>

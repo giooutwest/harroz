@@ -288,6 +288,11 @@ const StatsTab = ({ onSettingsClick }: StatsTabProps) => {
         onSettingsClick={onSettingsClick || (() => {})}
       />
 
+      {/* Tag Activity Analytics */}
+      <div className="px-4 mt-4">
+        <TagActivityChart />
+      </div>
+
       {/* Edit Profile Modal - Zine style */}
       <AnimatePresence>
         {isEditing && (
