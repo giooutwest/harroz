@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { Settings, Flame } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import BadgeDisplay from "./BadgeDisplay";
+import { useBadges } from "@/hooks/useBadges";
 
 interface ZineProfileViewProps {
   displayName: string | null;
@@ -30,6 +31,8 @@ const ZineProfileView = ({
   onEditClick,
   onSettingsClick,
 }: ZineProfileViewProps) => {
+  const { ogBadgeColor } = useBadges();
+
   // Generate random dossier ID
   const dossierId = `#${Math.floor(1000 + Math.random() * 9000)}`;
   const refCode = `${Math.floor(100 + Math.random() * 900)}-X`;
@@ -117,7 +120,11 @@ const ZineProfileView = ({
         >
           @{username || "unknown"}
           {equippedBadges.length > 0 && (
-            <BadgeDisplay badgeIds={equippedBadges} size="md" />
+            <BadgeDisplay
+              badgeIds={equippedBadges}
+              size="md"
+              customColor={equippedBadges.includes("og") ? ogBadgeColor : undefined}
+            />
           )}
         </p>
 

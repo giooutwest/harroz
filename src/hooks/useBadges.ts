@@ -9,12 +9,25 @@ export interface Badge {
   icon: string;
   color: string;
   rarity: "common" | "rare" | "epic" | "legendary";
+  type?: "emoji" | "verified"; // verified = Twitter-style checkmark badge
   quest?: {
     description: string;
     progress?: number;
     target?: number;
   };
 }
+
+// Available colors for the OG verified badge
+export const OG_BADGE_COLORS = [
+  { id: "blue", name: "Classic Blue", color: "#1D9BF0" },
+  { id: "gold", name: "Gold", color: "#FFD700" },
+  { id: "purple", name: "Purple", color: "#8B5CF6" },
+  { id: "green", name: "Green", color: "#22C55E" },
+  { id: "pink", name: "Pink", color: "#EC4899" },
+  { id: "orange", name: "Orange", color: "#F97316" },
+  { id: "red", name: "Red", color: "#EF4444" },
+  { id: "teal", name: "Teal", color: "#14B8A6" },
+];
 
 export interface EarnedBadge {
   badge_id: string;
@@ -28,9 +41,10 @@ export const BADGES: Badge[] = [
     id: "og",
     name: "OG",
     description: "An original member from the early days.",
-    icon: "✨",
-    color: "#3B82F6", // Blue
+    icon: "✓", // Will render as SVG checkmark
+    color: "#1D9BF0", // Twitter blue (default, user can customize)
     rarity: "legendary",
+    type: "verified",
   },
   {
     id: "community-champion",
@@ -159,6 +173,25 @@ export const useBadges = () => {
   const [progress, setProgress] = useState<BadgeProgress>({});
   const [loading, setLoading] = useState(true);
   const [referralCode, setReferralCode] = useState<string | null>(null);
+  const [ogBadgeColor, setOgBadgeColor] = useState("#1D9BF0");
+
+  // Load OG badge color from localStorage
+  useEffect(() => {
+    if (user) {
+      const savedColor = localStorage.getItem(`og-badge-color-${user.id}`);
+      if (savedColor) {
+        setOgBadgeColor(savedColor);
+      }
+    }
+  }, [user]);
+
+  // Save OG badge color
+  const saveOgBadgeColor = useCallback((color: string) => {
+    if (user) {
+      localStorage.setItem(`og-badge-color-${user.id}`, color);
+      setOgBadgeColor(color);
+    }
+  }, [user]);
 
   // Fetch earned badges
   const fetchEarnedBadges = useCallback(async () => {
@@ -472,8 +505,10 @@ export const useBadges = () => {
     progress,
     loading,
     referralCode,
+    ogBadgeColor,
     toggleEquipped,
     applyReferralCode,
+    saveOgBadgeColor,
     getEquippedBadges,
     getBadge,
     refreshBadges: async () => {
