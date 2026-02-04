@@ -44,16 +44,10 @@ const MoodCamera = ({ isOpen, onClose, onCapture, initialMode = "camera" }: Mood
   // Reset mode selection when modal opens
   useEffect(() => {
     if (isOpen) {
-      // If initialMode is gallery, skip mode selection and open gallery directly
+      // If initialMode is gallery, show gallery picker screen
       if (initialMode === "gallery") {
         setShowModeSelection(false);
-        setIsLoadingFile(true); // Show loading state while picker opens
-        const timer = setTimeout(() => {
-          if (fileInputRef.current) {
-            fileInputRef.current.click();
-          }
-        }, 100);
-        return () => clearTimeout(timer);
+        setIsLoadingFile(true); // This triggers the gallery picker screen
       } else if (initialMode === "camera") {
         // Skip mode selection and go directly to camera
         setShowModeSelection(false);
@@ -383,7 +377,53 @@ const MoodCamera = ({ isOpen, onClose, onCapture, initialMode = "camera" }: Mood
 
   if (!isOpen) return null;
 
-  // Loading state while processing file
+  // Gallery picker screen - shown when initialMode is gallery
+  if (isLoadingFile && !capturedImage && !selectedVideo && initialMode === "gallery") {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 bg-black flex items-center justify-center p-6"
+        style={{ zIndex: 99999 }}
+      >
+        {/* File input - visible as a label */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*,video/*"
+          id="gallery-file-input"
+          onChange={(e) => {
+            if (e.target.files && e.target.files.length > 0) {
+              handleFileSelect(e);
+            }
+          }}
+          className="hidden"
+        />
+        <div className="text-center w-full max-w-sm">
+          <ImagePlus className="w-16 h-16 mx-auto mb-4 text-white/50" />
+          <h2 className="text-white text-xl font-bold mb-2">Upload from Gallery</h2>
+          <p className="text-white/50 text-sm mb-6">Select a photo or video from your library</p>
+
+          <label
+            htmlFor="gallery-file-input"
+            className="block w-full py-4 bg-white text-black font-semibold rounded-2xl cursor-pointer active:scale-95 transition-transform"
+          >
+            Choose File
+          </label>
+
+          <button
+            onClick={handleClose}
+            className="w-full py-3 text-white/50 mt-4"
+          >
+            Cancel
+          </button>
+        </div>
+      </motion.div>
+    );
+  }
+
+  // Loading state while processing file (for camera captures)
   if (isLoadingFile && !capturedImage && !selectedVideo) {
     return (
       <motion.div
@@ -394,24 +434,9 @@ const MoodCamera = ({ isOpen, onClose, onCapture, initialMode = "camera" }: Mood
         style={{ zIndex: 99999 }}
         onClick={handleClose}
       >
-        {/* Hidden file input for gallery mode */}
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*,video/*"
-          onChange={(e) => {
-            if (e.target.files && e.target.files.length > 0) {
-              handleFileSelect(e);
-            } else {
-              // User cancelled - close modal
-              handleClose();
-            }
-          }}
-          className="hidden"
-        />
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-white/20 border-t-white rounded-full animate-spin mb-4 mx-auto" />
-          <p className="text-white/70">Loading...</p>
+          <p className="text-white/70">Processing...</p>
           <p className="text-white/40 text-sm mt-2">Tap to cancel</p>
         </div>
       </motion.div>
