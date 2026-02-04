@@ -44,16 +44,25 @@ const MoodCamera = ({ isOpen, onClose, onCapture, initialMode = "camera" }: Mood
   // Reset mode selection when modal opens
   useEffect(() => {
     if (isOpen) {
-      // If initialMode is gallery, skip mode selection and open gallery
+      // If initialMode is gallery, skip mode selection and open gallery directly
       if (initialMode === "gallery") {
         setShowModeSelection(false);
+        setIsLoadingFile(true); // Show loading state while picker opens
         const timer = setTimeout(() => {
-          fileInputRef.current?.click();
+          if (fileInputRef.current) {
+            fileInputRef.current.click();
+          }
         }, 100);
         return () => clearTimeout(timer);
+      } else if (initialMode === "camera") {
+        // Skip mode selection and go directly to camera
+        setShowModeSelection(false);
+        setIsLoadingFile(false);
+        // Camera will be started by the other useEffect
       } else {
         // Show mode selection first
         setShowModeSelection(true);
+        setIsLoadingFile(false);
       }
     }
     return () => {
@@ -63,6 +72,7 @@ const MoodCamera = ({ isOpen, onClose, onCapture, initialMode = "camera" }: Mood
 
   // Start camera when mode selection is dismissed for camera mode
   useEffect(() => {
+    // Start camera if: modal is open, mode selection is hidden, no content captured, not loading, and not in gallery mode
     if (isOpen && !showModeSelection && !capturedImage && !selectedVideo && !isLoadingFile && initialMode !== "gallery") {
       startCamera();
     }
@@ -382,10 +392,27 @@ const MoodCamera = ({ isOpen, onClose, onCapture, initialMode = "camera" }: Mood
         exit={{ opacity: 0 }}
         className="fixed inset-0 bg-black flex items-center justify-center"
         style={{ zIndex: 99999 }}
+        onClick={handleClose}
       >
+        {/* Hidden file input for gallery mode */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*,video/*"
+          onChange={(e) => {
+            if (e.target.files && e.target.files.length > 0) {
+              handleFileSelect(e);
+            } else {
+              // User cancelled - close modal
+              handleClose();
+            }
+          }}
+          className="hidden"
+        />
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-white/20 border-t-white rounded-full animate-spin mb-4 mx-auto" />
           <p className="text-white/70">Loading...</p>
+          <p className="text-white/40 text-sm mt-2">Tap to cancel</p>
         </div>
       </motion.div>
     );
