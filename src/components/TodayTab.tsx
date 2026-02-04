@@ -784,37 +784,36 @@ const TodayTab = ({}: TodayTabProps) => {
         />
       )}
 
-      {/* Photo Options Dialog */}
+      {/* Photo Options Dialog - Centered */}
       <AnimatePresence>
         {showPhotoOptions && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end justify-center"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-6"
             onClick={() => setShowPhotoOptions(false)}
           >
             <motion.div
-              initial={{ y: 300, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 300, opacity: 0 }}
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-md bg-card border-t border-border rounded-t-3xl p-6 pb-10"
+              className="w-full max-w-sm bg-card border border-border rounded-3xl p-6"
             >
-              <div className="w-12 h-1 bg-muted-foreground/30 rounded-full mx-auto mb-6" />
-              <h3 className="font-bold text-lg text-center mb-6">Add Photo or Video</h3>
+              <h3 className="font-bold text-xl text-center mb-6">Add Photo or Video</h3>
               <div className="space-y-3">
                 <button
                   onClick={() => openPhotoCapture("camera")}
-                  className="w-full py-4 bg-primary text-primary-foreground font-semibold flex items-center justify-center gap-3 rounded-xl"
+                  className="w-full py-4 bg-primary text-primary-foreground font-semibold flex items-center justify-center gap-3 rounded-2xl"
                 >
                   <Camera className="w-5 h-5" />
                   Take a Photo
                 </button>
                 <button
                   onClick={() => openPhotoCapture("gallery")}
-                  className="w-full py-4 bg-secondary text-foreground font-semibold flex items-center justify-center gap-3 rounded-xl"
+                  className="w-full py-4 bg-secondary text-foreground font-semibold flex items-center justify-center gap-3 rounded-2xl"
                 >
                   <ImagePlus className="w-5 h-5" />
                   Upload from Gallery
@@ -822,7 +821,7 @@ const TodayTab = ({}: TodayTabProps) => {
               </div>
               <button
                 onClick={() => setShowPhotoOptions(false)}
-                className="w-full py-3 text-muted-foreground text-sm mt-4"
+                className="w-full py-3 text-muted-foreground text-sm mt-2"
               >
                 Cancel
               </button>
