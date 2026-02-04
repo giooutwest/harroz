@@ -34,6 +34,7 @@ const MoodCamera = ({ isOpen, onClose, onCapture, initialMode = "camera" }: Mood
   const [isTrimming, setIsTrimming] = useState(false);
   const [isVideo, setIsVideo] = useState(false);
   const [showModeSelection, setShowModeSelection] = useState(true);
+  const [isLoadingFile, setIsLoadingFile] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -62,10 +63,10 @@ const MoodCamera = ({ isOpen, onClose, onCapture, initialMode = "camera" }: Mood
 
   // Start camera when mode selection is dismissed for camera mode
   useEffect(() => {
-    if (isOpen && !showModeSelection && !capturedImage && !selectedVideo && initialMode !== "gallery") {
+    if (isOpen && !showModeSelection && !capturedImage && !selectedVideo && !isLoadingFile && initialMode !== "gallery") {
       startCamera();
     }
-  }, [isOpen, showModeSelection, facingMode, capturedImage, selectedVideo, initialMode]);
+  }, [isOpen, showModeSelection, facingMode, capturedImage, selectedVideo, isLoadingFile, initialMode]);
 
   const selectCameraMode = () => {
     setShowModeSelection(false);
@@ -73,7 +74,8 @@ const MoodCamera = ({ isOpen, onClose, onCapture, initialMode = "camera" }: Mood
   };
 
   const selectGalleryMode = () => {
-    setShowModeSelection(false);
+    // Don't change showModeSelection yet - let the file input onChange handle it
+    // This prevents the UI from switching to camera view before file is selected
     fileInputRef.current?.click();
   };
 
@@ -211,6 +213,8 @@ const MoodCamera = ({ isOpen, onClose, onCapture, initialMode = "camera" }: Mood
       return;
     }
 
+    // Set loading state to prevent camera from starting during file processing
+    setIsLoadingFile(true);
     stopCamera();
 
     if (isImageFile) {
@@ -221,6 +225,11 @@ const MoodCamera = ({ isOpen, onClose, onCapture, initialMode = "camera" }: Mood
         setCapturedImage(dataUrl);
         setCapturedBlob(file);
         setIsVideo(false);
+        setIsLoadingFile(false);
+      };
+      reader.onerror = () => {
+        toast.error("Failed to load image");
+        setIsLoadingFile(false);
       };
       reader.readAsDataURL(file);
     } else {
@@ -247,7 +256,12 @@ const MoodCamera = ({ isOpen, onClose, onCapture, initialMode = "camera" }: Mood
           setCapturedBlob(file);
         }
 
+        setIsLoadingFile(false);
         URL.revokeObjectURL(tempVideo.src);
+      };
+      tempVideo.onerror = () => {
+        toast.error("Failed to load video");
+        setIsLoadingFile(false);
       };
       tempVideo.src = videoUrl;
     }
@@ -311,6 +325,7 @@ const MoodCamera = ({ isOpen, onClose, onCapture, initialMode = "camera" }: Mood
     setNeedsTrimming(false);
     setIsVideo(false);
     setVideoDuration(0);
+    setIsLoadingFile(false);
     setShowModeSelection(true);
   };
 
@@ -340,6 +355,7 @@ const MoodCamera = ({ isOpen, onClose, onCapture, initialMode = "camera" }: Mood
     setNeedsTrimming(false);
     setIsVideo(false);
     setVideoDuration(0);
+    setIsLoadingFile(false);
     setError(null);
     setShowModeSelection(true);
     onClose();
@@ -356,6 +372,24 @@ const MoodCamera = ({ isOpen, onClose, onCapture, initialMode = "camera" }: Mood
   };
 
   if (!isOpen) return null;
+
+  // Loading state while processing file
+  if (isLoadingFile && !capturedImage && !selectedVideo) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 bg-black flex items-center justify-center"
+        style={{ zIndex: 99999 }}
+      >
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-white/20 border-t-white rounded-full animate-spin mb-4 mx-auto" />
+          <p className="text-white/70">Loading...</p>
+        </div>
+      </motion.div>
+    );
+  }
 
   // Mode Selection Screen - shown as bottom sheet
   if (showModeSelection && !capturedImage && !selectedVideo) {
@@ -375,8 +409,11 @@ const MoodCamera = ({ isOpen, onClose, onCapture, initialMode = "camera" }: Mood
             type="file"
             accept="image/*,video/*"
             onChange={(e) => {
-              setShowModeSelection(false);
-              handleFileSelect(e);
+              // Only hide mode selection if a file was actually selected
+              if (e.target.files && e.target.files.length > 0) {
+                setShowModeSelection(false);
+                handleFileSelect(e);
+              }
             }}
             className="hidden"
           />
@@ -388,8 +425,8 @@ const MoodCamera = ({ isOpen, onClose, onCapture, initialMode = "camera" }: Mood
             exit={{ y: 300, opacity: 0 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
             onClick={(e) => e.stopPropagation()}
-            className="w-full bg-zinc-900 rounded-t-3xl"
-            style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 100px)' }}
+            className="w-full bg-zinc-900 rounded-t-3xl pb-8"
+            style={{ paddingBottom: 'max(2rem, calc(env(safe-area-inset-bottom, 0px) + 1rem))' }}
           >
             {/* Handle */}
             <div className="flex justify-center pt-3 pb-2">
