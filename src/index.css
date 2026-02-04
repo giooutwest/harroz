@@ -293,12 +293,9 @@
     @apply border-border;
   }
 
-  /* Extend app to cover status bar area */
-  html {
+  html, body {
     background-color: hsl(var(--background));
-    /* Ensure the background extends into the safe areas */
     min-height: 100%;
-    min-height: -webkit-fill-available;
   }
 
   body {
@@ -308,10 +305,6 @@
     -moz-osx-font-smoothing: grayscale;
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
-    min-height: 100vh;
-    min-height: -webkit-fill-available;
-    /* Extend background behind status bar */
-    padding-top: env(safe-area-inset-top, 0);
   }
 
   /* Safe area support for notched phones */
@@ -320,12 +313,6 @@
   }
 
   .safe-area-top {
-    padding-top: env(safe-area-inset-top, 0);
-  }
-
-  /* For pages that want their own background to extend into status bar */
-  .extend-to-status-bar {
-    margin-top: calc(-1 * env(safe-area-inset-top, 0));
     padding-top: env(safe-area-inset-top, 0);
   }
 }

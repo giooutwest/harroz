@@ -407,7 +407,7 @@ const FriendsTab = ({ initialSelectedFriendId, initialSelectedMoodId, initialSel
   };
 
   return (
-    <div className="min-h-screen bg-black px-4 py-6 pb-28 extend-to-status-bar">
+    <div className="min-h-screen bg-black px-4 py-6 pb-28">
       {/* Zine Header */}
       <div className="flex items-start justify-between mb-8">
         <div>

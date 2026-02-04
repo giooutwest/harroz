@@ -267,7 +267,7 @@ const StatsTab = ({ onSettingsClick }: StatsTabProps) => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[calc(100vh-120px)] bg-[#f5f0e8] extend-to-status-bar">
+      <div className="flex items-center justify-center min-h-[calc(100vh-120px)] bg-[#f5f0e8]">
         <motion.div
           animate={{ rotate: 360 }}
           transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
@@ -278,7 +278,7 @@ const StatsTab = ({ onSettingsClick }: StatsTabProps) => {
   }
 
   return (
-    <div className="pb-28 bg-[#f5f0e8] min-h-screen">
+    <div className="pb-28">
       {/* Zine Profile View - Dossier style */}
       <ZineProfileView
         displayName={profile?.display_name || null}

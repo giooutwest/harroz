@@ -27,9 +27,9 @@ export const BADGES: Badge[] = [
   {
     id: "og",
     name: "OG",
-    description: "One of the original members who believed in the vision from day one.",
-    icon: "✓",
-    color: "#3B82F6", // Blue check
+    description: "An original member from the early days.",
+    icon: "✨",
+    color: "#3B82F6", // Blue
     rarity: "legendary",
   },
   {
@@ -181,23 +181,27 @@ export const useBadges = () => {
 
     const newProgress: BadgeProgress = {};
 
-    // Get user profile for created_at and streak
+    // Get user profile for streak data
     const { data: profile } = await supabase
       .from("profiles")
-      .select("created_at, current_streak")
+      .select("current_streak")
       .eq("user_id", user.id)
       .single();
 
-    // Check OG status
-    if (profile) {
-      const createdAt = new Date(profile.created_at);
+    // Check OG status using the auth user's created_at (from user object)
+    // The user object from supabase auth includes created_at
+    const userCreatedAt = user.created_at ? new Date(user.created_at) : null;
+    if (userCreatedAt) {
+      const isOG = userCreatedAt < OG_CUTOFF_DATE;
       newProgress["og"] = {
-        current: createdAt < OG_CUTOFF_DATE ? 1 : 0,
+        current: isOG ? 1 : 0,
         target: 1,
-        completed: createdAt < OG_CUTOFF_DATE,
+        completed: isOG,
       };
+    }
 
-      // Streak progress
+    // Streak progress
+    if (profile) {
       const streak = profile.current_streak || 0;
       newProgress["week-warrior"] = {
         current: Math.min(streak, 7),
