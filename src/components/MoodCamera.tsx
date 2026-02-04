@@ -391,7 +391,7 @@ const MoodCamera = ({ isOpen, onClose, onCapture, initialMode = "camera" }: Mood
     );
   }
 
-  // Mode Selection Screen - shown as bottom sheet
+  // Mode Selection Screen - centered popup
   if (showModeSelection && !capturedImage && !selectedVideo) {
     return (
       <AnimatePresence>
@@ -399,7 +399,7 @@ const MoodCamera = ({ isOpen, onClose, onCapture, initialMode = "camera" }: Mood
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end justify-center"
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-6"
           style={{ zIndex: 99999 }}
           onClick={handleClose}
         >
@@ -418,29 +418,23 @@ const MoodCamera = ({ isOpen, onClose, onCapture, initialMode = "camera" }: Mood
             className="hidden"
           />
 
-          {/* Bottom Sheet */}
+          {/* Centered Modal */}
           <motion.div
-            initial={{ y: 300, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 300, opacity: 0 }}
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.9, opacity: 0 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
             onClick={(e) => e.stopPropagation()}
-            className="w-full bg-zinc-900 rounded-t-3xl pb-8"
-            style={{ paddingBottom: 'max(2rem, calc(env(safe-area-inset-bottom, 0px) + 1rem))' }}
+            className="w-full max-w-sm bg-zinc-900 rounded-3xl p-6"
           >
-            {/* Handle */}
-            <div className="flex justify-center pt-3 pb-2">
-              <div className="w-10 h-1 bg-white/30 rounded-full" />
-            </div>
-
             {/* Title */}
-            <h2 className="font-bold text-white text-lg text-center mb-6">Add Photo or Video</h2>
+            <h2 className="font-bold text-white text-xl text-center mb-6">Add Photo or Video</h2>
 
             {/* Mode Selection Buttons */}
-            <div className="px-6 space-y-3">
+            <div className="space-y-3">
               <motion.button
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
                 onClick={selectCameraMode}
                 className="w-full py-4 bg-white text-black rounded-2xl flex items-center justify-center gap-3"
@@ -450,8 +444,8 @@ const MoodCamera = ({ isOpen, onClose, onCapture, initialMode = "camera" }: Mood
               </motion.button>
 
               <motion.button
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.15 }}
                 onClick={selectGalleryMode}
                 className="w-full py-4 bg-white/10 border border-white/20 text-white rounded-2xl flex items-center justify-center gap-3"
@@ -465,7 +459,7 @@ const MoodCamera = ({ isOpen, onClose, onCapture, initialMode = "camera" }: Mood
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.2 }}
                 onClick={handleClose}
-                className="w-full py-4 text-white/50 text-center"
+                className="w-full py-3 text-white/50 text-center mt-2"
               >
                 Cancel
               </motion.button>
