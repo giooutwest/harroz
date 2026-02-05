@@ -232,7 +232,7 @@ const Index = () => {
               exit={{ opacity: 0, x: 20 }}
               transition={{ duration: 0.2 }}
             >
-              <TodayTab />
+              <TodayTab onSettingsClick={() => setShowSettings(true)} />
             </motion.div>
           )}
           {activeTab === "calendar" && (

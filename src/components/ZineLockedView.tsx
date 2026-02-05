@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Lock } from "lucide-react";
+import { Settings } from "lucide-react";
 import { differenceInSeconds, setHours, setMinutes, setSeconds, addDays, isBefore } from "date-fns";
 
 interface YesterdayMood {
@@ -18,12 +18,14 @@ interface ZineLockedViewProps {
   yesterdaysMood: YesterdayMood | null;
   onYesterdayClick?: () => void;
   onOpenFitCheckCamera?: () => void;
+  onSettingsClick?: () => void;
 }
 
 const ZineLockedView = ({
   displayName,
   yesterdaysMood,
-  onYesterdayClick
+  onYesterdayClick,
+  onSettingsClick
 }: ZineLockedViewProps) => {
   const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 0, seconds: 0 });
 
@@ -54,12 +56,12 @@ const ZineLockedView = ({
   const formatTime = (num: number) => num.toString().padStart(2, "0");
 
   return (
-    <div className="relative flex flex-col min-h-[calc(100vh-140px)] w-full max-w-md mx-auto px-4 pt-2 pb-8 overflow-hidden bg-background">
+    <div className="relative flex flex-col min-h-[calc(100vh-140px)] w-full max-w-md mx-auto px-4 pt-6 pb-8 overflow-hidden bg-background">
       {/* Noise overlay */}
       <div className="fixed inset-0 z-0 pointer-events-none opacity-[0.08] noise-overlay mix-blend-overlay" />
 
       {/* Header section */}
-      <header className="relative w-full z-10 mb-2">
+      <header className="relative w-full z-10 mb-4">
         {/* ROZ title - large and bold */}
         <h1
           className="text-[7rem] leading-[0.85] font-display text-foreground tracking-[-0.04em] select-none"
@@ -69,7 +71,7 @@ const ZineLockedView = ({
         </h1>
 
         {/* Greeting with shadow effect */}
-        <div className="relative -mt-2 ml-1">
+        <div className="relative mt-1 ml-1">
           <span
             className="absolute top-[2px] left-[2px] text-3xl font-bold text-muted-foreground/20"
             style={{ fontFamily: "'Playfair Display', serif" }}
@@ -84,15 +86,16 @@ const ZineLockedView = ({
           </span>
         </div>
 
-        {/* Lock button - glass effect */}
+        {/* Settings button - glass effect */}
         <motion.div
           className="absolute top-4 right-0"
           whileTap={{ scale: 0.95 }}
+          onClick={onSettingsClick}
         >
-          <div className="relative w-14 h-14 rounded-full bg-gradient-to-br from-white/20 to-white/5 backdrop-blur-md border border-white/20 flex items-center justify-center shadow-xl">
-            <Lock className="w-5 h-5 text-foreground/60" />
+          <div className="relative w-14 h-14 rounded-full bg-gradient-to-br from-foreground/20 to-foreground/5 backdrop-blur-md border border-foreground/20 flex items-center justify-center shadow-xl cursor-pointer">
+            <Settings className="w-5 h-5 text-foreground/60" />
             {/* Glass reflection */}
-            <div className="absolute top-1 left-2 w-4 h-4 rounded-full bg-white/20 blur-sm" />
+            <div className="absolute top-1 left-2 w-4 h-4 rounded-full bg-foreground/20 blur-sm" />
           </div>
         </motion.div>
       </header>

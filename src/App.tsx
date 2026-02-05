@@ -69,11 +69,9 @@ const App = () => {
   useEffect(() => {
     try {
       const saved = localStorage.getItem('moodmemos-theme');
-      if (saved) {
-        document.documentElement.classList.remove('theme-pixel', 'theme-fruit', 'theme-calligraphy');
-        if (saved === 'pixel') document.documentElement.classList.add('theme-pixel');
-        if (saved === 'fruit') document.documentElement.classList.add('theme-fruit');
-        if (saved === 'calligraphy') document.documentElement.classList.add('theme-calligraphy');
+      document.documentElement.classList.remove('theme-classic');
+      if (saved === 'classic') {
+        document.documentElement.classList.add('theme-classic');
       }
     } catch (e) {
       // ignore

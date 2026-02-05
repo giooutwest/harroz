@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Moon, Sparkles, Cherry, User, Check, Eye, Image, MessageSquare, Activity, Camera, Loader2, Search, AtSign, Bell, Smartphone, BellRing, BellOff, MessageCircle, MessageSquareHeart, LogOut, BookOpen, Lock, KeyRound, Award, Share2, Copy } from "lucide-react";
-import { PixelStar } from "./PixelIcons";
+import { X, Sparkles, User, Check, Eye, Image, MessageSquare, Activity, Camera, Loader2, Search, AtSign, Bell, Smartphone, BellRing, BellOff, MessageCircle, MessageSquareHeart, LogOut, BookOpen, Lock, KeyRound, Award, Share2, Copy } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -76,6 +75,7 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
   const [journalPinMode, setJournalPinMode] = useState<"setup" | "change">("setup");
   const [referralInput, setReferralInput] = useState("");
   const [isApplyingReferral, setIsApplyingReferral] = useState(false);
+  const [currentTheme, setCurrentTheme] = useState(() => localStorage.getItem('moodmemos-theme') || 'modern');
 
   useEffect(() => {
     if (isOpen && user) {
@@ -308,20 +308,20 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
             exit={{ y: "100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
             onClick={(e) => e.stopPropagation()}
-            className="bg-[#1a1a1a] border-t border-white/10 p-6 w-full max-w-lg safe-area-bottom"
+            className="bg-background border-t border-foreground/10 p-6 w-full max-w-lg safe-area-bottom"
             style={{ maxHeight: "85vh", overflowY: "auto" }}
           >
             {/* SYS.CONFIG Header */}
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h3
-                  className="text-2xl font-bold text-white uppercase tracking-wider"
+                  className="text-2xl font-bold text-foregrounduppercase tracking-wider"
                   style={{ fontFamily: "'Space Mono', monospace" }}
                 >
                   SYS.CONFIG
                 </h3>
                 <p
-                  className="text-[10px] text-white/40 uppercase tracking-[0.2em]"
+                  className="text-[10px] text-foreground/40 uppercase tracking-[0.2em]"
                   style={{ fontFamily: "'Space Mono', monospace" }}
                 >
                   System Settings v4.0
@@ -329,9 +329,9 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
               </div>
               <button
                 onClick={onClose}
-                className="p-2 bg-white/10 hover:bg-white/20 transition-colors touch-manipulation"
+                className="p-2 bg-foreground/10 hover:bg-white/20 transition-colors touch-manipulation"
               >
-                <X className="w-5 h-5 text-white" />
+                <X className="w-5 h-5 text-foreground" />
               </button>
             </div>
 
@@ -351,7 +351,7 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                 className={`flex-1 py-2 px-3 font-medium text-xs transition-colors ${
                   activeTab === "settings"
                     ? "bg-white text-black"
-                    : "bg-white/10 text-white/60 hover:bg-white/20"
+                    : "bg-foreground/10 text-foreground/60 hover:bg-white/20"
                 }`}
                 style={{ fontFamily: "'Space Mono', monospace" }}
               >
@@ -362,7 +362,7 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                 className={`flex-1 py-2 px-3 font-medium text-xs transition-colors ${
                   activeTab === "badges"
                     ? "bg-white text-black"
-                    : "bg-white/10 text-white/60 hover:bg-white/20"
+                    : "bg-foreground/10 text-foreground/60 hover:bg-white/20"
                 }`}
                 style={{ fontFamily: "'Space Mono', monospace" }}
               >
@@ -376,7 +376,7 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                 className={`flex-1 py-2 px-3 font-medium text-xs transition-colors relative ${
                   activeTab === "updates"
                     ? "bg-white text-black"
-                    : "bg-white/10 text-white/60 hover:bg-white/20"
+                    : "bg-foreground/10 text-foreground/60 hover:bg-white/20"
                 }`}
                 style={{ fontFamily: "'Space Mono', monospace" }}
               >
@@ -399,18 +399,18 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                 {/* Profile Section */}
                 <div className="mb-6">
                   <h4
-                    className="text-[10px] text-white/40 uppercase tracking-[0.2em] mb-4 flex items-center gap-2"
+                    className="text-[10px] text-foreground/40 uppercase tracking-[0.2em] mb-4 flex items-center gap-2"
                     style={{ fontFamily: "'Space Mono', monospace" }}
                   >
                     <User className="w-3 h-3" /> User_Profile
                   </h4>
                   <div className="flex items-center gap-4 mb-4">
                     <div className="relative">
-                      <div className="w-20 h-20 bg-white/10 flex items-center justify-center overflow-hidden border border-white/20">
+                      <div className="w-20 h-20 bg-foreground/10 flex items-center justify-center overflow-hidden border border-foreground/20">
                         {avatarUrl ? (
                           <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover grayscale" />
                         ) : (
-                          <User className="w-8 h-8 text-white/40" />
+                          <User className="w-8 h-8 text-foreground/40" />
                         )}
                       </div>
                       <button
@@ -423,7 +423,7 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                       <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAvatarSelect} className="hidden" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-white/40 text-xs" style={{ fontFamily: "'Space Mono', monospace" }}>
+                      <p className="text-foreground/40 text-xs" style={{ fontFamily: "'Space Mono', monospace" }}>
                         Tap camera to change avatar
                       </p>
                     </div>
@@ -431,7 +431,7 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
 
                   <div className="mb-3">
                     <label
-                      className="text-[10px] text-white/40 uppercase tracking-wider mb-1 block flex items-center gap-1"
+                      className="text-[10px] text-foreground/40 uppercase tracking-wider mb-1 block flex items-center gap-1"
                       style={{ fontFamily: "'Space Mono', monospace" }}
                     >
                       <AtSign className="w-3 h-3" /> Username
@@ -443,7 +443,7 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                         value={username}
                         onChange={(e) => handleUsernameChange(e.target.value)}
                         maxLength={20}
-                        className={`flex-1 bg-white/5 border-white/10 text-white placeholder:text-white/30 ${usernameError ? "border-red-500" : ""}`}
+                        className={`flex-1 bg-foreground/5 border-foreground/10 text-foreground placeholder:text-foreground/30 ${usernameError ? "border-red-500" : ""}`}
                         style={{ fontFamily: "'Space Mono', monospace" }}
                       />
                       <Button
@@ -463,7 +463,7 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                   </div>
 
                   <label
-                    className="text-[10px] text-white/40 uppercase tracking-wider mb-1 block"
+                    className="text-[10px] text-foreground/40 uppercase tracking-wider mb-1 block"
                     style={{ fontFamily: "'Space Mono', monospace" }}
                   >
                     Display_name
@@ -475,7 +475,7 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                       value={displayName}
                       onChange={(e) => setDisplayName(e.target.value)}
                       maxLength={50}
-                      className="flex-1 bg-white/5 border-white/10 text-white placeholder:text-white/30"
+                      className="flex-1 bg-foreground/5 border-foreground/10 text-foreground placeholder:text-foreground/30"
                       style={{ fontFamily: "'Space Mono', monospace" }}
                     />
                     <Button
@@ -492,7 +492,7 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                 {/* Discoverability Section */}
                 <div className="mt-6">
                   <h4
-                    className="text-[10px] text-white/40 uppercase tracking-[0.2em] mb-3 flex items-center gap-2"
+                    className="text-[10px] text-foreground/40 uppercase tracking-[0.2em] mb-3 flex items-center gap-2"
                     style={{ fontFamily: "'Space Mono', monospace" }}
                   >
                     <Search className="w-3 h-3" /> Discoverability
@@ -508,17 +508,17 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                         onClick={async () => { setDiscoverableBy(option.value); await supabase.from('profiles').upsert({ user_id: user?.id, discoverable_by: option.value }, { onConflict: 'user_id' }); }}
                         className={`w-full flex items-center justify-between p-3 border transition-all ${
                           discoverableBy === option.value
-                            ? "border-white bg-white/10"
-                            : "border-white/10 bg-transparent hover:border-white/30"
+                            ? "border-white bg-foreground/10"
+                            : "border-foreground/10 bg-transparent hover:border-foreground/30"
                         }`}
                       >
                         <div className="text-left">
-                          <p className="text-white text-sm" style={{ fontFamily: "'Space Mono', monospace" }}>
+                          <p className="text-foregroundtext-sm" style={{ fontFamily: "'Space Mono', monospace" }}>
                             {option.label}
                           </p>
-                          <p className="text-white/40 text-xs">{option.description}</p>
+                          <p className="text-foreground/40 text-xs">{option.description}</p>
                         </div>
-                        {discoverableBy === option.value && <Check className="w-4 h-4 text-white" />}
+                        {discoverableBy === option.value && <Check className="w-4 h-4 text-foreground" />}
                       </button>
                     ))}
                   </div>
@@ -527,7 +527,7 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                 {/* Privacy Section */}
                 <div className="mt-6">
                   <h4
-                    className="text-[10px] text-white/40 uppercase tracking-[0.2em] mb-3 flex items-center gap-2"
+                    className="text-[10px] text-foreground/40 uppercase tracking-[0.2em] mb-3 flex items-center gap-2"
                     style={{ fontFamily: "'Space Mono', monospace" }}
                   >
                     <Eye className="w-3 h-3" /> Privacy_Settings
@@ -536,10 +536,10 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                     {privacyOptions.map((option) => {
                       const Icon = option.icon;
                       return (
-                        <div key={option.key} className="flex items-center justify-between p-3 bg-white/5 border border-white/10">
+                        <div key={option.key} className="flex items-center justify-between p-3 bg-foreground/5 border border-foreground/10">
                           <div className="flex items-center gap-3">
-                            <Icon className="w-4 h-4 text-white/40" />
-                            <span className="text-white text-sm" style={{ fontFamily: "'Space Mono', monospace" }}>
+                            <Icon className="w-4 h-4 text-foreground/40" />
+                            <span className="text-foregroundtext-sm" style={{ fontFamily: "'Space Mono', monospace" }}>
                               {option.label}
                             </span>
                           </div>
@@ -553,21 +553,21 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                 {/* Notifications Section */}
                 <div className="mt-6">
                   <h4
-                    className="text-[10px] text-white/40 uppercase tracking-[0.2em] mb-3 flex items-center gap-2"
+                    className="text-[10px] text-foreground/40 uppercase tracking-[0.2em] mb-3 flex items-center gap-2"
                     style={{ fontFamily: "'Space Mono', monospace" }}
                   >
                     <BellRing className="w-3 h-3" /> Notifications
                   </h4>
                   {pushNotifications.isSupported ? (
                     <div className="space-y-3">
-                      <div className="flex items-center justify-between p-3 bg-white/5 border border-white/10">
+                      <div className="flex items-center justify-between p-3 bg-foreground/5 border border-foreground/10">
                         <div className="flex items-center gap-3">
-                          <Bell className="w-4 h-4 text-white/40" />
+                          <Bell className="w-4 h-4 text-foreground/40" />
                           <div>
-                            <span className="text-white text-sm" style={{ fontFamily: "'Space Mono', monospace" }}>
+                            <span className="text-foregroundtext-sm" style={{ fontFamily: "'Space Mono', monospace" }}>
                               Activity_Alerts
                             </span>
-                            <p className="text-white/40 text-xs">Likes, comments, and 9 PM journal</p>
+                            <p className="text-foreground/40 text-xs">Likes, comments, and 9 PM journal</p>
                           </div>
                         </div>
                         <Switch checked={pushNotifications.isSubscribed} onCheckedChange={handleNotificationToggle} />
@@ -579,7 +579,7 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                           size="sm"
                           onClick={handleTestNotification}
                           disabled={isSendingTest}
-                          className="w-full bg-transparent border-white/20 text-white hover:bg-white/10"
+                          className="w-full bg-transparent border-foreground/20 text-foregroundhover:bg-foreground/10"
                           style={{ fontFamily: "'Space Mono', monospace" }}
                         >
                           {isSendingTest ? "Sending..." : "Send_Test_Notification"}
@@ -587,9 +587,9 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                       )}
                     </div>
                   ) : (
-                    <div className="p-3 bg-white/5 border border-white/10 text-center">
-                      <BellOff className="w-5 h-5 mx-auto mb-2 text-white/40" />
-                      <p className="text-white/40 text-sm" style={{ fontFamily: "'Space Mono', monospace" }}>
+                    <div className="p-3 bg-foreground/5 border border-foreground/10 text-center">
+                      <BellOff className="w-5 h-5 mx-auto mb-2 text-foreground/40" />
+                      <p className="text-foreground/40 text-sm" style={{ fontFamily: "'Space Mono', monospace" }}>
                         Notifications not supported
                       </p>
                     </div>
@@ -599,26 +599,26 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                 {/* Private Journal PIN Section */}
                 <div className="mt-6">
                   <h4
-                    className="text-[10px] text-white/40 uppercase tracking-[0.2em] mb-3 flex items-center gap-2"
+                    className="text-[10px] text-foreground/40 uppercase tracking-[0.2em] mb-3 flex items-center gap-2"
                     style={{ fontFamily: "'Space Mono', monospace" }}
                   >
                     <BookOpen className="w-3 h-3" /> Private_Journal
                   </h4>
-                  <div className="p-4 bg-white/5 border border-white/10">
+                  <div className="p-4 bg-foreground/5 border border-foreground/10">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-white/10 flex items-center justify-center">
+                        <div className="w-10 h-10 bg-foreground/10 flex items-center justify-center">
                           {journalPin.hasPin ? (
                             <Lock className="w-5 h-5 text-green-500" />
                           ) : (
-                            <KeyRound className="w-5 h-5 text-white/40" />
+                            <KeyRound className="w-5 h-5 text-foreground/40" />
                           )}
                         </div>
                         <div>
-                          <p className="text-white text-sm" style={{ fontFamily: "'Space Mono', monospace" }}>
+                          <p className="text-foregroundtext-sm" style={{ fontFamily: "'Space Mono', monospace" }}>
                             {journalPin.hasPin ? "PIN_ACTIVE" : "PIN_INACTIVE"}
                           </p>
-                          <p className="text-white/40 text-xs">
+                          <p className="text-foreground/40 text-xs">
                             {journalPin.hasPin ? "Journal is secured" : "Set a PIN to protect"}
                           </p>
                         </div>
@@ -630,7 +630,7 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                           setJournalPinMode(journalPin.hasPin ? "change" : "setup");
                           setShowJournalPinModal(true);
                         }}
-                        className="bg-transparent border-white/20 text-white hover:bg-white/10"
+                        className="bg-transparent border-foreground/20 text-foregroundhover:bg-foreground/10"
                         style={{ fontFamily: "'Space Mono', monospace" }}
                       >
                         {journalPin.hasPin ? "Change" : "Set_PIN"}
@@ -642,31 +642,31 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                 {/* Referral Section */}
                 <div className="mt-6">
                   <h4
-                    className="text-[10px] text-white/40 uppercase tracking-[0.2em] mb-3 flex items-center gap-2"
+                    className="text-[10px] text-foreground/40 uppercase tracking-[0.2em] mb-3 flex items-center gap-2"
                     style={{ fontFamily: "'Space Mono', monospace" }}
                   >
                     <Share2 className="w-3 h-3" /> Invite_Friends
                   </h4>
-                  <div className="p-4 bg-white/5 border border-white/10 mb-3">
-                    <p className="text-white/60 text-xs mb-2" style={{ fontFamily: "'Space Mono', monospace" }}>
+                  <div className="p-4 bg-foreground/5 border border-foreground/10 mb-3">
+                    <p className="text-foreground/60 text-xs mb-2" style={{ fontFamily: "'Space Mono', monospace" }}>
                       Your referral code
                     </p>
                     <div className="flex gap-2">
-                      <div className="flex-1 bg-white/10 border border-white/20 px-3 py-2 flex items-center justify-between">
-                        <span className="text-white font-bold tracking-wider" style={{ fontFamily: "'Space Mono', monospace" }}>
+                      <div className="flex-1 bg-foreground/10 border border-foreground/20 px-3 py-2 flex items-center justify-between">
+                        <span className="text-foregroundfont-bold tracking-wider" style={{ fontFamily: "'Space Mono', monospace" }}>
                           {referralCode || "..."}
                         </span>
-                        <button onClick={handleCopyReferral} className="p-1 hover:bg-white/10">
-                          <Copy className="w-4 h-4 text-white/60" />
+                        <button onClick={handleCopyReferral} className="p-1 hover:bg-foreground/10">
+                          <Copy className="w-4 h-4 text-foreground/60" />
                         </button>
                       </div>
                     </div>
-                    <p className="text-white/40 text-[10px] mt-2" style={{ fontFamily: "'Space Mono', monospace" }}>
+                    <p className="text-foreground/40 text-[10px] mt-2" style={{ fontFamily: "'Space Mono', monospace" }}>
                       Share to unlock Community Champion badge!
                     </p>
                   </div>
-                  <div className="p-4 bg-white/5 border border-white/10">
-                    <p className="text-white/60 text-xs mb-2" style={{ fontFamily: "'Space Mono', monospace" }}>
+                  <div className="p-4 bg-foreground/5 border border-foreground/10">
+                    <p className="text-foreground/60 text-xs mb-2" style={{ fontFamily: "'Space Mono', monospace" }}>
                       Have a friend's code?
                     </p>
                     <div className="flex gap-2">
@@ -675,7 +675,7 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                         value={referralInput}
                         onChange={(e) => setReferralInput(e.target.value.toUpperCase())}
                         maxLength={8}
-                        className="flex-1 bg-white/5 border-white/10 text-white placeholder:text-white/30 uppercase"
+                        className="flex-1 bg-foreground/5 border-foreground/10 text-foreground placeholder:text-foreground/30 uppercase"
                         style={{ fontFamily: "'Space Mono', monospace" }}
                       />
                       <Button
@@ -693,44 +693,90 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                 {/* Install App Section */}
                 <div className="mt-6">
                   <h4
-                    className="text-[10px] text-white/40 uppercase tracking-[0.2em] mb-3 flex items-center gap-2"
+                    className="text-[10px] text-foreground/40 uppercase tracking-[0.2em] mb-3 flex items-center gap-2"
                     style={{ fontFamily: "'Space Mono', monospace" }}
                   >
                     <Smartphone className="w-3 h-3" /> Install_App
                   </h4>
                   <button
                     onClick={() => setShowPWATutorial(true)}
-                    className="w-full flex items-center justify-between p-4 bg-white/5 border border-white/20 hover:border-white/40 transition-colors"
+                    className="w-full flex items-center justify-between p-4 bg-foreground/5 border border-foreground/20 hover:border-foreground/40 transition-colors"
                   >
                     <div className="text-left">
-                      <p className="text-white text-sm" style={{ fontFamily: "'Space Mono', monospace" }}>
+                      <p className="text-foregroundtext-sm" style={{ fontFamily: "'Space Mono', monospace" }}>
                         Add_to_Home_Screen
                       </p>
-                      <p className="text-white/40 text-xs">Install ROZ for quick access</p>
+                      <p className="text-foreground/40 text-xs">Install ROZ for quick access</p>
                     </div>
-                    <Smartphone className="w-5 h-5 text-white/60" />
+                    <Smartphone className="w-5 h-5 text-foreground/60" />
                   </button>
+                </div>
+
+                {/* Theme Section */}
+                <div className="mt-6">
+                  <h4
+                    className="text-[10px] text-foreground/40 uppercase tracking-[0.2em] mb-3 flex items-center gap-2"
+                    style={{ fontFamily: "'Space Mono', monospace" }}
+                  >
+                    <Sparkles className="w-3 h-3" /> Theme
+                  </h4>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        setCurrentTheme('modern');
+                        localStorage.setItem('moodmemos-theme', 'modern');
+                        document.documentElement.classList.remove('theme-classic');
+                      }}
+                      className={`flex-1 p-4 border transition-colors ${
+                        currentTheme !== 'classic'
+                          ? 'border-foreground/60 bg-foreground/10'
+                          : 'border-foreground/10 bg-foreground/5 hover:border-foreground/30'
+                      }`}
+                    >
+                      <div className="w-full h-12 rounded bg-black border border-foreground/20 mb-2 flex items-center justify-center">
+                        <span className="text-foregroundtext-[10px]" style={{ fontFamily: "'Space Mono', monospace" }}>Aa</span>
+                      </div>
+                      <p className="text-foreground text-xs font-medium" style={{ fontFamily: "'Space Mono', monospace" }}>Modern</p>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setCurrentTheme('classic');
+                        localStorage.setItem('moodmemos-theme', 'classic');
+                        document.documentElement.classList.add('theme-classic');
+                      }}
+                      className={`flex-1 p-4 border transition-colors ${
+                        currentTheme === 'classic'
+                          ? 'border-foreground/60 bg-foreground/10'
+                          : 'border-foreground/10 bg-foreground/5 hover:border-foreground/30'
+                      }`}
+                    >
+                      <div className="w-full h-12 rounded bg-white border border-black/10 mb-2 flex items-center justify-center">
+                        <span className="text-black text-[10px]" style={{ fontFamily: "'Space Mono', monospace" }}>Aa</span>
+                      </div>
+                      <p className="text-foreground text-xs font-medium" style={{ fontFamily: "'Space Mono', monospace" }}>Classic</p>
+                    </button>
+                  </div>
                 </div>
 
                 {/* Feedback Section */}
                 <div className="mt-6">
                   <h4
-                    className="text-[10px] text-white/40 uppercase tracking-[0.2em] mb-3 flex items-center gap-2"
+                    className="text-[10px] text-foreground/40 uppercase tracking-[0.2em] mb-3 flex items-center gap-2"
                     style={{ fontFamily: "'Space Mono', monospace" }}
                   >
                     <MessageSquareHeart className="w-3 h-3" /> Feedback
                   </h4>
                   <button
                     onClick={() => setShowFeedback(true)}
-                    className="w-full flex items-center justify-between p-4 bg-white/5 border border-white/10 hover:border-white/30 transition-colors"
+                    className="w-full flex items-center justify-between p-4 bg-foreground/5 border border-foreground/10 hover:border-foreground/30 transition-colors"
                   >
                     <div className="text-left">
-                      <p className="text-white text-sm" style={{ fontFamily: "'Space Mono', monospace" }}>
+                      <p className="text-foregroundtext-sm" style={{ fontFamily: "'Space Mono', monospace" }}>
                         Send_Feedback
                       </p>
-                      <p className="text-white/40 text-xs">Help us improve</p>
+                      <p className="text-foreground/40 text-xs">Help us improve</p>
                     </div>
-                    <MessageSquareHeart className="w-5 h-5 text-white/60" />
+                    <MessageSquareHeart className="w-5 h-5 text-foreground/60" />
                   </button>
                 </div>
 

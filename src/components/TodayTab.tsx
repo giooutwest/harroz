@@ -29,7 +29,7 @@ import { useFeatureDiscovery } from "@/hooks/useFeatureDiscovery";
 type Visibility = "private" | "friends" | "close_friends";
 
 interface TodayTabProps {
-  // Props removed - zine is now the only theme
+  onSettingsClick?: () => void;
 }
 
 interface Liker {
@@ -93,7 +93,7 @@ const getMoodLabel = (rating: number): string => {
   return "Bright & sunny!";
 };
 
-const TodayTab = ({}: TodayTabProps) => {
+const TodayTab = ({ onSettingsClick }: TodayTabProps) => {
   const [rating, setRating] = useState(5);
   const [submitted, setSubmitted] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -470,6 +470,7 @@ const TodayTab = ({}: TodayTabProps) => {
             yesterdaysMood={yesterdaysMood && showYesterdaySummary ? yesterdaysMood : null}
             onYesterdayClick={() => setShowYesterdayEngagement(true)}
             onOpenFitCheckCamera={() => setShowFitCheckCamera(true)}
+            onSettingsClick={onSettingsClick}
           />
           {/* Yesterday's engagement sheet */}
 {yesterdaysMood && (

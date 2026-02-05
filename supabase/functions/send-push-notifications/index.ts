@@ -54,11 +54,49 @@ serve(async (req: Request) => {
 
     console.log(`Processing ${pendingNotifications.length} notifications...`);
 
+    // 4. Buffer/consolidate notifications to prevent spam
+    // Group by user_id + sender to prevent notification flooding
+
+    const groupedNotifications = new Map<string, {
+      notifications: typeof pendingNotifications;
+      latestNotification: typeof pendingNotifications[0];
+      count: number;
+    }>();
+
+    for (const notification of pendingNotifications) {
+      // Create a group key based on user_id and sender info
+      const senderId = notification.data?.sender_id || notification.data?.from_user_id || 'unknown';
+      const notificationType = notification.data?.type || 'nudge';
+      const groupKey = `${notification.user_id}:${senderId}:${notificationType}`;
+
+      const existing = groupedNotifications.get(groupKey);
+      if (existing) {
+        existing.notifications.push(notification);
+        existing.count++;
+        // Keep the most recent notification as the template
+        if (new Date(notification.created_at) > new Date(existing.latestNotification.created_at)) {
+          existing.latestNotification = notification;
+        }
+      } else {
+        groupedNotifications.set(groupKey, {
+          notifications: [notification],
+          latestNotification: notification,
+          count: 1,
+        });
+      }
+    }
+
+    console.log(`Consolidated into ${groupedNotifications.size} grouped notifications`);
+
     let successCount = 0;
     let failureCount = 0;
 
-    // 4. Process each notification
-    for (const notification of pendingNotifications) {
+    // 5. Process each grouped notification
+    for (const [, group] of groupedNotifications) {
+      const notification = group.latestNotification;
+      const allNotificationIds = group.notifications.map((n: any) => n.id);
+      const nudgeCount = group.count;
+
       try {
         // Get user's subscriptions
         const { data: subs } = await supabase
@@ -68,18 +106,26 @@ serve(async (req: Request) => {
 
         if (!subs || subs.length === 0) {
           console.log(`No subscriptions for user ${notification.user_id}`);
-          // Mark as processed so we don't retry forever
+          // Mark all in group as processed so we don't retry forever
           await supabase
             .from("pending_push_notifications")
             .update({ processed: true })
-            .eq("id", notification.id);
+            .in("id", allNotificationIds);
           continue;
+        }
+
+        // Consolidate notification body if multiple nudges from same sender
+        let consolidatedBody = notification.body;
+        if (nudgeCount > 1) {
+          // Extract sender name from existing body/title if possible
+          const senderName = notification.data?.sender_name || notification.title?.replace(' nudged you!', '') || 'Someone';
+          consolidatedBody = `${senderName} nudged you ${nudgeCount} times!`;
         }
 
         // Send to all devices
         const notificationPayload = JSON.stringify({
-          title: notification.title,
-          body: notification.body,
+          title: nudgeCount > 1 ? `${nudgeCount} nudges!` : notification.title,
+          body: consolidatedBody,
           icon: "/icon-192x192.png",
           url: notification.data?.url || "/",
         });
@@ -113,13 +159,13 @@ serve(async (req: Request) => {
 
         await Promise.all(sendPromises);
 
-        // Mark notification as processed
+        // Mark all notifications in this group as processed
         await supabase
           .from("pending_push_notifications")
           .update({ processed: true })
-          .eq("id", notification.id);
+          .in("id", allNotificationIds);
 
-        successCount++;
+        successCount += nudgeCount;
       } catch (error) {
         console.error(`Error processing notification ${notification.id}:`, error);
         failureCount++;
