@@ -2,13 +2,14 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { MessageCircle, Heart, Send, Scissors, Film } from "lucide-react";
-import { formatDistanceToNow, format } from "date-fns";
+import { MessageCircle, Heart, Send } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { useHaptic } from "@/hooks/useHaptic";
 import { motion, AnimatePresence } from "framer-motion";
-import BadgeDisplay from "./BadgeDisplay";
+import { Skeleton } from "@/components/ui/skeleton";
+import FeedPost from "./FeedPost";
 
 // --- Types ---
 interface Profile {
@@ -67,7 +68,7 @@ interface DailyReelProps {
   onClearHighlight?: () => void;
   shouldOpenComments?: boolean;
   closeFriendsOnly?: boolean;
-  communityBadgeIds?: string[]; // Filter to users with any of these equipped badges
+  communityBadgeIds?: string[];
 }
 
 const REACTIONS = [
@@ -87,30 +88,9 @@ const DailyReel = ({ onFriendClick, highlightMoodId, shouldOpenComments, closeFr
   const [openComments, setOpenComments] = useState<Record<string, boolean>>({});
   const [showReactionMenu, setShowReactionMenu] = useState<string | null>(null);
   const [replyingTo, setReplyingTo] = useState<{ moodId: string; commentId: string; username: string } | null>(null);
-  const [activeFrameIndex, setActiveFrameIndex] = useState(0);
   const commentInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const frameRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   const { trigger: haptic } = useHaptic();
-
-  // Track scroll position to update active frame
-  useEffect(() => {
-    const container = scrollContainerRef.current;
-    if (!container) return;
-
-    const handleScroll = () => {
-      const scrollTop = container.scrollTop;
-      const frameHeight = 520; // Approximate height of each frame
-      const newIndex = Math.round(scrollTop / frameHeight);
-      if (newIndex !== activeFrameIndex && newIndex >= 0 && newIndex < feedItems.length) {
-        setActiveFrameIndex(newIndex);
-      }
-    };
-
-    container.addEventListener('scroll', handleScroll, { passive: true });
-    return () => container.removeEventListener('scroll', handleScroll);
-  }, [activeFrameIndex, feedItems.length]);
 
   const fetchFeed = useCallback(async () => {
     try {
@@ -131,7 +111,6 @@ const DailyReel = ({ onFriendClick, highlightMoodId, shouldOpenComments, closeFr
       let friendIds: string[];
 
       if (communityBadgeIds && communityBadgeIds.length > 0) {
-        // Community mode: Get all users who have any of the specified badges equipped
         // @ts-ignore
         const { data: badgeUsers } = await supabase
           .from('user_badges')
@@ -140,7 +119,6 @@ const DailyReel = ({ onFriendClick, highlightMoodId, shouldOpenComments, closeFr
           .eq('is_equipped', true);
 
         friendIds = badgeUsers?.map(b => b.user_id) || [];
-        // Include self
         if (!friendIds.includes(user.id)) {
           friendIds.push(user.id);
         }
@@ -187,8 +165,6 @@ const DailyReel = ({ onFriendClick, highlightMoodId, shouldOpenComments, closeFr
         .in('user_id', friendIds)
         .gte('created_at', yesterdayISO);
 
-      // Both feeds show friends + close_friends visibility
-      // RLS handles permission checks for close_friends visibility posts
       query = query.in('visibility', ['friends', 'close_friends']);
 
       const { data: moodData, error } = await query
@@ -348,21 +324,15 @@ const DailyReel = ({ onFriendClick, highlightMoodId, shouldOpenComments, closeFr
         }
       }
 
-      // Merge and sort - put user's own posts first (Frame 001)
+      // Merge and sort by created_at (most recent first)
       const allItems: FeedItem[] = [...moodsWithDetails, ...fitChecksWithDetails]
-        .sort((a, b) => {
-          // Current user's posts come first
-          if (a.user_id === user.id && b.user_id !== user.id) return -1;
-          if (a.user_id !== user.id && b.user_id === user.id) return 1;
-          // Then sort by date
-          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-        });
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
       setFeedItems(allItems);
 
     } catch (error) {
       console.error("Error fetching feed:", error);
-      toast.error("Could not load reel.");
+      toast.error("Could not load feed.");
     } finally {
       setLoading(false);
     }
@@ -518,20 +488,11 @@ const DailyReel = ({ onFriendClick, highlightMoodId, shouldOpenComments, closeFr
     return REACTIONS.find(r => r.type === type)?.emoji || <Heart className="w-4 h-4 fill-current" />;
   };
 
-  // Generate random ISO value for each frame (seeded by index for consistency)
-  const getISO = (index: number) => {
-    const isoValues = [100, 200, 400, 800, 1600, 3200];
-    return isoValues[index % isoValues.length];
-  };
-
-  // Render a single film frame
-  const renderFilmFrame = (item: FeedItem, index: number) => {
+  // Render a single feed post
+  const renderFeedPost = (item: FeedItem) => {
     const isMood = item.type === 'mood';
     const mood = isMood ? item as Mood : null;
     const fitCheck = !isMood ? item as FitCheck : null;
-    const frameNumber = String(index + 1).padStart(3, '0');
-    const time = format(new Date(item.created_at), 'HH:mm');
-    const iso = getISO(index);
     const isOwnPost = item.user_id === currentUser;
 
     const handleLike = () => {
@@ -549,433 +510,226 @@ const DailyReel = ({ onFriendClick, highlightMoodId, shouldOpenComments, closeFr
     };
 
     return (
-      <div
-        key={item.id}
-        ref={el => { frameRefs.current[index] = el; }}
-        className="film-frame relative snap-start"
-        style={{ scrollSnapAlign: 'start' }}
-      >
-        {/* Splice line (jagged separator) - not on first frame */}
-        {index > 0 && (
-          <div className="relative h-8 flex items-center justify-center overflow-hidden">
-            <div className="splice-line w-full" />
-            <Scissors className="absolute w-4 h-4 text-white/20 -rotate-90" />
-          </div>
-        )}
+      <div key={item.id} className="relative">
+        <FeedPost
+          id={item.id}
+          username={item.user.username || "user"}
+          displayName={item.user.display_name}
+          avatarUrl={item.user.avatar_url}
+          photoUrl={item.photo_url}
+          caption={mood?.note || fitCheck?.caption}
+          rating={mood?.rating}
+          likesCount={mood?.likes_count || 0}
+          commentsCount={mood?.comments_count || 0}
+          hasLiked={mood?.has_liked || false}
+          createdAt={item.created_at}
+          streak={item.user.current_streak || 0}
+          type={item.type}
+          isOwnPost={isOwnPost}
+          equippedBadges={item.user.equipped_badges}
+          onLike={handleLike}
+          onComment={handleComment}
+          onUserClick={() => onFriendClick?.(item.user.user_id)}
+        />
 
-        {/* Frame content */}
-        <div className="relative px-2 py-4">
-          {/* Technical metadata strip */}
-          <div className="flex items-center justify-between mb-3 px-3">
-            <div className="flex items-center gap-4">
-              <span
-                className="text-white/50 text-[10px] tracking-[0.2em] uppercase"
-                style={{ fontFamily: "'Space Mono', monospace" }}
-              >
-                FRAME: {frameNumber}
-              </span>
-              <span
-                className="text-white/50 text-[10px] tracking-[0.15em]"
-                style={{ fontFamily: "'Space Mono', monospace" }}
-              >
-                TIME: {time}
-              </span>
-            </div>
-            <span
-              className="text-white/50 text-[10px] tracking-[0.15em]"
-              style={{ fontFamily: "'Space Mono', monospace" }}
-            >
-              ISO: {iso}
-            </span>
-          </div>
-
-          {/* Director credit */}
-          <div className="mb-4 px-3">
-            <button
-              onClick={() => onFriendClick?.(item.user.user_id)}
-              className="group flex items-center gap-3"
-            >
-              <span
-                className="text-white/40 text-[10px] uppercase tracking-[0.15em]"
-                style={{ fontFamily: "'Space Mono', monospace" }}
-              >
-                Director:
-              </span>
-              <span
-                className="text-white text-xl group-hover:text-[#C5A059] transition-colors flex items-center gap-1"
-                style={{ fontFamily: "'Playfair Display', serif" }}
-              >
-                {item.user.display_name || item.user.username}
-                {item.user.equipped_badges && item.user.equipped_badges.length > 0 && (
-                  <BadgeDisplay badgeIds={item.user.equipped_badges} size="md" />
-                )}
-              </span>
-              {isOwnPost && (
-                <span
-                  className="text-[#C5A059] text-[9px] uppercase tracking-wider px-2 py-0.5 border border-[#C5A059]/40"
-                  style={{ fontFamily: "'Space Mono', monospace" }}
-                >
-                  YOU
-                </span>
-              )}
-              {item.user.current_streak && item.user.current_streak > 0 && (
-                <span className="text-orange-500 text-sm">🔥{item.user.current_streak}</span>
-              )}
-            </button>
-          </div>
-
-          {/* Photo frame with film perforations */}
-          <div className="relative mx-3">
-            {/* Sprocket holes - left side */}
-            <div className="absolute -left-4 top-0 bottom-0 w-3 flex flex-col justify-around py-2 z-10">
-              {[...Array(5)].map((_, i) => (
-                <div
-                  key={i}
-                  className="w-2.5 h-5 rounded-sm bg-[#050505] border border-white/15"
-                  style={{ boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.5)' }}
-                />
-              ))}
-            </div>
-
-            {/* Sprocket holes - right side */}
-            <div className="absolute -right-4 top-0 bottom-0 w-3 flex flex-col justify-around py-2 z-10">
-              {[...Array(5)].map((_, i) => (
-                <div
-                  key={i}
-                  className="w-2.5 h-5 rounded-sm bg-[#050505] border border-white/15"
-                  style={{ boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.5)' }}
-                />
-              ))}
-            </div>
-
-            {/* Main photo area */}
-            <div className="relative aspect-[4/5] bg-black/90 border border-white/10 overflow-hidden">
-              {item.photo_url ? (
-                <img
-                  src={item.photo_url}
-                  alt="Frame"
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-900 to-black">
-                  {mood?.rating && (
-                    <span
-                      className="text-9xl text-white/5"
-                      style={{ fontFamily: "'Playfair Display', serif" }}
-                    >
-                      {mood.rating}
-                    </span>
-                  )}
-                </div>
-              )}
-
-              {/* Vibe rating badge */}
-              {mood?.rating && (
-                <div
-                  className="absolute top-3 right-3 bg-white text-black px-3 py-1.5"
-                  style={{ fontFamily: "'Space Mono', monospace" }}
-                >
-                  <span className="text-xs font-bold tracking-tight">{mood.rating}/10</span>
-                </div>
-              )}
-
-              {/* Fit check badge */}
-              {fitCheck && (
-                <div
-                  className="absolute top-3 right-3 bg-purple-500 text-white px-3 py-1.5 text-[10px] uppercase tracking-wider"
-                  style={{ fontFamily: "'Space Mono', monospace" }}
-                >
-                  FIT CHECK
-                </div>
-              )}
-
-              {/* Film edge burn effect */}
-              <div className="absolute inset-0 pointer-events-none">
-                <div className="absolute inset-0 bg-gradient-to-r from-black/30 via-transparent to-black/30" />
-                <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/20" />
-                {/* Vignette */}
-                <div
-                  className="absolute inset-0"
-                  style={{
-                    background: 'radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.4) 100%)'
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Caption */}
-          {(mood?.note || fitCheck?.caption) && (
-            <p
-              className="text-white/60 text-base mt-4 px-4 italic line-clamp-2"
-              style={{ fontFamily: "'Playfair Display', serif" }}
-            >
-              "{mood?.note || fitCheck?.caption}"
-            </p>
-          )}
-
-          {/* Actions bar */}
-          {mood && (
-            <div className="flex items-center justify-between mt-4 px-4">
-              <div className="flex items-center gap-5">
-                {/* Like button */}
-                <motion.button
-                  onClick={handleLike}
-                  whileTap={{ scale: 0.9 }}
-                  className={`flex items-center gap-2 ${mood.has_liked ? 'text-red-500' : 'text-white/50 hover:text-white'}`}
-                >
-                  {mood.has_liked ? (
-                    <span className="text-xl">{getReactionEmoji(mood.reaction_type)}</span>
-                  ) : (
-                    <Heart className="w-5 h-5" />
-                  )}
-                  <span
-                    className="text-[10px] uppercase tracking-wider"
-                    style={{ fontFamily: "'Space Mono', monospace" }}
-                  >
-                    {mood.likes_count > 0 ? mood.likes_count : 'REACT'}
-                  </span>
-                </motion.button>
-
-                {/* Comment button */}
-                <button
-                  onClick={handleComment}
-                  className="flex items-center gap-2 text-white/50 hover:text-white transition-colors"
-                >
-                  <MessageCircle className="w-5 h-5" />
-                  <span
-                    className="text-[10px] uppercase tracking-wider"
-                    style={{ fontFamily: "'Space Mono', monospace" }}
-                  >
-                    {mood.comments_count > 0 ? mood.comments_count : 'NOTE'}
-                  </span>
-                </button>
-              </div>
-
-              {/* Cut icon */}
-              <Scissors className="w-4 h-4 text-white/20" />
-            </div>
-          )}
-
-          {/* Reaction menu */}
-          <AnimatePresence>
-            {mood && showReactionMenu === mood.id && (
-              <>
-                <div className="fixed inset-0 z-40" onClick={() => setShowReactionMenu(null)} />
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.8, y: 10 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.8, y: 10 }}
-                  className="absolute left-1/2 -translate-x-1/2 bottom-4 z-50 flex items-center gap-1 bg-black/95 border border-white/20 rounded-full p-2 shadow-2xl backdrop-blur-sm"
-                >
-                  {REACTIONS.map((r) => (
-                    <button
-                      key={r.type}
-                      onClick={(e) => { e.stopPropagation(); handleReaction(mood.id, r.type); }}
-                      className="w-11 h-11 flex items-center justify-center text-2xl hover:scale-125 transition-transform active:scale-95"
-                    >
-                      {r.emoji}
-                    </button>
-                  ))}
-                </motion.div>
-              </>
-            )}
-          </AnimatePresence>
-
-          {/* Comments panel */}
-          <AnimatePresence>
-            {mood && openComments[mood.id] && (
+        {/* Reaction menu overlay */}
+        <AnimatePresence>
+          {mood && showReactionMenu === mood.id && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setShowReactionMenu(null)} />
               <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                className="mt-4 mx-3 bg-black/70 border border-white/10 p-3 backdrop-blur-sm"
+                initial={{ opacity: 0, scale: 0.8, y: 10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.8, y: 10 }}
+                className="absolute left-1/2 -translate-x-1/2 bottom-16 z-50 flex items-center gap-1 bg-card border border-border rounded-full p-2 shadow-xl"
               >
-                <div className="space-y-2">
-                  {mood.comments.length === 0 ? (
-                    <p
-                      className="text-white/30 text-[10px] text-center py-3 uppercase tracking-wider"
-                      style={{ fontFamily: "'Space Mono', monospace" }}
-                    >
-                      NO NOTES YET
-                    </p>
-                  ) : (
-                    <div className="max-h-32 overflow-y-auto no-scrollbar space-y-2">
-                      {mood.comments
-                        .filter(c => !c.parent_id)
-                        .slice(0, 5)
-                        .map((comment) => (
-                          <div key={comment.id} className="flex gap-2">
-                            <Avatar className="w-5 h-5 shrink-0">
-                              {comment.user.avatar_url && <AvatarImage src={comment.user.avatar_url} />}
-                              <AvatarFallback className="text-[8px] bg-white/10">{comment.user.username?.[0]}</AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1 min-w-0">
-                              <span
-                                className="text-white/70 text-[10px] font-medium"
-                                style={{ fontFamily: "'Space Mono', monospace" }}
-                              >
-                                {comment.user.display_name || comment.user.username}
-                              </span>
-                              <p className="text-white/50 text-[11px] leading-relaxed">{comment.content}</p>
+                {REACTIONS.map((r) => (
+                  <button
+                    key={r.type}
+                    onClick={(e) => { e.stopPropagation(); handleReaction(mood.id, r.type); }}
+                    className="w-11 h-11 flex items-center justify-center text-2xl hover:scale-125 transition-transform active:scale-95"
+                  >
+                    {r.emoji}
+                  </button>
+                ))}
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
+
+        {/* Comments panel */}
+        <AnimatePresence>
+          {mood && openComments[mood.id] && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="mt-2 bg-card border border-border rounded-xl p-3 overflow-hidden"
+            >
+              <div className="space-y-2">
+                {mood.comments.length === 0 ? (
+                  <p className="text-muted-foreground text-sm text-center py-3">
+                    No comments yet. Be the first!
+                  </p>
+                ) : (
+                  <div className="max-h-48 overflow-y-auto space-y-3">
+                    {mood.comments
+                      .filter(c => !c.parent_id)
+                      .map((comment) => {
+                        const replies = mood.comments.filter(c => c.parent_id === comment.id);
+                        return (
+                          <div key={comment.id}>
+                            <div className="flex gap-2">
+                              <Avatar className="w-7 h-7 shrink-0">
+                                {comment.user.avatar_url && <AvatarImage src={comment.user.avatar_url} />}
+                                <AvatarFallback className="text-xs bg-secondary">{comment.user.username?.[0]}</AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-baseline justify-between gap-2">
+                                  <span className="text-sm font-medium text-foreground">
+                                    {comment.user.display_name || comment.user.username}
+                                  </span>
+                                  <span className="text-xs text-muted-foreground shrink-0">
+                                    {formatDistanceToNow(new Date(comment.created_at))} ago
+                                  </span>
+                                </div>
+                                <p className="text-sm text-foreground/80 mt-0.5">{comment.content}</p>
+                                <div className="flex items-center gap-3 mt-1">
+                                  <button
+                                    onClick={() => handleLikeComment(comment.id, comment.has_liked)}
+                                    className={`flex items-center gap-1 text-xs ${comment.has_liked ? "text-red-500" : "text-muted-foreground hover:text-red-500"} transition-colors`}
+                                  >
+                                    <Heart className={`w-3 h-3 ${comment.has_liked ? "fill-current" : ""}`} />
+                                    {comment.likes_count > 0 && <span>{comment.likes_count}</span>}
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setReplyingTo({ moodId: mood.id, commentId: comment.id, username: comment.user.display_name || comment.user.username || 'user' });
+                                      haptic('light');
+                                      setTimeout(() => { commentInputRefs.current[mood.id]?.focus(); }, 100);
+                                    }}
+                                    className="text-xs text-muted-foreground hover:text-primary transition-colors"
+                                  >
+                                    Reply
+                                  </button>
+                                </div>
+                              </div>
                             </div>
+
+                            {/* Replies */}
+                            {replies.length > 0 && (
+                              <div className="ml-9 mt-2 space-y-2 border-l-2 border-border pl-3">
+                                {replies.map((reply) => (
+                                  <div key={reply.id} className="flex gap-2">
+                                    <Avatar className="w-6 h-6 shrink-0">
+                                      {reply.user.avatar_url && <AvatarImage src={reply.user.avatar_url} />}
+                                      <AvatarFallback className="text-[10px] bg-secondary">{reply.user.username?.[0]}</AvatarFallback>
+                                    </Avatar>
+                                    <div className="flex-1 min-w-0">
+                                      <span className="text-xs font-medium text-foreground">
+                                        {reply.user.display_name || reply.user.username}
+                                      </span>
+                                      <p className="text-xs text-foreground/80">{reply.content}</p>
+                                      <button
+                                        onClick={() => handleLikeComment(reply.id, reply.has_liked)}
+                                        className={`flex items-center gap-1 mt-1 text-[10px] ${reply.has_liked ? "text-red-500" : "text-muted-foreground hover:text-red-500"} transition-colors`}
+                                      >
+                                        <Heart className={`w-2.5 h-2.5 ${reply.has_liked ? "fill-current" : ""}`} />
+                                        {reply.likes_count > 0 && <span>{reply.likes_count}</span>}
+                                      </button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                           </div>
-                        ))}
+                        );
+                      })}
+                  </div>
+                )}
+
+                {/* Comment input */}
+                <div className="mt-3 pt-3 border-t border-border">
+                  {replyingTo?.moodId === mood.id && (
+                    <div className="flex items-center justify-between mb-2 px-2 py-1 bg-secondary rounded">
+                      <span className="text-xs text-muted-foreground">
+                        Replying to <span className="text-primary font-medium">@{replyingTo.username}</span>
+                      </span>
+                      <button
+                        onClick={() => setReplyingTo(null)}
+                        className="text-muted-foreground hover:text-foreground text-xs"
+                      >
+                        ✕
+                      </button>
                     </div>
                   )}
-
-                  {/* Comment input */}
-                  <div className="flex gap-2 mt-3 pt-3 border-t border-white/10">
+                  <div className="flex gap-2">
                     <Input
                       ref={(el) => { commentInputRefs.current[mood.id] = el; }}
-                      placeholder="Add a note..."
-                      className="h-8 text-[11px] bg-white/5 border-white/10 text-white placeholder:text-white/30"
+                      placeholder={replyingTo?.moodId === mood.id ? `Reply to @${replyingTo.username}...` : "Add a comment..."}
+                      className="h-9 text-sm bg-secondary border-border"
                       value={commentText[mood.id] || ""}
                       onChange={(e) => setCommentText(prev => ({ ...prev, [mood.id]: e.target.value }))}
                       onKeyDown={(e) => { if (e.key === 'Enter') handlePostComment(mood.id); }}
                     />
                     <Button
                       size="icon"
-                      className="h-8 w-8 bg-white/10 hover:bg-white/20 shrink-0"
+                      className="h-9 w-9 bg-primary hover:bg-primary/90 shrink-0"
                       onClick={() => handlePostComment(mood.id)}
                       disabled={!commentText[mood.id]?.trim()}
                     >
-                      <Send className="w-3.5 h-3.5" />
+                      <Send className="w-4 h-4" />
                     </Button>
                   </div>
                 </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     );
   };
 
   if (loading) {
     return (
-      <div className="relative min-h-[60vh] bg-[#050505] flex items-center justify-center -mx-4 -mt-6">
-        <div className="text-center">
-          <Film className="w-12 h-12 text-white/20 mx-auto mb-4 animate-pulse" />
-          <p
-            className="text-white/40 text-[10px] tracking-[0.2em] uppercase"
-            style={{ fontFamily: "'Space Mono', monospace" }}
-          >
-            Loading reel...
-          </p>
-        </div>
+      <div className="space-y-4 px-4 py-6">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="bg-card rounded-xl border border-border overflow-hidden">
+            <div className="flex items-center gap-3 p-3">
+              <Skeleton className="w-10 h-10 rounded-full" />
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-3 w-32" />
+              </div>
+            </div>
+            <Skeleton className="aspect-square w-full" />
+            <div className="p-3 space-y-2">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-2/3" />
+            </div>
+          </div>
+        ))}
       </div>
     );
   }
 
   if (feedItems.length === 0) {
     return (
-      <div className="relative min-h-[60vh] bg-[#050505] flex items-center justify-center -mx-4 -mt-6">
-        <div className="text-center px-8">
-          <div className="relative inline-block mb-6">
-            <Film className="w-16 h-16 text-white/10" />
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-white/20 text-2xl">?</span>
-            </div>
-          </div>
-          <h2
-            className="text-white/70 text-xl mb-2"
-            style={{ fontFamily: "'Playfair Display', serif" }}
-          >
-            No Frames Today
-          </h2>
-          <p
-            className="text-white/30 text-[10px] tracking-[0.15em] uppercase"
-            style={{ fontFamily: "'Space Mono', monospace" }}
-          >
-            The reel is empty
-          </p>
+      <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
+        <div className="w-16 h-16 bg-secondary rounded-full flex items-center justify-center mb-4">
+          <Heart className="w-8 h-8 text-muted-foreground" />
         </div>
+        <h3 className="text-lg font-semibold text-foreground mb-2">No posts yet</h3>
+        <p className="text-muted-foreground text-sm">
+          When your friends post, you'll see them here.
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="relative -mx-4 -mt-6 bg-[#050505]">
-      {/* Static noise/grain overlay */}
-      <div
-        className="fixed inset-0 pointer-events-none z-30 opacity-[0.035]"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
-        }}
-      />
-
-      {/* Scrollable film strip container */}
-      <div
-        ref={scrollContainerRef}
-        className="relative overflow-y-auto overflow-x-hidden no-scrollbar pb-28"
-        style={{
-          scrollSnapType: 'y proximity',
-          scrollBehavior: 'smooth',
-        }}
-      >
-        {/* Glow effect under the strip */}
-        <div className="absolute inset-x-0 top-0 bottom-0 flex justify-center pointer-events-none">
-          <div
-            className="w-[90%] max-w-[400px] h-full"
-            style={{
-              boxShadow: '0 0 80px 30px rgba(255,255,255,0.02), 0 0 120px 50px rgba(255,255,255,0.015)',
-            }}
-          />
-        </div>
-
-        {/* The film strip */}
-        <div className="relative mx-auto w-[90%] max-w-[380px]">
-          {/* Film strip side borders */}
-          <div
-            className="absolute left-0 top-0 bottom-0 w-5 pointer-events-none z-0"
-            style={{
-              background: 'linear-gradient(to right, rgba(255,255,255,0.03) 0%, transparent 100%)',
-            }}
-          />
-          <div
-            className="absolute right-0 top-0 bottom-0 w-5 pointer-events-none z-0"
-            style={{
-              background: 'linear-gradient(to left, rgba(255,255,255,0.03) 0%, transparent 100%)',
-            }}
-          />
-
-          {/* Film frames */}
-          <div className="relative z-10">
-            {feedItems.map((item, index) => renderFilmFrame(item, index))}
-          </div>
-
-          {/* End of reel marker */}
-          <div className="py-12 flex flex-col items-center justify-center">
-            <div className="splice-line w-24 mb-6" />
-            <p
-              className="text-white/25 text-[10px] tracking-[0.25em] uppercase mb-1"
-              style={{ fontFamily: "'Space Mono', monospace" }}
-            >
-              END OF REEL
-            </p>
-            <p
-              className="text-white/15 text-[9px] tracking-wider"
-              style={{ fontFamily: "'Space Mono', monospace" }}
-            >
-              {feedItems.length} FRAME{feedItems.length !== 1 ? 'S' : ''}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Frame indicator - floating at bottom */}
-      <div className="sticky bottom-24 flex justify-center pointer-events-none z-40">
-        <div
-          className="bg-black/90 border border-white/15 px-4 py-2 backdrop-blur-md"
-          style={{ fontFamily: "'Space Mono', monospace" }}
-        >
-          <span className="text-white/50 text-[10px] tracking-[0.1em]">
-            FRAME {String(activeFrameIndex + 1).padStart(3, '0')} / {String(feedItems.length).padStart(3, '0')}
-          </span>
-        </div>
-      </div>
+    <div className="space-y-4 px-4 py-6 pb-28">
+      {feedItems.map((item) => renderFeedPost(item))}
     </div>
   );
 };
