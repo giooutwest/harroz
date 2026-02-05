@@ -51,7 +51,7 @@ const ZineFeedPost = ({
     >
       {/* Polaroid frame */}
       <div
-        className="relative bg-[#1a1a1a] border border-white/10 p-3 mx-auto max-w-[320px] shadow-xl"
+        className="relative bg-card border border-foreground/10 p-3 mx-auto max-w-[320px] shadow-xl"
         style={{ transform: polaroidRotation }}
       >
         {/* Decorative tape */}
@@ -74,7 +74,7 @@ const ZineFeedPost = ({
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-800 to-gray-900">
               <span
-                className="text-6xl text-white/20"
+                className="text-6xl text-foreground/20"
                 style={{ fontFamily: "'Abril Fatface', serif" }}
               >
                 {rating || '?'}
@@ -116,7 +116,7 @@ const ZineFeedPost = ({
               className="flex items-center gap-2 hover:opacity-80 transition-opacity"
             >
               <span
-                className="text-sm font-bold text-white uppercase tracking-wide"
+                className="text-sm font-bold text-foreground uppercase tracking-wide"
                 style={{ fontFamily: "'Space Grotesk', sans-serif" }}
               >
                 {displayName || username}
@@ -131,12 +131,12 @@ const ZineFeedPost = ({
               onClick={onLike}
               whileTap={{ scale: 0.9 }}
               className={`p-1.5 rounded-full ${
-                hasLiked ? 'bg-red-500/20' : 'bg-white/5'
+                hasLiked ? 'bg-red-500/20' : 'bg-foreground/5'
               }`}
             >
               <Heart
                 className={`w-4 h-4 ${
-                  hasLiked ? 'text-red-500 fill-red-500' : 'text-white/60'
+                  hasLiked ? 'text-red-500 fill-red-500' : 'text-foreground/60'
                 }`}
               />
             </motion.button>
@@ -145,7 +145,7 @@ const ZineFeedPost = ({
           {/* Caption - handwritten style */}
           {caption && (
             <p
-              className="text-white/70 text-sm mb-2 italic line-clamp-2"
+              className="text-foreground/70 text-sm mb-2 italic line-clamp-2"
               style={{ fontFamily: "'Great Vibes', cursive", fontSize: '1rem' }}
             >
               "{caption}"
@@ -153,7 +153,7 @@ const ZineFeedPost = ({
           )}
 
           {/* Meta info */}
-          <div className="flex items-center justify-between text-white/40">
+          <div className="flex items-center justify-between text-foreground/40">
             <span
               className="text-[10px] uppercase tracking-wider"
               style={{ fontFamily: "'Space Mono', monospace" }}
@@ -163,7 +163,7 @@ const ZineFeedPost = ({
 
             <button
               onClick={onComment}
-              className="flex items-center gap-1 text-white/50 hover:text-white/80 transition-colors"
+              className="flex items-center gap-1 text-foreground/50 hover:text-foreground/80 transition-colors"
             >
               <MessageCircle className="w-3.5 h-3.5" />
               <span
@@ -178,7 +178,7 @@ const ZineFeedPost = ({
           {/* Likes count */}
           {likesCount > 0 && (
             <div
-              className="mt-1 text-[10px] text-white/40"
+              className="mt-1 text-[10px] text-foreground/40"
               style={{ fontFamily: "'Space Mono', monospace" }}
             >
               {likesCount} {likesCount === 1 ? 'like' : 'likes'}
@@ -189,7 +189,7 @@ const ZineFeedPost = ({
 
       {/* Decorative elements */}
       <div className="absolute -bottom-4 -left-4 opacity-10 pointer-events-none">
-        <svg className="w-12 h-12 stroke-white fill-none" strokeWidth="1" viewBox="0 0 100 100">
+        <svg className="w-12 h-12 stroke-foreground fill-none" strokeWidth="1" viewBox="0 0 100 100">
           <path d="M10,50 Q30,10 50,50 T90,50" />
         </svg>
       </div>

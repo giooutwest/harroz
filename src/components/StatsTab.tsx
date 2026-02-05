@@ -13,6 +13,7 @@ import { Button } from "./ui/button";
 import { Textarea } from "./ui/textarea";
 import ZineProfileView from "./ZineProfileView";
 import { useBadges } from "@/hooks/useBadges";
+import { useTheme } from "@/hooks/useTheme";
 
 interface Stats {
   bestStreak: number;
@@ -63,6 +64,7 @@ const StatsTab = ({ onSettingsClick }: StatsTabProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const { earnedBadges } = useBadges();
+  const { isClassic } = useTheme();
 
   // Get equipped badges for the current user
   const equippedBadges = earnedBadges.filter(b => b.is_equipped).map(b => b.badge_id);
@@ -267,11 +269,11 @@ const StatsTab = ({ onSettingsClick }: StatsTabProps) => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[calc(100vh-120px)] bg-[#f5f0e8]">
+      <div className={`flex items-center justify-center min-h-[calc(100vh-120px)] ${isClassic ? 'bg-background' : 'bg-[#f5f0e8]'}`}>
         <motion.div
           animate={{ rotate: 360 }}
           transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-          className="w-8 h-8 border-2 border-black border-t-transparent"
+          className={`w-8 h-8 border-2 border-t-transparent ${isClassic ? 'border-foreground' : 'border-black'}`}
         />
       </div>
     );
@@ -279,27 +281,97 @@ const StatsTab = ({ onSettingsClick }: StatsTabProps) => {
 
   return (
     <div className="pb-28">
-      {/* Zine Profile View - Dossier style */}
-      <ZineProfileView
-        displayName={profile?.display_name || null}
-        username={profile?.username || null}
-        avatarUrl={profile?.avatar_url || null}
-        currentStreak={stats.currentStreak}
-        bestStreak={stats.bestStreak}
-        totalGoodDays={stats.totalGoodDays}
-        totalEntries={stats.totalEntries}
-        yearlyAverage={stats.yearlyAverage}
-        equippedBadges={equippedBadges}
-        onEditClick={() => setIsEditing(true)}
-        onSettingsClick={onSettingsClick || (() => {})}
-      />
+      {isClassic ? (
+        /* Classic Profile View - Simple cards */
+        <div className="px-6 py-8 bg-background">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 bg-secondary rounded-full overflow-hidden flex items-center justify-center">
+                {profile?.avatar_url ? (
+                  <img src={profile.avatar_url} className="w-full h-full object-cover" />
+                ) : (
+                  <User className="w-8 h-8 text-muted-foreground" />
+                )}
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-foreground">{profile?.display_name || "You"}</h1>
+                {profile?.username && <p className="text-sm text-muted-foreground">@{profile.username}</p>}
+              </div>
+            </div>
+            <button onClick={onSettingsClick} className="p-2 rounded-full bg-secondary hover:bg-secondary/80 transition-colors">
+              <Settings className="w-5 h-5 text-muted-foreground" />
+            </button>
+          </div>
+
+          {/* Streak */}
+          {stats.currentStreak > 0 && (
+            <div className="bg-card border border-border rounded-2xl p-4 mb-4 flex items-center gap-3">
+              <div className="w-12 h-12 bg-orange-50 rounded-full flex items-center justify-center">
+                <Flame className="w-6 h-6 text-orange-500 fill-orange-500" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-foreground">{stats.currentStreak} Day Streak</p>
+                <p className="text-sm text-muted-foreground">Keep it going!</p>
+              </div>
+            </div>
+          )}
+
+          {/* Stats Grid */}
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            <div className="bg-card border border-border rounded-2xl p-4">
+              <Flame className="w-5 h-5 text-orange-500 mb-2" />
+              <p className="text-2xl font-bold text-foreground">{stats.bestStreak}</p>
+              <p className="text-xs text-muted-foreground">Best Streak</p>
+            </div>
+            <div className="bg-card border border-border rounded-2xl p-4">
+              <Sun className="w-5 h-5 text-yellow-500 mb-2" />
+              <p className="text-2xl font-bold text-foreground">{stats.totalGoodDays}</p>
+              <p className="text-xs text-muted-foreground">Sunny Days</p>
+            </div>
+            <div className="bg-card border border-border rounded-2xl p-4">
+              <TrendingUp className="w-5 h-5 text-blue-500 mb-2" />
+              <p className="text-2xl font-bold text-foreground">{stats.yearlyAverage.toFixed(1)}</p>
+              <p className="text-xs text-muted-foreground">Average Mood</p>
+            </div>
+            <div className="bg-card border border-border rounded-2xl p-4">
+              <Activity className="w-5 h-5 text-green-500 mb-2" />
+              <p className="text-2xl font-bold text-foreground">{stats.totalEntries}</p>
+              <p className="text-xs text-muted-foreground">Total Entries</p>
+            </div>
+          </div>
+
+          {/* Edit Profile Button */}
+          <button
+            onClick={() => setIsEditing(true)}
+            className="w-full py-3 bg-secondary text-foreground font-medium rounded-xl hover:bg-secondary/80 transition-colors text-sm"
+          >
+            Edit Profile
+          </button>
+        </div>
+      ) : (
+        /* Zine Profile View - Dossier style */
+        <ZineProfileView
+          displayName={profile?.display_name || null}
+          username={profile?.username || null}
+          avatarUrl={profile?.avatar_url || null}
+          currentStreak={stats.currentStreak}
+          bestStreak={stats.bestStreak}
+          totalGoodDays={stats.totalGoodDays}
+          totalEntries={stats.totalEntries}
+          yearlyAverage={stats.yearlyAverage}
+          equippedBadges={equippedBadges}
+          onEditClick={() => setIsEditing(true)}
+          onSettingsClick={onSettingsClick || (() => {})}
+        />
+      )}
 
       {/* Tag Activity Analytics */}
       <div className="px-4 mt-4">
         <TagActivityChart />
       </div>
 
-      {/* Edit Profile Modal - Zine style */}
+      {/* Edit Profile Modal */}
       <AnimatePresence>
         {isEditing && (
           <motion.div
@@ -314,46 +386,34 @@ const StatsTab = ({ onSettingsClick }: StatsTabProps) => {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-[#f5f0e8] border-2 border-black/10 p-6 w-full max-w-sm shadow-2xl"
+              className={`p-6 w-full max-w-sm shadow-2xl rounded-2xl ${isClassic ? 'bg-card border border-border' : 'bg-[#f5f0e8] border-2 border-black/10'}`}
             >
               <div className="flex items-center justify-between mb-6">
-                <h3
-                  className="font-bold text-black uppercase tracking-wide"
-                  style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-                >
+                <h3 className={`font-bold uppercase tracking-wide ${isClassic ? 'text-foreground' : 'text-black'}`}>
                   Edit Profile
                 </h3>
                 <button
                   onClick={() => setIsEditing(false)}
-                  className="p-2 bg-black/10 hover:bg-black/20 transition-colors"
+                  className={`p-2 rounded-full transition-colors ${isClassic ? 'bg-secondary hover:bg-secondary/80' : 'bg-black/10 hover:bg-black/20'}`}
                 >
-                  <X className="w-5 h-5 text-black" />
+                  <X className={`w-5 h-5 ${isClassic ? 'text-foreground' : 'text-black'}`} />
                 </button>
               </div>
 
               <div className="space-y-4">
-                {/* Avatar Upload */}
                 <div className="flex flex-col items-center gap-3">
-                   <div className="w-20 h-20 bg-white border-2 border-black/10 overflow-hidden">
+                   <div className={`w-20 h-20 overflow-hidden rounded-full ${isClassic ? 'bg-secondary' : 'bg-white border-2 border-black/10'}`}>
                       {editForm.avatar_url ? (
-                        <img src={editForm.avatar_url} className="w-full h-full object-cover grayscale" />
+                        <img src={editForm.avatar_url} className={`w-full h-full object-cover ${isClassic ? '' : 'grayscale'}`} />
                       ) : (
-                        <User className="w-8 h-8 m-auto mt-6 text-black/30" />
+                        <User className={`w-8 h-8 m-auto mt-6 ${isClassic ? 'text-muted-foreground' : 'text-black/30'}`} />
                       )}
                    </div>
                    <div>
-                     <input
-                       type="file"
-                       id="avatar-upload"
-                       hidden
-                       accept="image/*"
-                       onChange={handleAvatarUpload}
-                       disabled={uploading}
-                     />
+                     <input type="file" id="avatar-upload" hidden accept="image/*" onChange={handleAvatarUpload} disabled={uploading} />
                      <label
                        htmlFor="avatar-upload"
-                       className="cursor-pointer px-4 py-2 bg-black text-white text-xs font-medium hover:bg-black/80 flex items-center gap-2"
-                       style={{ fontFamily: "'Space Mono', monospace" }}
+                       className={`cursor-pointer px-4 py-2 text-xs font-medium flex items-center gap-2 rounded-lg ${isClassic ? 'bg-primary text-primary-foreground' : 'bg-black text-white hover:bg-black/80'}`}
                      >
                         <Camera className="w-3.5 h-3.5" />
                         {uploading ? "Uploading..." : "Change Photo"}
@@ -363,54 +423,26 @@ const StatsTab = ({ onSettingsClick }: StatsTabProps) => {
 
                 <div className="space-y-3">
                    <div>
-                     <label
-                       className="text-[10px] text-black/40 uppercase tracking-wider ml-1 mb-1 block"
-                       style={{ fontFamily: "'Space Mono', monospace" }}
-                     >
+                     <label className={`text-xs mb-1 block ${isClassic ? 'text-muted-foreground' : 'text-black/40 uppercase tracking-wider text-[10px]'}`}>
                        Display Name
                      </label>
-                     <Input
-                       value={editForm.display_name || ""}
-                       onChange={(e) => setEditForm({...editForm, display_name: e.target.value})}
-                       className="bg-white border-2 border-black/10 text-black"
-                     />
+                     <Input value={editForm.display_name || ""} onChange={(e) => setEditForm({...editForm, display_name: e.target.value})} />
                    </div>
-
                    <div>
-                     <label
-                       className="text-[10px] text-black/40 uppercase tracking-wider ml-1 mb-1 block"
-                       style={{ fontFamily: "'Space Mono', monospace" }}
-                     >
+                     <label className={`text-xs mb-1 block ${isClassic ? 'text-muted-foreground' : 'text-black/40 uppercase tracking-wider text-[10px]'}`}>
                        Username
                      </label>
-                     <Input
-                       value={editForm.username || ""}
-                       onChange={(e) => setEditForm({...editForm, username: e.target.value})}
-                       className="bg-white border-2 border-black/10 text-black"
-                     />
+                     <Input value={editForm.username || ""} onChange={(e) => setEditForm({...editForm, username: e.target.value})} />
                    </div>
-
                    <div>
-                     <label
-                       className="text-[10px] text-black/40 uppercase tracking-wider ml-1 mb-1 block"
-                       style={{ fontFamily: "'Space Mono', monospace" }}
-                     >
+                     <label className={`text-xs mb-1 block ${isClassic ? 'text-muted-foreground' : 'text-black/40 uppercase tracking-wider text-[10px]'}`}>
                        Bio
                      </label>
-                     <Textarea
-                       value={editForm.bio || ""}
-                       onChange={(e) => setEditForm({...editForm, bio: e.target.value})}
-                       className="bg-white border-2 border-black/10 text-black resize-none"
-                       maxLength={150}
-                     />
+                     <Textarea value={editForm.bio || ""} onChange={(e) => setEditForm({...editForm, bio: e.target.value})} className="resize-none" maxLength={150} />
                    </div>
                 </div>
 
-                <Button
-                   onClick={handleUpdateProfile}
-                   className="w-full gap-2 bg-black text-white hover:bg-black/80"
-                   style={{ fontFamily: "'Space Mono', monospace" }}
-                >
+                <Button onClick={handleUpdateProfile} className="w-full gap-2">
                   <Save className="w-4 h-4" /> Save Changes
                 </Button>
               </div>

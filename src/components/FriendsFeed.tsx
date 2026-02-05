@@ -517,13 +517,13 @@ const FriendsFeed = ({ onFriendClick, highlightMoodId, shouldOpenComments, close
     return (
       <div className="space-y-8 px-4 py-6">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="relative bg-[#1a1a1a] border border-white/10 p-3 mx-auto max-w-[320px] shadow-xl">
+          <div key={i} className="relative bg-card border border-foreground/10 p-3 mx-auto max-w-[320px] shadow-xl">
             <div className="absolute -top-3 left-1/4 w-12 h-5 bg-[#C5A059]/70 z-10" style={{ transform: "rotate(3deg)" }} />
-            <Skeleton className="aspect-square w-full bg-white/10" />
+            <Skeleton className="aspect-square w-full bg-foreground/10" />
             <div className="pt-3 pb-1 space-y-2">
-              <Skeleton className="h-4 w-24 bg-white/10" />
-              <Skeleton className="h-3 w-full bg-white/10" />
-              <Skeleton className="h-3 w-16 bg-white/10" />
+              <Skeleton className="h-4 w-24 bg-foreground/10" />
+              <Skeleton className="h-3 w-full bg-foreground/10" />
+              <Skeleton className="h-3 w-16 bg-foreground/10" />
             </div>
           </div>
         ))}
@@ -577,7 +577,7 @@ const FriendsFeed = ({ onFriendClick, highlightMoodId, shouldOpenComments, close
                 initial={{ opacity: 0, scale: 0.8, y: 10 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.8, y: 10 }}
-                className="absolute left-1/2 -translate-x-1/2 bottom-20 z-50 flex items-center gap-1 bg-black/90 border border-white/20 rounded-full p-2 shadow-2xl"
+                className="absolute left-1/2 -translate-x-1/2 bottom-20 z-50 flex items-center gap-1 bg-black/90 border border-foreground/20 rounded-full p-2 shadow-2xl"
               >
                 {REACTIONS.map((r) => (
                   <button
@@ -600,11 +600,11 @@ const FriendsFeed = ({ onFriendClick, highlightMoodId, shouldOpenComments, close
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
-              className="mx-auto max-w-[320px] -mt-4 pt-6 bg-[#1a1a1a] border border-white/10 border-t-0 px-3 pb-3"
+              className="mx-auto max-w-[320px] -mt-4 pt-6 bg-card border border-foreground/10 border-t-0 px-3 pb-3"
             >
               <div className="space-y-3">
                 {mood.comments.length === 0 ? (
-                  <p className="text-white/40 text-xs text-center py-2">No comments yet. Be the first!</p>
+                  <p className="text-foreground/40 text-xs text-center py-2">No comments yet. Be the first!</p>
                 ) : (
                   mood.comments
                     .filter(c => !c.parent_id)
@@ -617,19 +617,19 @@ const FriendsFeed = ({ onFriendClick, highlightMoodId, shouldOpenComments, close
                             <button onClick={() => onFriendClick?.(comment.user.user_id)} className="shrink-0">
                               <Avatar className="w-6 h-6">
                                 {comment.user.avatar_url && <AvatarImage src={comment.user.avatar_url} onError={(e) => { e.currentTarget.style.display = 'none'; }} />}
-                                <AvatarFallback className="text-[9px] bg-white/10 text-white">{comment.user.username?.[0]}</AvatarFallback>
+                                <AvatarFallback className="text-[9px] bg-foreground/10 text-foreground">{comment.user.username?.[0]}</AvatarFallback>
                               </Avatar>
                             </button>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-baseline justify-between gap-2">
-                                <button onClick={() => onFriendClick?.(comment.user.user_id)} className="text-xs font-semibold text-white hover:underline truncate">{comment.user.display_name || comment.user.username}</button>
-                                <span className="text-[10px] text-white/40 shrink-0" style={{ fontFamily: "'Space Mono', monospace" }}>{formatDistanceToNow(new Date(comment.created_at))} ago</span>
+                                <button onClick={() => onFriendClick?.(comment.user.user_id)} className="text-xs font-semibold text-foreground hover:underline truncate">{comment.user.display_name || comment.user.username}</button>
+                                <span className="text-[10px] text-foreground/40 shrink-0" style={{ fontFamily: "'Space Mono', monospace" }}>{formatDistanceToNow(new Date(comment.created_at))} ago</span>
                               </div>
-                              <p className="text-xs text-white/70 mt-0.5 break-words">{comment.content}</p>
+                              <p className="text-xs text-foreground/70 mt-0.5 break-words">{comment.content}</p>
                               <div className="flex items-center gap-3 mt-1">
                                 <button
                                   onClick={() => handleLikeComment(comment.id, comment.has_liked)}
-                                  className="flex items-center gap-1 text-[10px] text-white/40 hover:text-red-500 transition-colors"
+                                  className="flex items-center gap-1 text-[10px] text-foreground/40 hover:text-red-500 transition-colors"
                                 >
                                   <Heart className={`w-3 h-3 ${comment.has_liked ? "fill-red-500 text-red-500" : ""}`} />
                                   {comment.likes_count > 0 && <span>{comment.likes_count}</span>}
@@ -643,7 +643,7 @@ const FriendsFeed = ({ onFriendClick, highlightMoodId, shouldOpenComments, close
                                       commentInputRefs.current[mood.id]?.focus();
                                     }, 100);
                                   }}
-                                  className="text-[10px] text-white/40 hover:text-[#C5A059] transition-colors"
+                                  className="text-[10px] text-foreground/40 hover:text-[#C5A059] transition-colors"
                                 >
                                   Reply
                                 </button>
@@ -653,24 +653,24 @@ const FriendsFeed = ({ onFriendClick, highlightMoodId, shouldOpenComments, close
 
                           {/* Replies */}
                           {replies.length > 0 && (
-                            <div className="ml-8 mt-2 space-y-2 border-l border-white/10 pl-3">
+                            <div className="ml-8 mt-2 space-y-2 border-l border-foreground/10 pl-3">
                               {replies.map((reply) => (
                                 <div key={reply.id} className="flex gap-2 group">
                                   <button onClick={() => onFriendClick?.(reply.user.user_id)} className="shrink-0">
                                     <Avatar className="w-5 h-5">
                                       {reply.user.avatar_url && <AvatarImage src={reply.user.avatar_url} onError={(e) => { e.currentTarget.style.display = 'none'; }} />}
-                                      <AvatarFallback className="text-[8px] bg-white/10 text-white">{reply.user.username?.[0]}</AvatarFallback>
+                                      <AvatarFallback className="text-[8px] bg-foreground/10 text-foreground">{reply.user.username?.[0]}</AvatarFallback>
                                     </Avatar>
                                   </button>
                                   <div className="flex-1 min-w-0">
                                     <div className="flex items-baseline justify-between gap-2">
-                                      <button onClick={() => onFriendClick?.(reply.user.user_id)} className="text-[11px] font-semibold text-white hover:underline truncate">{reply.user.display_name || reply.user.username}</button>
-                                      <span className="text-[9px] text-white/40 shrink-0" style={{ fontFamily: "'Space Mono', monospace" }}>{formatDistanceToNow(new Date(reply.created_at))} ago</span>
+                                      <button onClick={() => onFriendClick?.(reply.user.user_id)} className="text-[11px] font-semibold text-foreground hover:underline truncate">{reply.user.display_name || reply.user.username}</button>
+                                      <span className="text-[9px] text-foreground/40 shrink-0" style={{ fontFamily: "'Space Mono', monospace" }}>{formatDistanceToNow(new Date(reply.created_at))} ago</span>
                                     </div>
-                                    <p className="text-[11px] text-white/70 mt-0.5 break-words">{reply.content}</p>
+                                    <p className="text-[11px] text-foreground/70 mt-0.5 break-words">{reply.content}</p>
                                     <button
                                       onClick={() => handleLikeComment(reply.id, reply.has_liked)}
-                                      className="flex items-center gap-1 mt-1 text-[10px] text-white/40 hover:text-red-500 transition-colors"
+                                      className="flex items-center gap-1 mt-1 text-[10px] text-foreground/40 hover:text-red-500 transition-colors"
                                     >
                                       <Heart className={`w-2.5 h-2.5 ${reply.has_liked ? "fill-red-500 text-red-500" : ""}`} />
                                       {reply.likes_count > 0 && <span>{reply.likes_count}</span>}
@@ -686,15 +686,15 @@ const FriendsFeed = ({ onFriendClick, highlightMoodId, shouldOpenComments, close
                 )}
 
                 {/* Comment input */}
-                <div className="mt-3 pt-3 border-t border-white/10">
+                <div className="mt-3 pt-3 border-t border-foreground/10">
                   {replyingTo?.moodId === mood.id && (
-                    <div className="flex items-center justify-between mb-2 px-2 py-1 bg-white/5 rounded">
-                      <span className="text-[10px] text-white/60">
+                    <div className="flex items-center justify-between mb-2 px-2 py-1 bg-foreground/5 rounded">
+                      <span className="text-[10px] text-foreground/60">
                         Replying to <span className="text-[#C5A059]">@{replyingTo.username}</span>
                       </span>
                       <button
                         onClick={() => setReplyingTo(null)}
-                        className="text-white/40 hover:text-white text-xs"
+                        className="text-foreground/40 hover:text-foreground text-xs"
                       >
                         ✕
                       </button>
@@ -704,7 +704,7 @@ const FriendsFeed = ({ onFriendClick, highlightMoodId, shouldOpenComments, close
                     <Input
                       ref={(el) => { commentInputRefs.current[mood.id] = el; }}
                       placeholder={replyingTo?.moodId === mood.id ? `Reply to @${replyingTo.username}...` : "Add a comment..."}
-                      className="h-8 text-xs bg-white/5 border-white/10 text-white placeholder:text-white/30"
+                      className="h-8 text-xs bg-foreground/5 border-foreground/10 text-foreground placeholder:text-foreground/30"
                       value={commentText[mood.id] || ""}
                       onChange={(e) => setCommentText(prev => ({ ...prev, [mood.id]: e.target.value }))}
                       onKeyDown={(e) => { if (e.key === 'Enter') handlePostComment(mood.id); }}
@@ -756,11 +756,11 @@ const FriendsFeed = ({ onFriendClick, highlightMoodId, shouldOpenComments, close
         {feedItems.length === 0 ? (
           <div className="text-center py-16">
             <div
-              className="relative mx-auto w-32 h-32 bg-[#1a1a1a] border border-white/10 p-2 mb-6"
+              className="relative mx-auto w-32 h-32 bg-card border border-foreground/10 p-2 mb-6"
               style={{ transform: "rotate(-2deg)" }}
             >
-              <div className="w-full h-full bg-white/5 flex items-center justify-center">
-                <Heart className="w-8 h-8 text-white/20" />
+              <div className="w-full h-full bg-foreground/5 flex items-center justify-center">
+                <Heart className="w-8 h-8 text-foreground/20" />
               </div>
               <div
                 className="absolute -top-3 left-1/2 -translate-x-1/2 w-10 h-4 bg-[#C5A059]/70"
@@ -768,13 +768,13 @@ const FriendsFeed = ({ onFriendClick, highlightMoodId, shouldOpenComments, close
               />
             </div>
             <p
-              className="text-white/60 text-sm uppercase tracking-wider"
+              className="text-foreground/60 text-sm uppercase tracking-wider"
               style={{ fontFamily: "'Space Mono', monospace" }}
             >
               No updates yet
             </p>
             <p
-              className="text-white/30 text-xs mt-2 italic"
+              className="text-foreground/30 text-xs mt-2 italic"
               style={{ fontFamily: "'Playfair Display', serif" }}
             >
               Your friends are being quiet...

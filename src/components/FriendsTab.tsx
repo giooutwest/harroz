@@ -407,12 +407,12 @@ const FriendsTab = ({ initialSelectedFriendId, initialSelectedMoodId, initialSel
   };
 
   return (
-    <div className="min-h-screen bg-black px-4 py-6 pb-28">
+    <div className="min-h-screen bg-background px-4 py-6 pb-28">
       {/* Zine Header */}
       <div className="flex items-start justify-between mb-8">
         <div>
           <h1
-            className="text-5xl font-black text-white uppercase tracking-tight"
+            className="text-5xl font-black text-foreground uppercase tracking-tight"
             style={{
               fontFamily: "'Abril Fatface', serif",
               textShadow: "2px 2px 0px #C5A059, 4px 4px 0px rgba(0,0,0,0.3)"
@@ -425,9 +425,9 @@ const FriendsTab = ({ initialSelectedFriendId, initialSelectedMoodId, initialSel
           <motion.button
             whileTap={{ scale: 0.95 }}
             onClick={() => setShowNotifications(true)}
-            className="relative p-3 bg-white/5 border border-white/10"
+            className="relative p-3 bg-foreground/5 border border-foreground/10"
           >
-            <Bell className="w-5 h-5 text-white/70" />
+            <Bell className="w-5 h-5 text-foreground/70" />
             {unreadCount > 0 && (
               <span
                 className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 text-white flex items-center justify-center text-[10px] font-bold"
@@ -463,10 +463,10 @@ const FriendsTab = ({ initialSelectedFriendId, initialSelectedMoodId, initialSel
             disabled={s.disabled}
             className={`flex-1 py-2 px-3 flex items-center justify-center gap-1 border transition-all ${
               s.disabled
-                ? "bg-transparent border-white/10 text-white/30 cursor-not-allowed"
+                ? "bg-transparent border-foreground/10 text-foreground/30 cursor-not-allowed"
                 : activeSection === s.id
-                ? "bg-white text-black border-white"
-                : "bg-transparent border-white/20 text-white/60 hover:border-white/40"
+                ? "bg-foreground text-background border-foreground"
+                : "bg-transparent border-foreground/20 text-foreground/60 hover:border-foreground/40"
             }`}
             title={s.disabled ? "Equip a badge in Settings to unlock" : undefined}
           >
@@ -511,8 +511,8 @@ const FriendsTab = ({ initialSelectedFriendId, initialSelectedMoodId, initialSel
               </>
             ) : (
               <div className="text-center py-12">
-                <Award className="w-12 h-12 mx-auto mb-3 text-white/20" />
-                <p className="text-white/40" style={{ fontFamily: "'Space Mono', monospace" }}>
+                <Award className="w-12 h-12 mx-auto mb-3 text-foreground/20" />
+                <p className="text-foreground/40" style={{ fontFamily: "'Space Mono', monospace" }}>
                   Equip a badge in Settings to see your tribe
                 </p>
               </div>
@@ -525,7 +525,7 @@ const FriendsTab = ({ initialSelectedFriendId, initialSelectedMoodId, initialSel
             {friends.map(f => (
               <div
                 key={f.id}
-                className="bg-white/5 border border-white/10 p-4 flex items-center justify-between"
+                className="bg-foreground/5 border border-foreground/10 p-4 flex items-center justify-between"
               >
                 <div
                   className="flex items-center gap-3 cursor-pointer"
@@ -539,11 +539,11 @@ const FriendsTab = ({ initialSelectedFriendId, initialSelectedMoodId, initialSel
                         onError={(e) => { e.currentTarget.style.display = 'none'; }}
                       />
                     ) : (
-                      <User className="w-5 h-5 text-white/40" />
+                      <User className="w-5 h-5 text-foreground/40" />
                     )}
                   </div>
                   <p
-                    className="font-medium text-white text-sm uppercase tracking-wide"
+                    className="font-medium text-foreground text-sm uppercase tracking-wide"
                     style={{ fontFamily: "'Space Grotesk', sans-serif" }}
                   >
                     {f.friend_profile?.display_name || f.friend_profile?.username}
@@ -552,7 +552,7 @@ const FriendsTab = ({ initialSelectedFriendId, initialSelectedMoodId, initialSel
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleSendNudge(f.friend_profile?.user_id || "", f.friend_profile?.username || "")}
-                    className="p-2 text-white/40 hover:text-yellow-500 hover:bg-yellow-500/10 transition-colors"
+                    className="p-2 text-foreground/40 hover:text-yellow-500 hover:bg-yellow-500/10 transition-colors"
                     title="Nudge"
                   >
                     <Zap className="w-4 h-4 fill-current" />
@@ -562,14 +562,14 @@ const FriendsTab = ({ initialSelectedFriendId, initialSelectedMoodId, initialSel
                     className={`p-2 transition-colors ${
                       closeFriends.some(c => c.friend_id === f.friend_profile?.user_id)
                         ? "text-[#C5A059]"
-                        : "text-white/40 hover:text-[#C5A059]"
+                        : "text-foreground/40 hover:text-[#C5A059]"
                     }`}
                   >
                     <Star className={`w-4 h-4 ${closeFriends.some(c => c.friend_id === f.friend_profile?.user_id) ? "fill-current" : ""}`} />
                   </button>
                   <button
                     onClick={() => handleRemoveFriend(f.id)}
-                    className="p-2 text-white/40 hover:text-red-500 transition-colors"
+                    className="p-2 text-foreground/40 hover:text-red-500 transition-colors"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -578,8 +578,8 @@ const FriendsTab = ({ initialSelectedFriendId, initialSelectedMoodId, initialSel
             ))}
             {friends.length === 0 && (
               <div className="text-center py-12">
-                <Users className="w-12 h-12 mx-auto mb-3 text-white/20" />
-                <p className="text-white/40" style={{ fontFamily: "'Space Mono', monospace" }}>No friends yet</p>
+                <Users className="w-12 h-12 mx-auto mb-3 text-foreground/20" />
+                <p className="text-foreground/40" style={{ fontFamily: "'Space Mono', monospace" }}>No friends yet</p>
               </div>
             )}
           </motion.div>
@@ -596,14 +596,14 @@ const FriendsTab = ({ initialSelectedFriendId, initialSelectedMoodId, initialSel
             {pendingRequests.length > 0 && (
               <div className="space-y-3">
                 <h3
-                  className="text-[10px] text-white/40 uppercase tracking-[0.2em]"
+                  className="text-[10px] text-foreground/40 uppercase tracking-[0.2em]"
                   style={{ fontFamily: "'Space Mono', monospace" }}
                 >
                   Friend Requests
                 </h3>
                 {pendingRequests.map(r => (
-                  <div key={r.id} className="bg-white/5 border border-white/10 p-4 flex items-center justify-between">
-                    <p className="font-medium text-white text-sm">{r.friend_profile?.display_name}</p>
+                  <div key={r.id} className="bg-foreground/5 border border-foreground/10 p-4 flex items-center justify-between">
+                    <p className="font-medium text-foreground text-sm">{r.friend_profile?.display_name}</p>
                     <div className="flex gap-2">
                       <button
                         onClick={() => handleAcceptRequest(r.id, r.requester_id)}
@@ -615,7 +615,7 @@ const FriendsTab = ({ initialSelectedFriendId, initialSelectedMoodId, initialSel
                       <button
                         onClick={() => handleRejectRequest(r.id)}
                         disabled={processingRequestId === r.id}
-                        className="p-2 bg-white/10 text-white/60 disabled:opacity-50"
+                        className="p-2 bg-white/10 text-foreground/60 disabled:opacity-50"
                       >
                         <X className="w-4 h-4" />
                       </button>
@@ -628,7 +628,7 @@ const FriendsTab = ({ initialSelectedFriendId, initialSelectedMoodId, initialSel
             {nudges.length > 0 && (
               <div className="space-y-3">
                 <h3
-                  className="text-[10px] text-white/40 uppercase tracking-[0.2em]"
+                  className="text-[10px] text-foreground/40 uppercase tracking-[0.2em]"
                   style={{ fontFamily: "'Space Mono', monospace" }}
                 >
                   Nudges
@@ -649,10 +649,10 @@ const FriendsTab = ({ initialSelectedFriendId, initialSelectedMoodId, initialSel
                         )}
                       </div>
                       <div>
-                        <p className="text-white text-sm">
+                        <p className="text-foreground text-sm">
                           <span className="font-bold text-yellow-500">{nudge.sender_profile?.display_name || nudge.sender_profile?.username || "Someone"}</span> nudged you!
                         </p>
-                        <p className="text-white/40 text-xs" style={{ fontFamily: "'Space Mono', monospace" }}>
+                        <p className="text-foreground/40 text-xs" style={{ fontFamily: "'Space Mono', monospace" }}>
                           {formatDistanceToNow(new Date(nudge.created_at), { addSuffix: true })}
                         </p>
                       </div>
@@ -667,7 +667,7 @@ const FriendsTab = ({ initialSelectedFriendId, initialSelectedMoodId, initialSel
                       </button>
                       <button
                         onClick={() => handleDismissNudge(nudge.id)}
-                        className="p-2 bg-white/10 hover:bg-red-500/20 text-white/60 hover:text-red-500"
+                        className="p-2 bg-white/10 hover:bg-red-500/20 text-foreground/60 hover:text-red-500"
                         title="Dismiss"
                       >
                         <X className="w-4 h-4" />
@@ -680,8 +680,8 @@ const FriendsTab = ({ initialSelectedFriendId, initialSelectedMoodId, initialSel
 
             {pendingRequests.length === 0 && nudges.length === 0 && (
               <div className="text-center py-12">
-                <Mail className="w-12 h-12 mx-auto mb-3 text-white/20" />
-                <p className="text-white/40" style={{ fontFamily: "'Space Mono', monospace" }}>No pending requests or nudges</p>
+                <Mail className="w-12 h-12 mx-auto mb-3 text-foreground/20" />
+                <p className="text-foreground/40" style={{ fontFamily: "'Space Mono', monospace" }}>No pending requests or nudges</p>
               </div>
             )}
           </motion.div>
@@ -695,17 +695,17 @@ const FriendsTab = ({ initialSelectedFriendId, initialSelectedMoodId, initialSel
             onClick={() => setShowAddFriend(false)}
           >
             <div
-              className="bg-[#1a1a1a] border border-white/10 p-6 w-full max-w-sm"
+              className="bg-[#1a1a1a] border border-foreground/10 p-6 w-full max-w-sm"
               onClick={e => e.stopPropagation()}
             >
               <div className="flex justify-between mb-4">
                 <h3
-                  className="text-xl font-bold text-white uppercase tracking-wide"
+                  className="text-xl font-bold text-foreground uppercase tracking-wide"
                   style={{ fontFamily: "'Space Grotesk', sans-serif" }}
                 >
                   Add Friend
                 </h3>
-                <button onClick={() => setShowAddFriend(false)} className="text-white/60 hover:text-white">
+                <button onClick={() => setShowAddFriend(false)} className="text-foreground/60 hover:text-foreground">
                   <X className="w-5 h-5" />
                 </button>
               </div>
@@ -714,7 +714,7 @@ const FriendsTab = ({ initialSelectedFriendId, initialSelectedMoodId, initialSel
                   value={searchUsername}
                   onChange={e => setSearchUsername(e.target.value)}
                   placeholder="@username"
-                  className="bg-white/5 border-white/10 text-white placeholder:text-white/30"
+                  className="bg-foreground/5 border-foreground/10 text-foreground placeholder:text-foreground/30"
                 />
                 <Button
                   onClick={handleSearchUsername}
@@ -729,8 +729,8 @@ const FriendsTab = ({ initialSelectedFriendId, initialSelectedMoodId, initialSel
                 </p>
               )}
               {searchResult && (
-                <div className="mt-4 p-4 bg-white/5 border border-white/10 flex justify-between items-center">
-                  <p className="font-bold text-white">@{searchResult.username}</p>
+                <div className="mt-4 p-4 bg-foreground/5 border border-foreground/10 flex justify-between items-center">
+                  <p className="font-bold text-foreground">@{searchResult.username}</p>
                   <Button
                     onClick={handleSendRequest}
                     disabled={isSearching}
@@ -745,21 +745,21 @@ const FriendsTab = ({ initialSelectedFriendId, initialSelectedMoodId, initialSel
               {!searchResult && (
                 <div className="mt-6">
                   <h4
-                    className="text-xs font-bold text-white/50 uppercase tracking-wider mb-3"
+                    className="text-xs font-bold text-foreground/50 uppercase tracking-wider mb-3"
                     style={{ fontFamily: "'Space Mono', monospace" }}
                   >
                     People You May Know
                   </h4>
                   {loadingSuggestions ? (
                     <div className="py-4 text-center">
-                      <p className="text-white/40 text-sm">Loading suggestions...</p>
+                      <p className="text-foreground/40 text-sm">Loading suggestions...</p>
                     </div>
                   ) : friendSuggestions.length > 0 ? (
                     <div className="space-y-2 max-h-60 overflow-y-auto">
                       {friendSuggestions.map(suggestion => (
                         <div
                           key={suggestion.user_id}
-                          className="p-3 bg-white/5 border border-white/10 flex items-center justify-between"
+                          className="p-3 bg-foreground/5 border border-foreground/10 flex items-center justify-between"
                         >
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-full bg-white/10 overflow-hidden">
@@ -767,16 +767,16 @@ const FriendsTab = ({ initialSelectedFriendId, initialSelectedMoodId, initialSel
                                 <img src={suggestion.avatar_url} alt="" className="w-full h-full object-cover" />
                               ) : (
                                 <div className="w-full h-full flex items-center justify-center">
-                                  <User className="w-5 h-5 text-white/40" />
+                                  <User className="w-5 h-5 text-foreground/40" />
                                 </div>
                               )}
                             </div>
                             <div>
-                              <p className="font-bold text-white text-sm">
+                              <p className="font-bold text-foreground text-sm">
                                 {suggestion.display_name || `@${suggestion.username}`}
                               </p>
                               {suggestion.mutual_friend_name && (
-                                <p className="text-white/40 text-xs" style={{ fontFamily: "'Space Mono', monospace" }}>
+                                <p className="text-foreground/40 text-xs" style={{ fontFamily: "'Space Mono', monospace" }}>
                                   Friends with {suggestion.mutual_friend_name}
                                 </p>
                               )}
@@ -794,15 +794,15 @@ const FriendsTab = ({ initialSelectedFriendId, initialSelectedMoodId, initialSel
                     </div>
                   ) : friends.length > 0 ? (
                     <div className="py-4 text-center">
-                      <Users className="w-8 h-8 mx-auto mb-2 text-white/20" />
-                      <p className="text-white/40 text-xs" style={{ fontFamily: "'Space Mono', monospace" }}>
+                      <Users className="w-8 h-8 mx-auto mb-2 text-foreground/20" />
+                      <p className="text-foreground/40 text-xs" style={{ fontFamily: "'Space Mono', monospace" }}>
                         No suggestions right now
                       </p>
                     </div>
                   ) : (
                     <div className="py-4 text-center">
-                      <Users className="w-8 h-8 mx-auto mb-2 text-white/20" />
-                      <p className="text-white/40 text-xs" style={{ fontFamily: "'Space Mono', monospace" }}>
+                      <Users className="w-8 h-8 mx-auto mb-2 text-foreground/20" />
+                      <p className="text-foreground/40 text-xs" style={{ fontFamily: "'Space Mono', monospace" }}>
                         Add some friends to see suggestions
                       </p>
                     </div>

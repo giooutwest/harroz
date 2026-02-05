@@ -3,7 +3,9 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import ZineBottomNav from "@/components/ZineBottomNav";
+import BottomNav from "@/components/BottomNav";
 import TodayTab from "@/components/TodayTab";
+import { useTheme } from "@/hooks/useTheme";
 import SettingsSheet from "@/components/SettingsSheet";
 import Onboarding from "@/components/Onboarding";
 import UpdateBanner from "@/components/UpdateBanner";
@@ -54,6 +56,7 @@ const Index = () => {
   const navigate = useNavigate();
   const { hasUnread } = useUnreadUpdates();
   const { navigation, clearNavigation } = useNotificationNavigation();
+  const { isClassic } = useTheme();
 
   useRealtimeNotifications();
 
@@ -307,10 +310,11 @@ const Index = () => {
 
       {/* Camera FAB removed - photo capture is now integrated directly into TodayTab */}
 
-      <ZineBottomNav
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-      />
+      {isClassic ? (
+        <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
+      ) : (
+        <ZineBottomNav activeTab={activeTab} onTabChange={setActiveTab} />
+      )}
 
       <SettingsSheet
         isOpen={showSettings}

@@ -25,6 +25,8 @@ import ZineLockedView from "./ZineLockedView";
 import ZineOpenView from "./ZineOpenView";
 import MoodCamera from "./MoodCamera";
 import { useFeatureDiscovery } from "@/hooks/useFeatureDiscovery";
+import { useTheme } from "@/hooks/useTheme";
+import { Settings } from "lucide-react";
 
 type Visibility = "private" | "friends" | "close_friends";
 
@@ -160,6 +162,7 @@ const TodayTab = ({ onSettingsClick }: TodayTabProps) => {
   const { user } = useAuth();
   const timeWindow = useTimeWindowStatic();
   const { currentStreak } = useStreak();
+  const { isClassic } = useTheme();
 
   // Journal hooks
   const journalPin = useJournalPin();
@@ -461,8 +464,8 @@ const TodayTab = ({ onSettingsClick }: TodayTabProps) => {
   };
 
   if (showLockedState) {
-    // Use new Zine aesthetic for default dark theme
-    if (true) {
+    // Use Zine aesthetic for modern theme, simple layout for classic
+    if (!isClassic) {
       return (
         <>
           <ZineLockedView
@@ -486,15 +489,19 @@ const TodayTab = ({ onSettingsClick }: TodayTabProps) => {
       );
     }
 
-    // Pixel theme fallback - original locked state
+    // Classic theme - simple locked state
     const YesterdayMoodIcon = yesterdaysMood ? getMoodIcon(yesterdaysMood.rating, false) : null;
     return (
-      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-120px)] px-6 py-8 pb-32">
+      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-120px)] px-6 py-8 pb-32 bg-background relative">
+        {/* Settings button */}
+        <button onClick={onSettingsClick} className="absolute top-6 right-6 p-2 rounded-full bg-secondary hover:bg-secondary/80 transition-colors">
+          <Settings className="w-5 h-5 text-muted-foreground" />
+        </button>
         <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-sm flex flex-col items-center text-center">
           <motion.div animate={{ scale: [1, 1.05, 1] }} transition={{ repeat: Infinity, duration: 2 }} className={`w-24 h-24 flex items-center justify-center mb-6 bg-secondary rounded-full`}>
             <Lock className="w-10 h-10 text-muted-foreground" />
           </motion.div>
-          <h2 className={`font-bold mb-2 flex items-center gap-2 text-xl`}>{displayName ? `Hi ${displayName}! ✨` : "Hey there! ✨"}</h2>
+          <h2 className={`font-bold mb-2 flex items-center gap-2 text-xl`}>{displayName ? `Hi ${displayName}!` : "Hey there!"}</h2>
           {currentStreak > 0 && (<Badge variant="secondary" className="mb-4 bg-orange-50 text-orange-600 border-orange-100 gap-1.5 px-3 py-1"><Flame className="w-3 h-3 fill-orange-500" /><span className="font-bold">{currentStreak} Day Streak</span></Badge>)}
           <p className={`text-muted-foreground mb-6 `}>Your journal opens at 9 PM so you can reflect on your whole day.</p>
           <AnimatePresence>
@@ -560,8 +567,8 @@ const TodayTab = ({ onSettingsClick }: TodayTabProps) => {
     );
   }
 
-  // Show ZineOpenView when window just opened but user hasn't entered yet
-  if (timeWindow.isOpen && !submitted && !hasEnteredRoom) {
+  // Show ZineOpenView when window just opened but user hasn't entered yet (modern only)
+  if (timeWindow.isOpen && !submitted && !hasEnteredRoom && !isClassic) {
     return (
       <ZineOpenView onEnter={handleEnterRoom} />
     );
