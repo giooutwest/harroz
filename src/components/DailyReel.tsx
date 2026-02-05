@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { useHaptic } from "@/hooks/useHaptic";
 import { motion, AnimatePresence } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
-import FeedPost from "./FeedPost";
+import FeedPost, { MoodMention } from "./FeedPost";
 
 // --- Types ---
 interface Profile {
@@ -50,6 +50,7 @@ interface Mood {
   song_title?: string | null;
   song_artist?: string | null;
   song_preview_url?: string | null;
+  mentions?: MoodMention[];
 }
 
 interface FitCheck {
@@ -240,6 +241,30 @@ const DailyReel = ({ onFriendClick, highlightMoodId, shouldOpenComments, closeFr
         badgesByUser.set(b.user_id, userBadges);
       });
 
+      // Fetch mentions for all moods
+      // @ts-ignore - mood_mentions table exists but not in generated types
+      const { data: allMentions } = await supabase
+        .from('mood_mentions')
+        .select(`
+          mood_id,
+          mentioned_user_id,
+          user:profiles!mood_mentions_mentioned_user_id_fkey(user_id, username, display_name)
+        `)
+        .in('mood_id', moodIds);
+
+      const mentionsByMood = new Map<string, MoodMention[]>();
+      (allMentions || []).forEach((m: any) => {
+        const moodMentions = mentionsByMood.get(m.mood_id) || [];
+        if (m.user) {
+          moodMentions.push({
+            user_id: m.mentioned_user_id,
+            username: m.user.username,
+            display_name: m.user.display_name,
+          });
+        }
+        mentionsByMood.set(m.mood_id, moodMentions);
+      });
+
       const moodsWithDetails: Mood[] = await Promise.all(moodData.map(async (m: any) => {
         let signedPhotoUrl = null;
         if (m.photo_url) {
@@ -283,6 +308,7 @@ const DailyReel = ({ onFriendClick, highlightMoodId, shouldOpenComments, closeFr
           song_title: m.song_title || null,
           song_artist: m.song_artist || null,
           song_preview_url: m.song_preview_url || null,
+          mentions: mentionsByMood.get(m.id) || [],
           user: {
             ...m.user,
             equipped_badges: badgesByUser.get(m.user_id) || []
@@ -536,9 +562,11 @@ const DailyReel = ({ onFriendClick, highlightMoodId, shouldOpenComments, closeFr
           songTitle={mood?.song_title}
           songArtist={mood?.song_artist}
           songPreviewUrl={mood?.song_preview_url}
+          mentions={mood?.mentions}
           onLike={handleLike}
           onComment={handleComment}
           onUserClick={() => onFriendClick?.(item.user.user_id)}
+          onMentionClick={(userId) => onFriendClick?.(userId)}
         />
 
         {/* Reaction menu overlay */}

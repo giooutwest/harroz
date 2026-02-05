@@ -1,12 +1,18 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Heart, MessageCircle } from "lucide-react";
+import { Heart, MessageCircle, ChevronDown } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import BadgeDisplay from "./BadgeDisplay";
 import MusicPlayer from "./MusicPlayer";
+
+export interface MoodMention {
+  user_id: string;
+  username: string | null;
+  display_name: string | null;
+}
 
 const GUESSES_STORAGE_KEY = "moodmemos-guesses";
 
@@ -45,9 +51,11 @@ interface FeedPostProps {
   songTitle?: string | null;
   songArtist?: string | null;
   songPreviewUrl?: string | null;
+  mentions?: MoodMention[];
   onLike: () => void;
   onComment: () => void;
   onUserClick: () => void;
+  onMentionClick?: (userId: string) => void;
 }
 
 const CONFETTI_COLORS = ["bg-yellow-400", "bg-green-400", "bg-blue-400", "bg-pink-400"];
@@ -71,9 +79,11 @@ const FeedPost = ({
   songTitle,
   songArtist,
   songPreviewUrl,
+  mentions = [],
   onLike,
   onComment,
   onUserClick,
+  onMentionClick,
 }: FeedPostProps) => {
   // Check if we've already guessed this post
   const storedGuesses = getStoredGuesses();
@@ -197,6 +207,23 @@ const FeedPost = ({
         {showGuessMechanic && !hasGuessed && (
           <div className="absolute top-3 right-3 bg-foreground/80 text-background px-3 py-1 rounded-full text-xs font-medium">
             ?/10
+          </div>
+        )}
+
+        {/* Tagged friends indicator - Instagram style */}
+        {mentions.length > 0 && (
+          <div className="absolute bottom-3 left-3">
+            <button
+              onClick={() => onMentionClick?.(mentions[0].user_id)}
+              className="flex items-center gap-1.5 bg-black/70 backdrop-blur-sm text-white px-2.5 py-1.5 rounded-lg text-xs font-medium hover:bg-black/80 transition-colors"
+            >
+              <ChevronDown className="w-3 h-3" />
+              <span>
+                {mentions.length === 1
+                  ? `@${mentions[0].username || mentions[0].display_name}`
+                  : `@${mentions[0].username || mentions[0].display_name} +${mentions.length - 1}`}
+              </span>
+            </button>
           </div>
         )}
       </div>

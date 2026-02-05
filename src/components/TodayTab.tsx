@@ -28,6 +28,8 @@ import { useFeatureDiscovery } from "@/hooks/useFeatureDiscovery";
 import { useTheme } from "@/hooks/useTheme";
 import { Settings } from "lucide-react";
 import MusicSearchModal from "./MusicSearchModal";
+import FriendSelectorModal, { SelectedFriend } from "./FriendSelectorModal";
+import { UserPlus } from "lucide-react";
 
 type Visibility = "private" | "friends" | "close_friends";
 
@@ -157,6 +159,10 @@ const TodayTab = ({ onSettingsClick }: TodayTabProps) => {
   // Music state
   const [showMusicSearch, setShowMusicSearch] = useState(false);
   const [selectedSong, setSelectedSong] = useState<{ title: string; artist: string; previewUrl: string | null } | null>(null);
+
+  // Friend tagging state
+  const [showFriendSelector, setShowFriendSelector] = useState(false);
+  const [taggedFriends, setTaggedFriends] = useState<SelectedFriend[]>([]);
 
   // Feature discovery
   const { shouldShowTooltip, markDiscovered } = useFeatureDiscovery();
@@ -392,6 +398,20 @@ const TodayTab = ({ onSettingsClick }: TodayTabProps) => {
       setTodaysMoodId(upsertedMood.id);
     } else if (upsertedMood?.id) {
       setTodaysMoodId(upsertedMood.id);
+    }
+
+    // Save friend mentions if any
+    if (upsertedMood?.id && taggedFriends.length > 0) {
+      const mentionsToInsert = taggedFriends.map(friend => ({
+        mood_id: upsertedMood.id,
+        mentioned_user_id: friend.user_id
+      }));
+
+      // First delete existing mentions for this mood, then insert new ones
+      // @ts-ignore - mood_mentions table exists but not in generated types
+      await supabase.from('mood_mentions').delete().eq('mood_id', upsertedMood.id);
+      // @ts-ignore - mood_mentions table exists but not in generated types
+      await supabase.from('mood_mentions').insert(mentionsToInsert);
     }
 
     setIsUploading(false);
@@ -694,6 +714,42 @@ const TodayTab = ({ onSettingsClick }: TodayTabProps) => {
               )}
             </div>
 
+            {/* Tag Friends Button */}
+            <div className="w-full mb-4">
+              {taggedFriends.length === 0 ? (
+                <button
+                  onClick={() => setShowFriendSelector(true)}
+                  className="w-full py-3 px-4 border border-dashed border-border bg-secondary/30 flex items-center justify-center gap-2 text-muted-foreground hover:bg-secondary/50 hover:text-foreground transition-colors rounded-xl"
+                >
+                  <UserPlus className="w-4 h-4" />
+                  <span className="font-medium">Tag Friends</span>
+                </button>
+              ) : (
+                <div className="flex items-center gap-3 p-3 bg-secondary/50 rounded-xl border border-border">
+                  <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center shrink-0">
+                    <Users className="w-5 h-5 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-foreground text-sm truncate">
+                      {taggedFriends.map(f => f.display_name || f.username).join(", ")}
+                    </p>
+                    <button
+                      onClick={() => setShowFriendSelector(true)}
+                      className="text-xs text-primary hover:underline"
+                    >
+                      Edit tags
+                    </button>
+                  </div>
+                  <button
+                    onClick={() => setTaggedFriends([])}
+                    className="p-1.5 hover:bg-secondary rounded-full transition-colors shrink-0"
+                  >
+                    <X className="w-4 h-4 text-muted-foreground" />
+                  </button>
+                </div>
+              )}
+            </div>
+
             {/* Routine Tags */}
             <div className="w-full mb-4">
               <RoutineTags
@@ -955,6 +1011,13 @@ const TodayTab = ({ onSettingsClick }: TodayTabProps) => {
         isOpen={showMusicSearch}
         onClose={() => setShowMusicSearch(false)}
         onSelect={(track) => setSelectedSong(track)}
+      />
+
+      <FriendSelectorModal
+        isOpen={showFriendSelector}
+        onClose={() => setShowFriendSelector(false)}
+        onSelect={(friends) => setTaggedFriends(friends)}
+        initialSelected={taggedFriends}
       />
     </div>
   );

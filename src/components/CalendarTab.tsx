@@ -51,6 +51,12 @@ interface MoodEntry {
   photo_url: string | null;
   photo_signed_url?: string | null;
   caption: string | null;
+  isTagged?: boolean;
+  taggedByUser?: {
+    user_id: string;
+    username: string | null;
+    display_name: string | null;
+  };
 }
 
 const getMoodColor = (rating: number): string => {
@@ -95,6 +101,7 @@ const CalendarTab = () => {
     const lastDayDate = new Date(year, month + 1, 0);
     const lastDay = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDayDate.getDate()).padStart(2, '0')}`;
 
+    // Fetch user's own moods
     const { data } = await supabase
       .from('moods')
       .select('*')
@@ -102,20 +109,70 @@ const CalendarTab = () => {
       .gte('date', firstDay)
       .lte('date', lastDay);
 
+    // Fetch moods where user is tagged
+    // @ts-ignore - mood_mentions table exists but not in generated types
+    const { data: taggedMentions }: { data: any[] | null } = await supabase
+      .from('mood_mentions')
+      .select(`
+        mood_id,
+        mood:moods!mood_mentions_mood_id_fkey(
+          id, date, rating, note, photo_url, caption, user_id,
+          user:profiles!moods_user_id_fkey(user_id, username, display_name)
+        )
+      `)
+      .eq('mentioned_user_id', user.id);
+
+    const moodMap: Record<string, MoodEntry> = {};
+
+    // Process own moods
     if (data) {
-      const moodMap: Record<string, MoodEntry> = {};
       for (const m of data) {
         let signedUrl: string | null = null;
         if (m.photo_url) {
           const { data: signedData } = await supabase.storage.from('mood-photos').createSignedUrl(m.photo_url, 3600);
           signedUrl = signedData?.signedUrl || null;
         }
-        moodMap[m.date] = { 
-          date: m.date, rating: m.rating, note: m.note || null, photo_url: m.photo_url, photo_signed_url: signedUrl, caption: m.caption 
+        moodMap[m.date] = {
+          date: m.date, rating: m.rating, note: m.note || null, photo_url: m.photo_url, photo_signed_url: signedUrl, caption: m.caption
         };
       }
-      setMoods(moodMap);
     }
+
+    // Process tagged moods (only add if no own mood exists for that date)
+    if (taggedMentions) {
+      for (const mention of taggedMentions) {
+        const mood = mention.mood as any;
+        if (!mood || !mood.date) continue;
+
+        // Filter by date range
+        if (mood.date < firstDay || mood.date > lastDay) continue;
+
+        // Only add if user doesn't have their own mood for this date
+        if (!moodMap[mood.date]) {
+          let signedUrl: string | null = null;
+          if (mood.photo_url) {
+            const { data: signedData } = await supabase.storage.from('mood-photos').createSignedUrl(mood.photo_url, 3600);
+            signedUrl = signedData?.signedUrl || null;
+          }
+          moodMap[mood.date] = {
+            date: mood.date,
+            rating: mood.rating,
+            note: mood.note || null,
+            photo_url: mood.photo_url,
+            photo_signed_url: signedUrl,
+            caption: mood.caption,
+            isTagged: true,
+            taggedByUser: mood.user ? {
+              user_id: mood.user.user_id,
+              username: mood.user.username,
+              display_name: mood.user.display_name,
+            } : undefined,
+          };
+        }
+      }
+    }
+
+    setMoods(moodMap);
   };
 
   const getDaysInMonth = () => {
