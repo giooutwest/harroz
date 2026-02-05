@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Flame, Sun, TrendingUp, PieChart, Sparkles, Camera, Edit2, Save, X, User, Clock, Activity, Settings } from "lucide-react";
+import { Flame, Sun, TrendingUp, PieChart, Sparkles, Camera, Edit2, Save, X, User, Clock, Activity, Settings, Share2 } from "lucide-react";
+import WeeklyRecap from "./WeeklyRecap";
 import OnThisDay from "./OnThisDay";
 import TagActivityChart from "./TagActivityChart";
 import { supabase } from "@/integrations/supabase/client";
@@ -61,6 +62,7 @@ const StatsTab = ({ onSettingsClick }: StatsTabProps) => {
   
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [showWeeklyRecap, setShowWeeklyRecap] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
   const { earnedBadges } = useBadges();
@@ -341,29 +343,50 @@ const StatsTab = ({ onSettingsClick }: StatsTabProps) => {
             </div>
           </div>
 
-          {/* Edit Profile Button */}
-          <button
-            onClick={() => setIsEditing(true)}
-            className="w-full py-3 bg-secondary text-foreground font-medium rounded-xl hover:bg-secondary/80 transition-colors text-sm"
-          >
-            Edit Profile
-          </button>
+          {/* Action Buttons */}
+          <div className="flex gap-3">
+            <button
+              onClick={() => setIsEditing(true)}
+              className="flex-1 py-3 bg-secondary text-foreground font-medium rounded-xl hover:bg-secondary/80 transition-colors text-sm"
+            >
+              Edit Profile
+            </button>
+            <button
+              onClick={() => setShowWeeklyRecap(true)}
+              className="py-3 px-4 bg-primary text-primary-foreground font-medium rounded-xl hover:bg-primary/90 transition-colors text-sm flex items-center gap-2"
+            >
+              <Share2 className="w-4 h-4" />
+              Weekly Recap
+            </button>
+          </div>
         </div>
       ) : (
         /* Zine Profile View - Dossier style */
-        <ZineProfileView
-          displayName={profile?.display_name || null}
-          username={profile?.username || null}
-          avatarUrl={profile?.avatar_url || null}
-          currentStreak={stats.currentStreak}
-          bestStreak={stats.bestStreak}
-          totalGoodDays={stats.totalGoodDays}
-          totalEntries={stats.totalEntries}
-          yearlyAverage={stats.yearlyAverage}
-          equippedBadges={equippedBadges}
-          onEditClick={() => setIsEditing(true)}
-          onSettingsClick={onSettingsClick || (() => {})}
-        />
+        <>
+          <ZineProfileView
+            displayName={profile?.display_name || null}
+            username={profile?.username || null}
+            avatarUrl={profile?.avatar_url || null}
+            currentStreak={stats.currentStreak}
+            bestStreak={stats.bestStreak}
+            totalGoodDays={stats.totalGoodDays}
+            totalEntries={stats.totalEntries}
+            yearlyAverage={stats.yearlyAverage}
+            equippedBadges={equippedBadges}
+            onEditClick={() => setIsEditing(true)}
+            onSettingsClick={onSettingsClick || (() => {})}
+          />
+          {/* Weekly Recap Button for Zine view */}
+          <div className="px-4 mt-4">
+            <button
+              onClick={() => setShowWeeklyRecap(true)}
+              className="w-full py-3 bg-black text-white font-medium rounded-xl hover:bg-black/90 transition-colors text-sm flex items-center justify-center gap-2"
+            >
+              <Share2 className="w-4 h-4" />
+              Share Weekly Recap
+            </button>
+          </div>
+        </>
       )}
 
       {/* Tag Activity Analytics */}
@@ -451,6 +474,11 @@ const StatsTab = ({ onSettingsClick }: StatsTabProps) => {
         )}
       </AnimatePresence>
 
+      {/* Weekly Recap Modal */}
+      <WeeklyRecap
+        isOpen={showWeeklyRecap}
+        onClose={() => setShowWeeklyRecap(false)}
+      />
     </div>
   );
 };

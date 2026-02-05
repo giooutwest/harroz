@@ -47,6 +47,9 @@ interface Mood {
   comments_count: number;
   reaction_type: string | null;
   type: 'mood';
+  song_title?: string | null;
+  song_artist?: string | null;
+  song_preview_url?: string | null;
 }
 
 interface FitCheck {
@@ -159,7 +162,7 @@ const DailyReel = ({ onFriendClick, highlightMoodId, shouldOpenComments, closeFr
       let query = supabase
         .from('moods')
         .select(`
-          id, rating, note:caption, photo_url, created_at, user_id,
+          id, rating, note:caption, photo_url, created_at, user_id, song_title, song_artist, song_preview_url,
           user:profiles!moods_user_id_fkey(user_id, username, display_name, avatar_url, current_streak)
         `)
         .in('user_id', friendIds)
@@ -277,6 +280,9 @@ const DailyReel = ({ onFriendClick, highlightMoodId, shouldOpenComments, closeFr
           comments_count: commentsWithLikes.length,
           comments: commentsWithLikes,
           type: 'mood' as const,
+          song_title: m.song_title || null,
+          song_artist: m.song_artist || null,
+          song_preview_url: m.song_preview_url || null,
           user: {
             ...m.user,
             equipped_badges: badgesByUser.get(m.user_id) || []
@@ -527,6 +533,9 @@ const DailyReel = ({ onFriendClick, highlightMoodId, shouldOpenComments, closeFr
           type={item.type}
           isOwnPost={isOwnPost}
           equippedBadges={item.user.equipped_badges}
+          songTitle={mood?.song_title}
+          songArtist={mood?.song_artist}
+          songPreviewUrl={mood?.song_preview_url}
           onLike={handleLike}
           onComment={handleComment}
           onUserClick={() => onFriendClick?.(item.user.user_id)}

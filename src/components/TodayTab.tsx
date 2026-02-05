@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Heart, CloudRain, Cloud, Sun, Star, Camera, X, MessageCircle, User, Lock, Pencil, Flame, Share2, Users, BookOpen, ImagePlus } from "lucide-react";
+import { Sparkles, Heart, CloudRain, Cloud, Sun, Star, Camera, X, MessageCircle, User, Lock, Pencil, Flame, Share2, Users, BookOpen, ImagePlus, Music } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { PixelStorm, PixelRain, PixelCloudy, PixelPartlyCloudy, PixelSunny } from "./PixelIcons";
@@ -27,6 +27,7 @@ import MoodCamera from "./MoodCamera";
 import { useFeatureDiscovery } from "@/hooks/useFeatureDiscovery";
 import { useTheme } from "@/hooks/useTheme";
 import { Settings } from "lucide-react";
+import MusicSearchModal from "./MusicSearchModal";
 
 type Visibility = "private" | "friends" | "close_friends";
 
@@ -152,6 +153,10 @@ const TodayTab = ({ onSettingsClick }: TodayTabProps) => {
 
   // Tags state (before mood is created)
   const [pendingTags, setPendingTags] = useState<{tag_id: string; tag_type: "default" | "custom"}[]>([]);
+
+  // Music state
+  const [showMusicSearch, setShowMusicSearch] = useState(false);
+  const [selectedSong, setSelectedSong] = useState<{ title: string; artist: string; previewUrl: string | null } | null>(null);
 
   // Feature discovery
   const { shouldShowTooltip, markDiscovered } = useFeatureDiscovery();
@@ -352,7 +357,10 @@ const TodayTab = ({ onSettingsClick }: TodayTabProps) => {
         user_id: user.id,
         photo_url: finalPhotoPath,
         caption: caption || null,
-        visibility
+        visibility,
+        song_title: selectedSong?.title || null,
+        song_artist: selectedSong?.artist || null,
+        song_preview_url: selectedSong?.previewUrl || null,
       }, {
         onConflict: 'user_id,date'
       })
@@ -657,6 +665,35 @@ const TodayTab = ({ onSettingsClick }: TodayTabProps) => {
             </motion.div>
             <Input type="text" placeholder="Caption (optional)" value={caption} onChange={(e) => setCaption(e.target.value)} maxLength={500} className={`mb-2 `} />
 
+            {/* Add Song Button */}
+            <div className="w-full mb-4">
+              {!selectedSong ? (
+                <button
+                  onClick={() => setShowMusicSearch(true)}
+                  className="w-full py-3 px-4 border border-dashed border-border bg-secondary/30 flex items-center justify-center gap-2 text-muted-foreground hover:bg-secondary/50 hover:text-foreground transition-colors rounded-xl"
+                >
+                  <Music className="w-4 h-4" />
+                  <span className="font-medium">Add a Song</span>
+                </button>
+              ) : (
+                <div className="flex items-center gap-3 p-3 bg-secondary/50 rounded-xl border border-border">
+                  <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center shrink-0">
+                    <Music className="w-5 h-5 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-foreground text-sm truncate">{selectedSong.title}</p>
+                    <p className="text-xs text-muted-foreground truncate">{selectedSong.artist}</p>
+                  </div>
+                  <button
+                    onClick={() => setSelectedSong(null)}
+                    className="p-1.5 hover:bg-secondary rounded-full transition-colors shrink-0"
+                  >
+                    <X className="w-4 h-4 text-muted-foreground" />
+                  </button>
+                </div>
+              )}
+            </div>
+
             {/* Routine Tags */}
             <div className="w-full mb-4">
               <RoutineTags
@@ -912,6 +949,12 @@ const TodayTab = ({ onSettingsClick }: TodayTabProps) => {
         onClose={() => setShowMoodCamera(false)}
         onCapture={handleCameraCapture}
         initialMode={cameraMode}
+      />
+
+      <MusicSearchModal
+        isOpen={showMusicSearch}
+        onClose={() => setShowMusicSearch(false)}
+        onSelect={(track) => setSelectedSong(track)}
       />
     </div>
   );

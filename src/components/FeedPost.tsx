@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Heart, MessageCircle } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
@@ -6,6 +6,25 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import BadgeDisplay from "./BadgeDisplay";
+import MusicPlayer from "./MusicPlayer";
+
+const GUESSES_STORAGE_KEY = "moodmemos-guesses";
+
+// Helper to get/set guesses from localStorage
+const getStoredGuesses = (): Record<string, { guess: number; actualRating: number }> => {
+  try {
+    const stored = localStorage.getItem(GUESSES_STORAGE_KEY);
+    return stored ? JSON.parse(stored) : {};
+  } catch {
+    return {};
+  }
+};
+
+const storeGuess = (moodId: string, guess: number, actualRating: number) => {
+  const guesses = getStoredGuesses();
+  guesses[moodId] = { guess, actualRating };
+  localStorage.setItem(GUESSES_STORAGE_KEY, JSON.stringify(guesses));
+};
 
 interface FeedPostProps {
   id: string;
@@ -23,6 +42,9 @@ interface FeedPostProps {
   type: 'mood' | 'fitcheck';
   isOwnPost: boolean;
   equippedBadges?: string[];
+  songTitle?: string | null;
+  songArtist?: string | null;
+  songPreviewUrl?: string | null;
   onLike: () => void;
   onComment: () => void;
   onUserClick: () => void;
@@ -31,6 +53,7 @@ interface FeedPostProps {
 const CONFETTI_COLORS = ["bg-yellow-400", "bg-green-400", "bg-blue-400", "bg-pink-400"];
 
 const FeedPost = ({
+  id,
   username,
   displayName,
   avatarUrl,
@@ -45,12 +68,19 @@ const FeedPost = ({
   type,
   isOwnPost,
   equippedBadges,
+  songTitle,
+  songArtist,
+  songPreviewUrl,
   onLike,
   onComment,
   onUserClick,
 }: FeedPostProps) => {
-  const [guess, setGuess] = useState(5);
-  const [hasGuessed, setHasGuessed] = useState(false);
+  // Check if we've already guessed this post
+  const storedGuesses = getStoredGuesses();
+  const previousGuess = storedGuesses[id];
+
+  const [guess, setGuess] = useState(previousGuess?.guess ?? 5);
+  const [hasGuessed, setHasGuessed] = useState(!!previousGuess);
   const [showConfetti, setShowConfetti] = useState(false);
 
   // Determine if we should show the guess mechanic
@@ -61,6 +91,9 @@ const FeedPost = ({
     if (!rating) return;
     setHasGuessed(true);
 
+    // Persist the guess to localStorage
+    storeGuess(id, guess, rating);
+
     // Check if guess is close (within 1)
     const diff = Math.abs(guess - rating);
     if (diff <= 1) {
@@ -69,9 +102,12 @@ const FeedPost = ({
     }
   };
 
+  // Use stored guess for display if available
+  const displayGuess = previousGuess?.guess ?? guess;
+
   const getDifferenceText = () => {
     if (!rating) return "";
-    const diff = Math.abs(guess - rating);
+    const diff = Math.abs(displayGuess - rating);
     if (diff === 0) return "Perfect guess!";
     if (diff === 1) return "So close!";
     if (diff <= 2) return "Not bad!";
@@ -211,7 +247,7 @@ const FeedPost = ({
               className="text-center"
             >
               <p className="text-sm text-muted-foreground">
-                You guessed <span className="font-bold text-foreground">{guess}</span>, they were{" "}
+                You guessed <span className="font-bold text-foreground">{displayGuess}</span>, they were{" "}
                 <span className="font-bold text-foreground">{rating}</span>
               </p>
               <p className="text-lg font-bold text-foreground mt-1">
@@ -254,6 +290,17 @@ const FeedPost = ({
           >
             {caption}
           </p>
+        </div>
+      )}
+
+      {/* Music Player */}
+      {songTitle && songArtist && (
+        <div className="px-4 py-2">
+          <MusicPlayer
+            songTitle={songTitle}
+            songArtist={songArtist}
+            previewUrl={songPreviewUrl || null}
+          />
         </div>
       )}
 

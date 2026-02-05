@@ -7,12 +7,13 @@ import {
   Sparkles,
   CheckCircle2,
   Camera,
-  Award
+  Award,
+  Music
 } from "lucide-react";
 
 // Version key for tracking which What's New users have seen
 // Increment this when adding new features to show the modal again
-export const WHATS_NEW_VERSION = "v2.1";
+export const WHATS_NEW_VERSION = "v2.2";
 
 interface Feature {
   id: string;
@@ -32,6 +33,15 @@ interface WhatsNewModalProps {
 
 // Only include the latest features users haven't seen
 const features: Feature[] = [
+  {
+    id: "music-tagging",
+    title: "Add Songs to Your Mood!",
+    description: "Share what you're listening to! When posting your mood, tap 'Add a Song' to search and attach a track. Your friends can play a 30-second preview right from the feed.",
+    icon: Music,
+    color: "hsl(280, 70%, 55%)",
+    tryItAction: "today",
+    illustration: "🎵🎧✨"
+  },
   {
     id: "gallery-upload",
     title: "Gallery Uploads Are Back!",

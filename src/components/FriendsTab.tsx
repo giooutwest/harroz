@@ -387,11 +387,35 @@ const FriendsTab = ({ initialSelectedFriendId, initialSelectedMoodId, initialSel
 
   const handleSendNudge = async (friendId: string, friendName: string) => {
     if (!user) return;
-    // @ts-ignore
-    const { error } = await supabase.from('nudges').insert({ sender_id: user.id, receiver_id: friendId });
-    if (error) { toast({ title: "Could not send nudge", variant: "destructive" }); return; }
-    // Database trigger will automatically queue push notification and in-app notification
-    toast({ title: `Nudged ${friendName}! ⚡` });
+
+    // Check for 1-hour cooldown per friend
+    const NUDGE_COOLDOWN_KEY = "moodmemos-nudge-cooldowns";
+    const ONE_HOUR_MS = 60 * 60 * 1000;
+
+    try {
+      const storedCooldowns = localStorage.getItem(NUDGE_COOLDOWN_KEY);
+      const cooldowns: Record<string, number> = storedCooldowns ? JSON.parse(storedCooldowns) : {};
+      const lastNudgeTime = cooldowns[friendId];
+
+      if (lastNudgeTime && Date.now() - lastNudgeTime < ONE_HOUR_MS) {
+        const minutesLeft = Math.ceil((ONE_HOUR_MS - (Date.now() - lastNudgeTime)) / 60000);
+        toast({ title: `Wait ${minutesLeft} min before nudging ${friendName} again`, variant: "destructive" });
+        return;
+      }
+
+      // @ts-ignore
+      const { error } = await supabase.from('nudges').insert({ sender_id: user.id, receiver_id: friendId });
+      if (error) { toast({ title: "Could not send nudge", variant: "destructive" }); return; }
+
+      // Store the nudge timestamp
+      cooldowns[friendId] = Date.now();
+      localStorage.setItem(NUDGE_COOLDOWN_KEY, JSON.stringify(cooldowns));
+
+      // Database trigger will automatically queue push notification and in-app notification
+      toast({ title: `Nudged ${friendName}! ⚡` });
+    } catch {
+      toast({ title: "Could not send nudge", variant: "destructive" });
+    }
   };
 
   const handleDismissNudge = async (nudgeId: string) => {
@@ -407,7 +431,7 @@ const FriendsTab = ({ initialSelectedFriendId, initialSelectedMoodId, initialSel
   };
 
   return (
-    <div className="min-h-screen bg-background px-4 py-6 pb-28">
+    <div className="min-h-screen bg-background px-4 pt-12 pb-28">
       {/* Zine Header */}
       <div className="flex items-start justify-between mb-8">
         <div>
