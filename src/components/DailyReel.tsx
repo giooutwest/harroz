@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { MessageCircle, Heart, Send } from "lucide-react";
+import { MessageCircle, Heart, Send, Lock } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
@@ -75,6 +75,18 @@ interface DailyReelProps {
   communityBadgeIds?: string[];
 }
 
+// Get the most recent 9 PM boundary that has passed
+const getCycleCutoff = (): Date => {
+  const now = new Date();
+  const cutoff = new Date(now);
+  if (now.getHours() < 21) {
+    // Before 9 PM today → cutoff is yesterday at 9 PM
+    cutoff.setDate(cutoff.getDate() - 1);
+  }
+  cutoff.setHours(21, 0, 0, 0);
+  return cutoff;
+};
+
 const REACTIONS = [
   { type: 'heart', emoji: '❤️' },
   { type: 'fire', emoji: '🔥' },
@@ -86,6 +98,7 @@ const REACTIONS = [
 const DailyReel = ({ onFriendClick, highlightMoodId, shouldOpenComments, closeFriendsOnly, communityBadgeIds }: DailyReelProps) => {
   const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hasPostedToday, setHasPostedToday] = useState<boolean | null>(null);
   const [currentUser, setCurrentUser] = useState<string | null>(null);
   const [currentUserProfile, setCurrentUserProfile] = useState<Profile | null>(null);
   const [commentText, setCommentText] = useState<Record<string, string>>({});
@@ -154,11 +167,24 @@ const DailyReel = ({ onFriendClick, highlightMoodId, shouldOpenComments, closeFr
         return;
       }
 
-      const now = new Date();
-      const yesterday = new Date(now);
-      yesterday.setDate(yesterday.getDate() - 1);
-      yesterday.setHours(0, 0, 0, 0);
-      const yesterdayISO = yesterday.toISOString();
+      // Time window: posts from the last 9 PM boundary
+      const cutoff = getCycleCutoff();
+      const cutoffISO = cutoff.toISOString();
+
+      // Feed gating: check if user posted in this cycle
+      const { count: userPostCount } = await supabase
+        .from('moods')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .gte('created_at', cutoffISO);
+
+      if (!userPostCount || userPostCount === 0) {
+        setHasPostedToday(false);
+        setFeedItems([]);
+        setLoading(false);
+        return;
+      }
+      setHasPostedToday(true);
 
       let query = supabase
         .from('moods')
@@ -167,7 +193,7 @@ const DailyReel = ({ onFriendClick, highlightMoodId, shouldOpenComments, closeFr
           user:profiles!moods_user_id_fkey(user_id, username, display_name, avatar_url, current_streak)
         `)
         .in('user_id', friendIds)
-        .gte('created_at', yesterdayISO);
+        .gte('created_at', cutoffISO);
 
       query = query.in('visibility', ['friends', 'close_friends']);
 
@@ -336,7 +362,7 @@ const DailyReel = ({ onFriendClick, highlightMoodId, shouldOpenComments, closeFr
           `)
           .in('user_id', friendIds)
           .eq('visibility', 'friends')
-          .gte('created_at', yesterdayISO)
+          .gte('created_at', cutoffISO)
           .order('created_at', { ascending: false })
           .limit(10);
 
@@ -758,6 +784,20 @@ const DailyReel = ({ onFriendClick, highlightMoodId, shouldOpenComments, closeFr
             </div>
           </div>
         ))}
+      </div>
+    );
+  }
+
+  if (!loading && hasPostedToday === false) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
+        <div className="w-16 h-16 bg-secondary rounded-full flex items-center justify-center mb-4">
+          <Lock className="w-8 h-8 text-muted-foreground" />
+        </div>
+        <h3 className="text-lg font-semibold text-foreground mb-2">Post to unlock</h3>
+        <p className="text-muted-foreground text-sm">
+          Share your mood today to see what your friends are up to.
+        </p>
       </div>
     );
   }
