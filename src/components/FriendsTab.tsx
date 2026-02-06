@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { UserPlus, Users, Star, Check, X, Mail, Newspaper, User, Bell, Zap, Award } from "lucide-react";
+import { UserPlus, Users, Star, Check, X, Mail, Newspaper, User, Bell, Zap, Swords } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -11,7 +11,9 @@ import FriendProfileModal from "./FriendProfileModal";
 import NotificationsSheet from "./NotificationsSheet";
 import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
 import { formatDistanceToNow } from "date-fns";
-import { useBadges } from "@/hooks/useBadges";
+import { useNemesis } from "@/hooks/useNemesis";
+import { getLocalDateString } from "@/hooks/useTimeWindow";
+import NemesisRivalry from "./NemesisRivalry";
 
 interface FriendsTabProps {
   initialSelectedFriendId?: string | null;
@@ -39,7 +41,7 @@ interface Nudge {
 }
 
 const FriendsTab = ({ initialSelectedFriendId, initialSelectedMoodId, initialSelectedCommentId, initialShowRequests, initialOpenComments, onClearInitialFriend }: FriendsTabProps) => {
-  const [activeSection, setActiveSection] = useState<"feed" | "friends" | "close" | "requests" | "community">("feed");
+  const [activeSection, setActiveSection] = useState<"feed" | "friends" | "close" | "requests" | "rivals">("feed");
   const [friends, setFriends] = useState<Friendship[]>([]);
   const [pendingRequests, setPendingRequests] = useState<Friendship[]>([]);
   const [closeFriends, setCloseFriends] = useState<CloseFriend[]>([]);
@@ -65,10 +67,9 @@ const FriendsTab = ({ initialSelectedFriendId, initialSelectedMoodId, initialSel
   
   const { user } = useAuth();
   const { toast } = useToast();
-  const { earnedBadges } = useBadges();
-
-  // Get user's equipped badges for community tab
-  const equippedBadgeIds = earnedBadges.filter(b => b.is_equipped).map(b => b.badge_id);
+  const { nemesisId, nemesisProfile, nemesisTodayMood, rivalryStats, setNemesis, removeNemesis } = useNemesis();
+  const [friendRivalries, setFriendRivalries] = useState<any[]>([]);
+  const [userTodayRating, setUserTodayRating] = useState<number>(5);
 
   useEffect(() => {
     if (user) {
@@ -78,7 +79,9 @@ const FriendsTab = ({ initialSelectedFriendId, initialSelectedMoodId, initialSel
         fetchPendingRequests(),
         fetchCloseFriends(),
         fetchMyUsername(),
-        fetchNudges()
+        fetchNudges(),
+        fetchUserTodayRating(),
+        fetchFriendRivalries()
       ]);
     }
   }, [user]);
@@ -93,6 +96,60 @@ const FriendsTab = ({ initialSelectedFriendId, initialSelectedMoodId, initialSel
     if (!user) return;
     const { data } = await supabase.from('profiles').select('username').eq('user_id', user.id).maybeSingle();
     setMyUsername(data?.username || null);
+  };
+
+  const fetchUserTodayRating = async () => {
+    if (!user) return;
+    const today = getLocalDateString();
+    const { data } = await supabase.from('moods').select('rating').eq('user_id', user.id).eq('date', today).maybeSingle();
+    if (data) setUserTodayRating(data.rating);
+  };
+
+  const fetchFriendRivalries = async () => {
+    if (!user) return;
+    try {
+      const { data: friendships } = await supabase
+        .from('friendships')
+        .select('requester_id, addressee_id')
+        .eq('status', 'accepted')
+        .or(`requester_id.eq.${user.id},addressee_id.eq.${user.id}`);
+
+      const fIds = friendships?.map(f => f.requester_id === user.id ? f.addressee_id : f.requester_id) || [];
+      if (fIds.length === 0) return;
+
+      const { data: nemesesData } = await (supabase as any)
+        .from('nemeses')
+        .select('user_id, nemesis_id')
+        .in('user_id', fIds);
+
+      if (!nemesesData || nemesesData.length === 0) { setFriendRivalries([]); return; }
+
+      const allUserIds: string[] = [...new Set(nemesesData.flatMap((n: any) => [n.user_id, n.nemesis_id]) as string[])];
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, display_name, username, avatar_url')
+        .in('user_id', allUserIds);
+
+      const profileMap = new Map((profiles || []).map(p => [p.user_id, p]));
+
+      setFriendRivalries(nemesesData.map((n: any) => ({
+        user_id: n.user_id,
+        nemesis_id: n.nemesis_id,
+        userProfile: profileMap.get(n.user_id) || null,
+        nemesisProfile: profileMap.get(n.nemesis_id) || null,
+      })));
+    } catch { setFriendRivalries([]); }
+  };
+
+  const handleToggleNemesis = async (friendId: string) => {
+    if (!user) return;
+    if (nemesisId === friendId) {
+      await removeNemesis();
+      toast({ title: "Nemesis removed" });
+    } else {
+      await setNemesis(friendId);
+      toast({ title: "Nemesis set. Ready for war." });
+    }
   };
 
   const fetchFriends = async () => {
@@ -380,7 +437,10 @@ const FriendsTab = ({ initialSelectedFriendId, initialSelectedMoodId, initialSel
     await fetchCloseFriends();
   };
 
-  const handleRemoveFriend = async (id: string) => {
+  const handleRemoveFriend = async (id: string, friendUserId?: string) => {
+    if (friendUserId && nemesisId === friendUserId) {
+      await removeNemesis();
+    }
     await supabase.from('friendships').delete().eq('id', id);
     toast({ title: "Friend removed" }); fetchFriends(); fetchCloseFriends();
   };
@@ -476,7 +536,7 @@ const FriendsTab = ({ initialSelectedFriendId, initialSelectedMoodId, initialSel
       <div className="flex gap-2 mb-6 overflow-x-auto no-scrollbar">
         {[
           { id: "feed", label: "Feed", icon: Newspaper, count: null },
-          { id: "community", label: "Tribe", icon: Award, count: null, disabled: equippedBadgeIds.length === 0 },
+          { id: "rivals", label: "Rivals", icon: Swords, count: null },
           { id: "friends", label: "All", icon: Users, count: friends.length },
           { id: "close", label: "Close", icon: Star, count: closeFriends.length },
           { id: "requests", label: "Inbox", icon: Mail, count: pendingRequests.length + nudges.length }
@@ -519,25 +579,70 @@ const FriendsTab = ({ initialSelectedFriendId, initialSelectedMoodId, initialSel
           </motion.div>
         )}
 
-        {activeSection === "community" && (
-          <motion.div key="community" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            {equippedBadgeIds.length > 0 ? (
+        {activeSection === "rivals" && (
+          <motion.div key="rivals" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4">
+            {nemesisProfile ? (
               <>
-                <div className="mb-4 p-3 bg-[#C5A059]/10 border border-[#C5A059]/30">
-                  <p className="text-[10px] text-[#C5A059] uppercase tracking-wider" style={{ fontFamily: "'Space Mono', monospace" }}>
-                    Showing posts from users with your equipped badges
-                  </p>
-                </div>
-                <DailyReel
-                  onFriendClick={setSelectedFriendId}
-                  communityBadgeIds={equippedBadgeIds}
+                <NemesisRivalry
+                  nemesisProfile={nemesisProfile}
+                  nemesisTodayMood={nemesisTodayMood}
+                  userTodayRating={userTodayRating}
+                  rivalryStats={rivalryStats}
                 />
+                {/* Friends' rivalries */}
+                {friendRivalries.length > 0 && (
+                  <div className="mt-6">
+                    <p
+                      className="text-[10px] text-foreground/40 uppercase tracking-[0.2em] mb-3"
+                      style={{ fontFamily: "'Space Mono', monospace" }}
+                    >
+                      Other Rivalries
+                    </p>
+                    <div className="space-y-2">
+                      {friendRivalries.map((r: any) => (
+                        <div
+                          key={r.user_id}
+                          className="bg-foreground/5 border border-foreground/10 p-3 flex items-center justify-between"
+                        >
+                          <div className="flex items-center gap-2">
+                            <div className="w-7 h-7 bg-foreground/10 flex items-center justify-center overflow-hidden">
+                              {r.userProfile?.avatar_url ? (
+                                <img src={r.userProfile.avatar_url} className="w-full h-full object-cover" loading="lazy" />
+                              ) : (
+                                <User className="w-3.5 h-3.5 text-foreground/30" />
+                              )}
+                            </div>
+                            <span className="text-xs font-medium text-foreground" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                              {r.userProfile?.display_name || r.userProfile?.username}
+                            </span>
+                          </div>
+                          <Swords className="w-3 h-3 text-red-500/50" />
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-medium text-foreground" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                              {r.nemesisProfile?.display_name || r.nemesisProfile?.username}
+                            </span>
+                            <div className="w-7 h-7 bg-foreground/10 flex items-center justify-center overflow-hidden">
+                              {r.nemesisProfile?.avatar_url ? (
+                                <img src={r.nemesisProfile.avatar_url} className="w-full h-full object-cover" loading="lazy" />
+                              ) : (
+                                <User className="w-3.5 h-3.5 text-foreground/30" />
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </>
             ) : (
               <div className="text-center py-12">
-                <Award className="w-12 h-12 mx-auto mb-3 text-foreground/20" />
-                <p className="text-foreground/40" style={{ fontFamily: "'Space Mono', monospace" }}>
-                  Equip a badge in Settings to see your tribe
+                <Swords className="w-12 h-12 mx-auto mb-3 text-foreground/20" />
+                <p className="text-foreground/40 mb-2" style={{ fontFamily: "'Space Mono', monospace" }}>
+                  No nemesis set
+                </p>
+                <p className="text-foreground/30 text-xs">
+                  Designate a rival from your friends list to start a rivalry
                 </p>
               </div>
             )}
@@ -583,6 +688,17 @@ const FriendsTab = ({ initialSelectedFriendId, initialSelectedMoodId, initialSel
                     <Zap className="w-4 h-4 fill-current" />
                   </button>
                   <button
+                    onClick={() => handleToggleNemesis(f.friend_profile?.user_id || "")}
+                    className={`p-2 transition-colors ${
+                      nemesisId === f.friend_profile?.user_id
+                        ? "text-red-500"
+                        : "text-foreground/40 hover:text-red-500"
+                    }`}
+                    title="Nemesis"
+                  >
+                    <Swords className="w-4 h-4" />
+                  </button>
+                  <button
                     onClick={() => handleToggleCloseFriend(f.friend_profile?.user_id || "")}
                     className={`p-2 transition-colors ${
                       closeFriends.some(c => c.friend_id === f.friend_profile?.user_id)
@@ -593,7 +709,7 @@ const FriendsTab = ({ initialSelectedFriendId, initialSelectedMoodId, initialSel
                     <Star className={`w-4 h-4 ${closeFriends.some(c => c.friend_id === f.friend_profile?.user_id) ? "fill-current" : ""}`} />
                   </button>
                   <button
-                    onClick={() => handleRemoveFriend(f.id)}
+                    onClick={() => handleRemoveFriend(f.id, f.friend_profile?.user_id)}
                     className="p-2 text-foreground/40 hover:text-red-500 transition-colors"
                   >
                     <X className="w-4 h-4" />

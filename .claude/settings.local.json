@@ -27,7 +27,8 @@
       "Bash(xargs:*)",
       "Bash(npx tsc:*)",
       "Bash(npx vite:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(sort:*)"
     ]
   }
 }

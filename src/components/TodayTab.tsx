@@ -30,6 +30,8 @@ import { Settings } from "lucide-react";
 import MusicSearchModal from "./MusicSearchModal";
 import FriendSelectorModal, { SelectedFriend } from "./FriendSelectorModal";
 import { UserPlus } from "lucide-react";
+import NemesisRivalry from "./NemesisRivalry";
+import { useNemesis } from "@/hooks/useNemesis";
 
 type Visibility = "private" | "friends" | "close_friends";
 
@@ -174,6 +176,7 @@ const TodayTab = ({ onSettingsClick }: TodayTabProps) => {
   const timeWindow = useTimeWindowStatic();
   const { currentStreak } = useStreak();
   const { isClassic } = useTheme();
+  const { nemesisProfile, nemesisTodayMood, rivalryStats } = useNemesis();
 
   // Journal hooks
   const journalPin = useJournalPin();
@@ -849,6 +852,18 @@ const TodayTab = ({ onSettingsClick }: TodayTabProps) => {
                   <MessageCircle className="w-4 h-4" />
                   <span className="text-xs">{commentsCount}</span>
                 </div>
+              </div>
+            )}
+
+            {/* Nemesis Rivalry Display */}
+            {submitted && nemesisProfile && (
+              <div className="w-full mt-4">
+                <NemesisRivalry
+                  nemesisProfile={nemesisProfile}
+                  nemesisTodayMood={nemesisTodayMood}
+                  userTodayRating={submittedRating}
+                  rivalryStats={rivalryStats}
+                />
               </div>
             )}
 

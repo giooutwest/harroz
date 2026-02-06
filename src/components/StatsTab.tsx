@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Flame, Sun, TrendingUp, PieChart, Sparkles, Camera, Edit2, Save, X, User, Clock, Activity, Settings, Share2 } from "lucide-react";
+import { Flame, Sun, TrendingUp, PieChart, Sparkles, Camera, Edit2, Save, X, User, Clock, Activity, Settings, Share2, Swords } from "lucide-react";
 import WeeklyRecap from "./WeeklyRecap";
 import OnThisDay from "./OnThisDay";
 import TagActivityChart from "./TagActivityChart";
@@ -15,6 +15,7 @@ import { Textarea } from "./ui/textarea";
 import ZineProfileView from "./ZineProfileView";
 import { useBadges } from "@/hooks/useBadges";
 import { useTheme } from "@/hooks/useTheme";
+import { useNemesis } from "@/hooks/useNemesis";
 
 interface Stats {
   bestStreak: number;
@@ -67,6 +68,7 @@ const StatsTab = ({ onSettingsClick }: StatsTabProps) => {
   const { toast } = useToast();
   const { earnedBadges } = useBadges();
   const { isClassic } = useTheme();
+  const { nemesisProfile, rivalryStats } = useNemesis();
 
   // Get equipped badges for the current user
   const equippedBadges = earnedBadges.filter(b => b.is_equipped).map(b => b.badge_id);
@@ -393,6 +395,73 @@ const StatsTab = ({ onSettingsClick }: StatsTabProps) => {
       <div className="px-4 mt-4">
         <TagActivityChart />
       </div>
+
+      {/* Rivalry Stats */}
+      {nemesisProfile && rivalryStats && (
+        <div className="px-4 mt-4">
+          {isClassic ? (
+            <div className="bg-card border border-border rounded-2xl p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Swords className="w-5 h-5 text-red-500" />
+                <h3 className="font-bold text-foreground text-sm">
+                  Rivalry vs {nemesisProfile.display_name || nemesisProfile.username}
+                </h3>
+              </div>
+              <div className="grid grid-cols-3 gap-3 mb-3">
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-green-500">{rivalryStats.wins}</p>
+                  <p className="text-xs text-muted-foreground">Wins</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-red-500">{rivalryStats.losses}</p>
+                  <p className="text-xs text-muted-foreground">Losses</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-foreground/50">{rivalryStats.draws}</p>
+                  <p className="text-xs text-muted-foreground">Draws</p>
+                </div>
+              </div>
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>Avg Diff: {rivalryStats.avgDifferential > 0 ? '+' : ''}{rivalryStats.avgDifferential.toFixed(1)}</span>
+                {rivalryStats.currentStreakCount > 1 && rivalryStats.currentStreakType && (
+                  <span className={rivalryStats.currentStreakType === 'W' ? 'text-green-500' : rivalryStats.currentStreakType === 'L' ? 'text-red-500' : ''}>
+                    {rivalryStats.currentStreakCount}{rivalryStats.currentStreakType} Streak
+                  </span>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="border-l-2 border-red-500 pl-3">
+              <div className="flex items-center gap-2 mb-1">
+                <Swords className="w-3 h-3 text-red-500" />
+                <span
+                  className="text-[10px] text-foreground/40 uppercase tracking-[0.2em]"
+                  style={{ fontFamily: "'Space Mono', monospace" }}
+                >
+                  Rivalry_Intel // {nemesisProfile.display_name || nemesisProfile.username}
+                </span>
+              </div>
+              <div className="flex items-baseline gap-6 mt-2">
+                <span className="text-3xl font-black text-green-600" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                  {rivalryStats.wins}W
+                </span>
+                <span className="text-3xl font-black text-red-500" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                  {rivalryStats.losses}L
+                </span>
+                <span className="text-3xl font-black text-foreground/30" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                  {rivalryStats.draws}D
+                </span>
+              </div>
+              <p className="text-[10px] text-foreground/30 mt-1" style={{ fontFamily: "'Space Mono', monospace" }}>
+                Avg_Diff: {rivalryStats.avgDifferential > 0 ? '+' : ''}{rivalryStats.avgDifferential.toFixed(1)} // Last_30d
+                {rivalryStats.currentStreakCount > 1 && rivalryStats.currentStreakType && (
+                  <> // Streak: {rivalryStats.currentStreakCount}{rivalryStats.currentStreakType}</>
+                )}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Edit Profile Modal */}
       <AnimatePresence>

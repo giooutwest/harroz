@@ -17,6 +17,7 @@ import PinEntryModal from "./PinEntryModal";
 import JournalView from "./JournalView";
 import { useJournalPin } from "@/hooks/useJournalPin";
 import { useJournalEntries, useJournalEntry } from "@/hooks/useJournalEntry";
+import { useNemesis } from "@/hooks/useNemesis";
 
 // --- SNAKE PATH MATH ---
 // This calculates the x/y position for any day index automatically.
@@ -80,8 +81,10 @@ const CalendarTab = () => {
   const [isJournalUnlocked, setIsJournalUnlocked] = useState(false);
   const [selectedJournalDate, setSelectedJournalDate] = useState<string | null>(null);
   const [pendingJournalDate, setPendingJournalDate] = useState<string | null>(null);
+  const [nemesisMoods, setNemesisMoods] = useState<Record<string, number>>({});
 
   const { user } = useAuth();
+  const { nemesisId } = useNemesis();
   const journalPin = useJournalPin();
   const { entries: journalEntries } = useJournalEntries(
     currentDate.getFullYear(),
@@ -91,7 +94,7 @@ const CalendarTab = () => {
 
   useEffect(() => {
     if (user) fetchMoods();
-  }, [currentDate, user]);
+  }, [currentDate, user, nemesisId]);
 
   const fetchMoods = async () => {
     if (!user) return;
@@ -195,6 +198,24 @@ const CalendarTab = () => {
     }
 
     setMoods(moodMap);
+
+    // Fetch nemesis moods for this month
+    if (nemesisId) {
+      const { data: nemData } = await supabase
+        .from('moods')
+        .select('date, rating')
+        .eq('user_id', nemesisId)
+        .gte('date', firstDay)
+        .lte('date', lastDay);
+
+      const nemMap: Record<string, number> = {};
+      if (nemData) {
+        nemData.forEach((m: any) => { nemMap[m.date] = m.rating; });
+      }
+      setNemesisMoods(nemMap);
+    } else {
+      setNemesisMoods({});
+    }
   };
 
   const getDaysInMonth = () => {
@@ -354,6 +375,8 @@ const CalendarTab = () => {
             const pos = getSnakePosition(i); // Use our new Snake Math
             const dateStr = formatDate(dayNum);
             const mood = moods[dateStr];
+            const nemRating = nemesisMoods[dateStr];
+            const hasRivalry = mood && nemRating !== undefined;
             const hasJournal = !!journalEntries[dateStr];
             const isToday = dateStr === today;
             const isFuture = dateStr > today;
@@ -391,12 +414,31 @@ const CalendarTab = () => {
                     {String(dayNum).padStart(2, '0')}
                     </span>
 
-                    {/* Mood Background */}
+                    {/* Mood Background — split-color when rivalry exists */}
                     {viewMode === "moods" && mood && (
-                    <div 
-                        className="absolute inset-0 -z-10 rotate-3 rounded-sm border border-white/10 shadow-[0_0_15px_rgba(255,255,255,0.2)]" 
-                        style={{ backgroundColor: getMoodColor(mood.rating) }}
-                    />
+                      hasRivalry ? (
+                        <div className="absolute inset-0 -z-10 rotate-3 rounded-sm border border-white/10 shadow-[0_0_15px_rgba(255,255,255,0.2)] overflow-hidden">
+                          <div className="absolute inset-0 w-1/2" style={{ backgroundColor: getMoodColor(mood.rating) }} />
+                          <div className="absolute inset-0 left-1/2 w-1/2" style={{ backgroundColor: getMoodColor(nemRating!) }} />
+                        </div>
+                      ) : (
+                        <div
+                          className="absolute inset-0 -z-10 rotate-3 rounded-sm border border-white/10 shadow-[0_0_15px_rgba(255,255,255,0.2)]"
+                          style={{ backgroundColor: getMoodColor(mood.rating) }}
+                        />
+                      )
+                    )}
+
+                    {/* W/L/D indicator for rivalry days */}
+                    {viewMode === "moods" && hasRivalry && (
+                      <span
+                        className={`absolute -bottom-1 -right-1 text-[8px] font-black leading-none px-0.5 ${
+                          mood!.rating > nemRating! ? 'text-green-400' : mood!.rating < nemRating! ? 'text-red-400' : 'text-amber-400'
+                        }`}
+                        style={{ fontFamily: "'Space Mono', monospace" }}
+                      >
+                        {mood!.rating > nemRating! ? 'W' : mood!.rating < nemRating! ? 'L' : 'D'}
+                      </span>
                     )}
 
                     {/* Journal Indicator */}
