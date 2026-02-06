@@ -179,27 +179,48 @@ const DailyReel = ({ onFriendClick, highlightMoodId, shouldOpenComments, closeFr
 
       const moodIds = moodData.map((m: any) => m.id);
 
-      const { data: allMoodLikes } = await supabase
-        .from('mood_likes')
+      // --- Parallel fetch: likes, comments, badges, mentions all at once ---
+      const userIdsInFeed = [...new Set(moodData.map((m: any) => m.user_id))];
+
+      const [
+        { data: allMoodLikes },
+        { data: allComments },
         // @ts-ignore
-        .select('mood_id, user_id, reaction_type')
-        .in('mood_id', moodIds);
+        { data: allBadges },
+        mentionsResult,
+      ] = await Promise.all([
+        supabase.from('mood_likes')
+          // @ts-ignore
+          .select('mood_id, user_id, reaction_type')
+          .in('mood_id', moodIds),
+        supabase.from('mood_comments')
+          .select(`
+            id, content, created_at, user_id, parent_id, mood_id,
+            user:profiles(user_id, username, display_name, avatar_url, current_streak)
+          `)
+          .in('mood_id', moodIds)
+          .order('created_at', { ascending: true }),
+        supabase.from('user_badges')
+          .select('user_id, badge_id')
+          .in('user_id', userIdsInFeed)
+          .eq('is_equipped', true),
+        (supabase as any).from('mood_mentions')
+          .select(`
+            mood_id, mentioned_user_id,
+            user:profiles!mood_mentions_mentioned_user_id_fkey(user_id, username, display_name)
+          `)
+          .in('mood_id', moodIds)
+          .then((res: any) => res)
+          .catch(() => ({ data: null })),
+      ]);
 
-      const { data: allComments } = await supabase
-        .from('mood_comments')
-        .select(`
-          id, content, created_at, user_id, parent_id, mood_id,
-          user:profiles(user_id, username, display_name, avatar_url, current_streak)
-        `)
-        .in('mood_id', moodIds)
-        .order('created_at', { ascending: true });
-
+      // Comment likes depend on commentIds, so runs after comments resolve
       const commentIds = (allComments || []).map((c: any) => c.id);
-
       const { data: allCommentLikes } = commentIds.length > 0
         ? await supabase.from('comment_likes').select('comment_id, user_id').in('comment_id', commentIds)
         : { data: [] };
 
+      // --- Build lookup maps ---
       const likesCountByMood = new Map<string, number>();
       const userLikeByMood = new Map<string, any>();
       (allMoodLikes || []).forEach((like: any) => {
@@ -225,15 +246,6 @@ const DailyReel = ({ onFriendClick, highlightMoodId, shouldOpenComments, closeFr
         }
       });
 
-      // Fetch equipped badges for all users in the feed
-      const userIdsInFeed = [...new Set(moodData.map((m: any) => m.user_id))];
-      // @ts-ignore
-      const { data: allBadges } = await supabase
-        .from('user_badges')
-        .select('user_id, badge_id')
-        .in('user_id', userIdsInFeed)
-        .eq('is_equipped', true);
-
       const badgesByUser = new Map<string, string[]>();
       (allBadges || []).forEach((b: any) => {
         const userBadges = badgesByUser.get(b.user_id) || [];
@@ -241,19 +253,8 @@ const DailyReel = ({ onFriendClick, highlightMoodId, shouldOpenComments, closeFr
         badgesByUser.set(b.user_id, userBadges);
       });
 
-      // Fetch mentions for all moods
-      // @ts-ignore - mood_mentions table exists but not in generated types
-      const { data: allMentions } = await supabase
-        .from('mood_mentions')
-        .select(`
-          mood_id,
-          mentioned_user_id,
-          user:profiles!mood_mentions_mentioned_user_id_fkey(user_id, username, display_name)
-        `)
-        .in('mood_id', moodIds);
-
       const mentionsByMood = new Map<string, MoodMention[]>();
-      (allMentions || []).forEach((m: any) => {
+      (mentionsResult?.data || []).forEach((m: any) => {
         const moodMentions = mentionsByMood.get(m.mood_id) || [];
         if (m.user) {
           moodMentions.push({
@@ -265,21 +266,28 @@ const DailyReel = ({ onFriendClick, highlightMoodId, shouldOpenComments, closeFr
         mentionsByMood.set(m.mood_id, moodMentions);
       });
 
-      const moodsWithDetails: Mood[] = await Promise.all(moodData.map(async (m: any) => {
-        let signedPhotoUrl = null;
-        if (m.photo_url) {
-          try {
-            const { data: signedData, error: signedError } = await supabase.storage
-              .from('mood-photos')
-              .createSignedUrl(m.photo_url, 3600);
-            if (!signedError && signedData?.signedUrl) {
-              signedPhotoUrl = signedData.signedUrl;
-            }
-          } catch (err) {
-            console.warn('Failed to generate signed URL for photo:', m.photo_url);
-          }
-        }
+      // --- Batch signed URLs for all mood photos in one request ---
+      const moodPhotoPaths = moodData
+        .filter((m: any) => m.photo_url)
+        .map((m: any) => m.photo_url as string);
 
+      const signedUrlMap = new Map<string, string>();
+      if (moodPhotoPaths.length > 0) {
+        const { data: signedUrls } = await supabase.storage
+          .from('mood-photos')
+          .createSignedUrls(moodPhotoPaths, 3600);
+        if (signedUrls) {
+          signedUrls.forEach((item) => {
+            if (!item.error && item.signedUrl) {
+              signedUrlMap.set(item.path!, item.signedUrl);
+            }
+          });
+        }
+      }
+
+      // --- Map moods synchronously using lookup maps ---
+      const moodsWithDetails: Mood[] = moodData.map((m: any) => {
+        const signedPhotoUrl = m.photo_url ? signedUrlMap.get(m.photo_url) || null : null;
         const moodLikesCount = likesCountByMood.get(m.id) || 0;
         const myMoodLike = userLikeByMood.get(m.id);
         const moodComments = commentsByMood.get(m.id) || [];
@@ -314,8 +322,9 @@ const DailyReel = ({ onFriendClick, highlightMoodId, shouldOpenComments, closeFr
             equipped_badges: badgesByUser.get(m.user_id) || []
           }
         };
-      }));
+      });
 
+      // --- Fit checks with batch signed URLs ---
       let fitChecksWithDetails: FitCheck[] = [];
       if (!closeFriendsOnly) {
         // @ts-ignore
@@ -332,26 +341,29 @@ const DailyReel = ({ onFriendClick, highlightMoodId, shouldOpenComments, closeFr
           .limit(10);
 
         if (fitCheckData) {
-          fitChecksWithDetails = await Promise.all(fitCheckData.map(async (fc: any) => {
-            let signedPhotoUrl = null;
-            if (fc.photo_url) {
-              try {
-                const { data: signedData, error: signedError } = await supabase.storage
-                  .from('mood-photos')
-                  .createSignedUrl(fc.photo_url, 3600);
-                if (!signedError && signedData?.signedUrl) {
-                  signedPhotoUrl = signedData.signedUrl;
-                }
-              } catch (err) {
-                console.warn('Failed to generate signed URL for fit check:', fc.photo_url);
-              }
-            }
+          // Batch signed URLs for fit check photos
+          const fcPhotoPaths = fitCheckData
+            .filter((fc: any) => fc.photo_url)
+            .map((fc: any) => fc.photo_url as string);
 
-            return {
-              ...fc,
-              photo_url: signedPhotoUrl,
-              type: 'fitcheck' as const
-            };
+          const fcSignedUrlMap = new Map<string, string>();
+          if (fcPhotoPaths.length > 0) {
+            const { data: fcSignedUrls } = await supabase.storage
+              .from('mood-photos')
+              .createSignedUrls(fcPhotoPaths, 3600);
+            if (fcSignedUrls) {
+              fcSignedUrls.forEach((item) => {
+                if (!item.error && item.signedUrl) {
+                  fcSignedUrlMap.set(item.path!, item.signedUrl);
+                }
+              });
+            }
+          }
+
+          fitChecksWithDetails = fitCheckData.map((fc: any) => ({
+            ...fc,
+            photo_url: fc.photo_url ? fcSignedUrlMap.get(fc.photo_url) || null : null,
+            type: 'fitcheck' as const,
           }));
         }
       }

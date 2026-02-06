@@ -70,6 +70,7 @@ const ZineFeedPost = ({
               src={photoUrl}
               alt="Post"
               className="w-full h-full object-cover transition-transform group-hover:scale-105"
+              loading="lazy"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-800 to-gray-900">

@@ -146,24 +146,25 @@ const CalendarDayDetail = ({ isOpen, onClose, date, onFriendClick }: CalendarDay
       .eq('user_id', user.id)
       .maybeSingle();
 
-    if (myMoodData) {
-      let signedUrl: string | null = null;
-      if (myMoodData.photo_url) {
-        const { data: signedData } = await supabase.storage
-          .from('mood-photos')
-          .createSignedUrl(myMoodData.photo_url, 3600);
-        signedUrl = signedData?.signedUrl || null;
-      }
+    // Fetch friend moods in parallel with processing own mood
+    const friendMoodsPromise = supabase
+      .from('moods')
+      .select('*')
+      .eq('date', date)
+      .neq('user_id', user.id)
+      .in('visibility', ['friends', 'close_friends']);
 
+    if (myMoodData) {
       const [likesResult, commentsResult, userLikeResult] = await Promise.all([
         supabase.from('mood_likes').select('*', { count: 'exact', head: true }).eq('mood_id', myMoodData.id),
         supabase.from('mood_comments').select('*', { count: 'exact', head: true }).eq('mood_id', myMoodData.id),
         supabase.from('mood_likes').select('*').eq('mood_id', myMoodData.id).eq('user_id', user.id).maybeSingle()
       ]);
 
+      // Signed URL for own mood will be batched below
       const myMoodObj = {
         ...myMoodData,
-        photo_signed_url: signedUrl,
+        photo_signed_url: null as string | null,
         likes_count: likesResult.count || 0,
         comments_count: commentsResult.count || 0,
         user_liked: !!userLikeResult.data
@@ -176,12 +177,16 @@ const CalendarDayDetail = ({ isOpen, onClose, date, onFriendClick }: CalendarDay
       setMyMood(null);
     }
 
-    const { data: friendMoodsData } = await supabase
-      .from('moods')
-      .select('*')
-      .eq('date', date)
-      .neq('user_id', user.id)
-      .in('visibility', ['friends', 'close_friends']);
+    const { data: friendMoodsData } = await friendMoodsPromise;
+
+    // Collect all photo paths for batch signing
+    const allPhotoPaths: string[] = [];
+    if (myMoodData?.photo_url) allPhotoPaths.push(myMoodData.photo_url);
+
+    let profilesMap = new Map<string, any>();
+    let likesCountMap = new Map<string, number>();
+    let userLikedSet = new Set<string>();
+    let commentsCountMap = new Map<string, number>();
 
     if (friendMoodsData && friendMoodsData.length > 0) {
       const userIds = [...new Set(friendMoodsData.map(m => m.user_id).filter(Boolean))] as string[];
@@ -194,24 +199,54 @@ const CalendarDayDetail = ({ isOpen, onClose, date, onFriendClick }: CalendarDay
         supabase.from('mood_comments').select('mood_id').in('mood_id', moodIds)
       ]);
 
-      const profilesMap = new Map((profilesResult.data || []).map(p => [p.user_id, p]));
-      const likesCountMap = new Map<string, number>();
+      profilesMap = new Map((profilesResult.data || []).map(p => [p.user_id, p]));
       (likesResult.data || []).forEach(like => {
         likesCountMap.set(like.mood_id, (likesCountMap.get(like.mood_id) || 0) + 1);
       });
-      const userLikedSet = new Set((userLikesResult.data || []).map(l => l.mood_id));
-      const commentsCountMap = new Map<string, number>();
+      userLikedSet = new Set((userLikesResult.data || []).map(l => l.mood_id));
       (commentsResult.data || []).forEach(c => {
         commentsCountMap.set(c.mood_id, (commentsCountMap.get(c.mood_id) || 0) + 1);
       });
 
-      const enrichedMoods = await Promise.all(friendMoodsData.map(async (mood) => {
+      // Collect friend mood photos that should be signed
+      friendMoodsData.forEach(mood => {
         const profile = profilesMap.get(mood.user_id || '');
-        let signedUrl: string | null = null;
         if (mood.photo_url && profile?.show_photo_to_friends) {
-          const { data } = await supabase.storage.from('mood-photos').createSignedUrl(mood.photo_url, 3600);
-          signedUrl = data?.signedUrl || null;
+          allPhotoPaths.push(mood.photo_url);
         }
+      });
+    }
+
+    // Batch sign all URLs in one request
+    const signedUrlMap = new Map<string, string>();
+    if (allPhotoPaths.length > 0) {
+      const { data: signedUrls } = await supabase.storage
+        .from('mood-photos')
+        .createSignedUrls(allPhotoPaths, 3600);
+      if (signedUrls) {
+        signedUrls.forEach((item) => {
+          if (!item.error && item.signedUrl && item.path) {
+            signedUrlMap.set(item.path, item.signedUrl);
+          }
+        });
+      }
+    }
+
+    // Update own mood's signed URL
+    if (myMoodData?.photo_url) {
+      setMyMood(prev => prev ? {
+        ...prev,
+        photo_signed_url: signedUrlMap.get(myMoodData.photo_url!) || null
+      } : null);
+    }
+
+    // Map friend moods synchronously
+    if (friendMoodsData && friendMoodsData.length > 0) {
+      const enrichedMoods = friendMoodsData.map((mood) => {
+        const profile = profilesMap.get(mood.user_id || '');
+        const signedUrl = (mood.photo_url && profile?.show_photo_to_friends)
+          ? signedUrlMap.get(mood.photo_url) || null
+          : null;
         return {
           ...mood,
           user_profile: profile || null,
@@ -220,7 +255,7 @@ const CalendarDayDetail = ({ isOpen, onClose, date, onFriendClick }: CalendarDay
           comments_count: commentsCountMap.get(mood.id) || 0,
           user_liked: userLikedSet.has(mood.id)
         };
-      }));
+      });
 
       setFriendMoods(enrichedMoods);
     } else {
@@ -448,7 +483,7 @@ const CalendarDayDetail = ({ isOpen, onClose, date, onFriendClick }: CalendarDay
 
         {showPhoto && mood.photo_signed_url && (
           <div className="w-full aspect-square bg-secondary/20 relative pointer-events-none">
-            <img src={mood.photo_signed_url} alt="Mood" className="w-full h-full object-cover" />
+            <img src={mood.photo_signed_url} alt="Mood" className="w-full h-full object-cover" loading="lazy" />
           </div>
         )}
 

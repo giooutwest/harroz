@@ -560,6 +560,7 @@ const FriendsTab = ({ initialSelectedFriendId, initialSelectedMoodId, initialSel
                       <img
                         src={f.friend_profile.avatar_url}
                         className="w-full h-full object-cover"
+                        loading="lazy"
                         onError={(e) => { e.currentTarget.style.display = 'none'; }}
                       />
                     ) : (
@@ -667,7 +668,7 @@ const FriendsTab = ({ initialSelectedFriendId, initialSelectedMoodId, initialSel
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-yellow-500/20 flex items-center justify-center overflow-hidden">
                         {nudge.sender_profile?.avatar_url ? (
-                          <img src={nudge.sender_profile.avatar_url} className="w-full h-full object-cover" />
+                          <img src={nudge.sender_profile.avatar_url} className="w-full h-full object-cover" loading="lazy" />
                         ) : (
                           <User className="w-5 h-5 text-yellow-500" />
                         )}
@@ -788,7 +789,7 @@ const FriendsTab = ({ initialSelectedFriendId, initialSelectedMoodId, initialSel
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-full bg-white/10 overflow-hidden">
                               {suggestion.avatar_url ? (
-                                <img src={suggestion.avatar_url} alt="" className="w-full h-full object-cover" />
+                                <img src={suggestion.avatar_url} alt="" className="w-full h-full object-cover" loading="lazy" />
                               ) : (
                                 <div className="w-full h-full flex items-center justify-center">
                                   <User className="w-5 h-5 text-foreground/40" />

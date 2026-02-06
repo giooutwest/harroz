@@ -110,30 +110,61 @@ const CalendarTab = () => {
       .lte('date', lastDay);
 
     // Fetch moods where user is tagged
-    // @ts-ignore - mood_mentions table exists but not in generated types
-    const { data: taggedMentions }: { data: any[] | null } = await supabase
-      .from('mood_mentions')
-      .select(`
-        mood_id,
-        mood:moods!mood_mentions_mood_id_fkey(
-          id, date, rating, note, photo_url, caption, user_id,
-          user:profiles!moods_user_id_fkey(user_id, username, display_name)
-        )
-      `)
-      .eq('mentioned_user_id', user.id);
+    let taggedMentions: any[] | null = null;
+    try {
+      const res = await (supabase as any)
+        .from('mood_mentions')
+        .select(`
+          mood_id,
+          mood:moods!mood_mentions_mood_id_fkey(
+            id, date, rating, note, photo_url, caption, user_id,
+            user:profiles!moods_user_id_fkey(user_id, username, display_name)
+          )
+        `)
+        .eq('mentioned_user_id', user.id);
+      taggedMentions = res.data;
+    } catch (e) {
+      console.warn('mood_mentions query failed:', e);
+    }
+
+    // Collect all photo paths for batch signing
+    const allPhotoPaths: string[] = [];
+    if (data) {
+      for (const m of data) {
+        if (m.photo_url) allPhotoPaths.push(m.photo_url);
+      }
+    }
+    if (taggedMentions) {
+      for (const mention of taggedMentions) {
+        const mood = mention.mood as any;
+        if (mood?.photo_url) allPhotoPaths.push(mood.photo_url);
+      }
+    }
+
+    // Batch sign all URLs in one request
+    const signedUrlMap = new Map<string, string>();
+    if (allPhotoPaths.length > 0) {
+      const { data: signedUrls } = await supabase.storage
+        .from('mood-photos')
+        .createSignedUrls(allPhotoPaths, 3600);
+      if (signedUrls) {
+        signedUrls.forEach((item) => {
+          if (!item.error && item.signedUrl && item.path) {
+            signedUrlMap.set(item.path, item.signedUrl);
+          }
+        });
+      }
+    }
 
     const moodMap: Record<string, MoodEntry> = {};
 
     // Process own moods
     if (data) {
       for (const m of data) {
-        let signedUrl: string | null = null;
-        if (m.photo_url) {
-          const { data: signedData } = await supabase.storage.from('mood-photos').createSignedUrl(m.photo_url, 3600);
-          signedUrl = signedData?.signedUrl || null;
-        }
         moodMap[m.date] = {
-          date: m.date, rating: m.rating, note: m.note || null, photo_url: m.photo_url, photo_signed_url: signedUrl, caption: m.caption
+          date: m.date, rating: m.rating, note: m.note || null, photo_url: m.photo_url,
+          photo_signed_url: m.photo_url ? signedUrlMap.get(m.photo_url) || null : null,
+          caption: m.caption
         };
       }
     }
@@ -143,23 +174,14 @@ const CalendarTab = () => {
       for (const mention of taggedMentions) {
         const mood = mention.mood as any;
         if (!mood || !mood.date) continue;
-
-        // Filter by date range
         if (mood.date < firstDay || mood.date > lastDay) continue;
-
-        // Only add if user doesn't have their own mood for this date
         if (!moodMap[mood.date]) {
-          let signedUrl: string | null = null;
-          if (mood.photo_url) {
-            const { data: signedData } = await supabase.storage.from('mood-photos').createSignedUrl(mood.photo_url, 3600);
-            signedUrl = signedData?.signedUrl || null;
-          }
           moodMap[mood.date] = {
             date: mood.date,
             rating: mood.rating,
             note: mood.note || null,
             photo_url: mood.photo_url,
-            photo_signed_url: signedUrl,
+            photo_signed_url: mood.photo_url ? signedUrlMap.get(mood.photo_url) || null : null,
             caption: mood.caption,
             isTagged: true,
             taggedByUser: mood.user ? {

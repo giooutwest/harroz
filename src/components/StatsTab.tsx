@@ -291,7 +291,7 @@ const StatsTab = ({ onSettingsClick }: StatsTabProps) => {
             <div className="flex items-center gap-4">
               <div className="w-16 h-16 bg-secondary rounded-full overflow-hidden flex items-center justify-center">
                 {profile?.avatar_url ? (
-                  <img src={profile.avatar_url} className="w-full h-full object-cover" />
+                  <img src={profile.avatar_url} className="w-full h-full object-cover" loading="lazy" />
                 ) : (
                   <User className="w-8 h-8 text-muted-foreground" />
                 )}
@@ -427,7 +427,7 @@ const StatsTab = ({ onSettingsClick }: StatsTabProps) => {
                 <div className="flex flex-col items-center gap-3">
                    <div className={`w-20 h-20 overflow-hidden rounded-full ${isClassic ? 'bg-secondary' : 'bg-white border-2 border-black/10'}`}>
                       {editForm.avatar_url ? (
-                        <img src={editForm.avatar_url} className={`w-full h-full object-cover ${isClassic ? '' : 'grayscale'}`} />
+                        <img src={editForm.avatar_url} className={`w-full h-full object-cover ${isClassic ? '' : 'grayscale'}`} loading="lazy" />
                       ) : (
                         <User className={`w-8 h-8 m-auto mt-6 ${isClassic ? 'text-muted-foreground' : 'text-black/30'}`} />
                       )}

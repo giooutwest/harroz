@@ -400,18 +400,19 @@ const TodayTab = ({ onSettingsClick }: TodayTabProps) => {
       setTodaysMoodId(upsertedMood.id);
     }
 
-    // Save friend mentions if any
+    // Save friend mentions if any (non-blocking - won't prevent mood save)
     if (upsertedMood?.id && taggedFriends.length > 0) {
-      const mentionsToInsert = taggedFriends.map(friend => ({
-        mood_id: upsertedMood.id,
-        mentioned_user_id: friend.user_id
-      }));
+      try {
+        const mentionsToInsert = taggedFriends.map(friend => ({
+          mood_id: upsertedMood.id,
+          mentioned_user_id: friend.user_id
+        }));
 
-      // First delete existing mentions for this mood, then insert new ones
-      // @ts-ignore - mood_mentions table exists but not in generated types
-      await supabase.from('mood_mentions').delete().eq('mood_id', upsertedMood.id);
-      // @ts-ignore - mood_mentions table exists but not in generated types
-      await supabase.from('mood_mentions').insert(mentionsToInsert);
+        await (supabase as any).from('mood_mentions').delete().eq('mood_id', upsertedMood.id);
+        await (supabase as any).from('mood_mentions').insert(mentionsToInsert);
+      } catch (e) {
+        console.warn('Failed to save mentions:', e);
+      }
     }
 
     setIsUploading(false);
@@ -545,7 +546,7 @@ const TodayTab = ({ onSettingsClick }: TodayTabProps) => {
                 >
                   {yesterdaysMood.photo_url ? (
                     <div className="relative w-full aspect-square bg-secondary/30">
-                      <img src={yesterdaysMood.photo_url} alt="Yesterday's mood" className="w-full h-full object-cover" onError={(e) => { e.currentTarget.parentElement!.innerHTML = '<div class="w-full h-48 flex items-center justify-center bg-secondary/30"><svg class="w-10 h-10 text-primary-foreground" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg></div>'; }} />
+                      <img src={yesterdaysMood.photo_url} alt="Yesterday's mood" className="w-full h-full object-cover" loading="lazy" onError={(e) => { e.currentTarget.parentElement!.innerHTML = '<div class="w-full h-48 flex items-center justify-center bg-secondary/30"><svg class="w-10 h-10 text-primary-foreground" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg></div>'; }} />
                     </div>
                   ) : (
                     <div className="w-full h-48 flex items-center justify-center bg-secondary/30"><YesterdayMoodIcon className="w-10 h-10 text-primary-foreground" /></div>
@@ -676,7 +677,7 @@ const TodayTab = ({ onSettingsClick }: TodayTabProps) => {
                   {isVideoMedia ? (
                     <video src={photoPreview} className="w-full h-40 object-cover rounded-xl" autoPlay loop muted playsInline />
                   ) : (
-                    <img src={photoPreview} alt="Selected" className="w-full h-40 object-cover rounded-xl" />
+                    <img src={photoPreview} alt="Selected" className="w-full h-40 object-cover rounded-xl" loading="lazy" />
                   )}
                   <button onClick={removePhoto} className="absolute top-2 right-2 p-1 bg-background/80 rounded-full"><X className="w-4 h-4" /></button>
                   {isVideoMedia && <span className="absolute bottom-2 left-2 px-2 py-1 bg-black/70 text-white text-xs rounded">Video</span>}
@@ -804,6 +805,7 @@ const TodayTab = ({ onSettingsClick }: TodayTabProps) => {
                    alt="Mood"
                    onClick={() => setShowEngagementSheet(true)}
                    className={`w-full aspect-square object-cover mb-4 cursor-pointer hover:opacity-90 transition-opacity rounded-xl`}
+                   loading="lazy"
                  />
                )}
                <p className="text-sm italic">"{caption}"</p>
@@ -821,7 +823,7 @@ const TodayTab = ({ onSettingsClick }: TodayTabProps) => {
                       {recentLikers.map((liker) => (
                         <div key={liker.user_id} className={`w-6 h-6 border-2 border-background overflow-hidden rounded-full`}>
                           {liker.profiles?.avatar_url ? (
-                            <img src={liker.profiles.avatar_url} alt="" className="w-full h-full object-cover" onError={(e) => { e.currentTarget.parentElement!.innerHTML = '<div class="w-full h-full bg-muted flex items-center justify-center"><svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div>'; }} />
+                            <img src={liker.profiles.avatar_url} alt="" className="w-full h-full object-cover" loading="lazy" onError={(e) => { e.currentTarget.parentElement!.innerHTML = '<div class="w-full h-full bg-muted flex items-center justify-center"><svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div>'; }} />
                           ) : (
                             <div className="w-full h-full bg-muted flex items-center justify-center"><User className="w-3 h-3" /></div>
                           )}

@@ -26,7 +26,8 @@
       "Bash(npx supabase:*)",
       "Bash(xargs:*)",
       "Bash(npx tsc:*)",
-      "Bash(npx vite:*)"
+      "Bash(npx vite:*)",
+      "Bash(find:*)"
     ]
   }
 }
