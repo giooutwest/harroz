@@ -14,6 +14,14 @@ interface Update {
   created_at: string;
 }
 
+const V41_CHANGELOG = [
+  { icon: "⚔️", title: "Nemesis VS Animation", description: "When you and your nemesis both log, a dramatic head-to-head animation shows your avatars clashing before revealing the score." },
+  { icon: "🎵", title: "Music Search Revamp", description: "Completely redesigned song search — the search bar now sits at the top with results flowing below. Preview any song before selecting." },
+  { icon: "✅", title: "Verified OG Badge", description: "The OG badge is now a Twitter-style verified checkmark. Customize your badge color from 8 options in the Name Tags section." },
+  { icon: "📸", title: "Photo Upload Fix", description: "Gallery uploads now work reliably on all devices. HEIC, PNG, and all image formats are fully supported." },
+  { icon: "🖼️", title: "Upload UI Overhaul", description: "The photo/video upload menu is now a clean centered popup. Gallery mode has a dedicated file picker screen." },
+];
+
 const V4_CHANGELOG = [
   { icon: "🏆", title: "Badge System Overhaul", description: "Equip ONE badge to display on your profile, feed posts, and comments. Complete quests to unlock rare badges!" },
   { icon: "📊", title: "Activity Insights", description: "New analytics showing how your daily activities correlate with your mood over time." },
@@ -70,7 +78,7 @@ const UpdatesTab = () => {
 
   return (
     <div className="space-y-4">
-      {/* Featured v4.0 Update */}
+      {/* Featured v4.1 Update */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -80,7 +88,7 @@ const UpdatesTab = () => {
           <div className="flex items-center gap-2">
             <Zap className="w-5 h-5 text-[#C5A059]" />
             <h3 className="text-white font-bold" style={{ fontFamily: "'Space Mono', monospace" }}>
-              v4.0 - Major Update
+              v4.1 - Rivalries & Music
             </h3>
           </div>
           <span className="px-2 py-0.5 bg-[#C5A059]/20 text-[#C5A059] text-[10px] uppercase" style={{ fontFamily: "'Space Mono', monospace" }}>
@@ -89,7 +97,7 @@ const UpdatesTab = () => {
         </div>
 
         <p className="text-white/70 text-sm mb-3">
-          Badges, activity insights, referrals, and more!
+          Nemesis head-to-head animations, music search overhaul, verified OG badge, and upload fixes.
         </p>
 
         <button
@@ -110,7 +118,7 @@ const UpdatesTab = () => {
               className="overflow-hidden"
             >
               <div className="space-y-3 pt-3 border-t border-white/10">
-                {V4_CHANGELOG.map((item, index) => (
+                {V41_CHANGELOG.map((item, index) => (
                   <motion.div
                     key={index}
                     initial={{ opacity: 0, x: -10 }}
@@ -139,7 +147,25 @@ const UpdatesTab = () => {
         </span>
       </div>
 
-      {/* Previous Updates */}
+      {/* v4.0 Changelog */}
+      <div>
+        <h4 className="text-[10px] text-white/40 uppercase tracking-[0.2em] mb-3" style={{ fontFamily: "'Space Mono', monospace" }}>
+          v4.0 — Major Update
+        </h4>
+        <div className="p-3 bg-white/5 border border-white/10 space-y-3">
+          {V4_CHANGELOG.map((item, index) => (
+            <div key={index} className="flex gap-3">
+              <span className="text-base">{item.icon}</span>
+              <div>
+                <p className="text-white/70 text-sm font-medium">{item.title}</p>
+                <p className="text-white/40 text-xs">{item.description}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Previous Updates from DB */}
       {updates.length > 0 && (
         <div>
           <h4 className="text-[10px] text-white/40 uppercase tracking-[0.2em] mb-3" style={{ fontFamily: "'Space Mono', monospace" }}>

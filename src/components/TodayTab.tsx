@@ -117,6 +117,7 @@ const TodayTab = ({ onSettingsClick }: TodayTabProps) => {
   const [isUploading, setIsUploading] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
   const [displayName, setDisplayName] = useState<string | null>(null);
+  const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null);
   const [likesCount, setLikesCount] = useState(0);
   const [commentsCount, setCommentsCount] = useState(0);
   const [recentLikers, setRecentLikers] = useState<Liker[]>([]);
@@ -232,10 +233,11 @@ const TodayTab = ({ onSettingsClick }: TodayTabProps) => {
 
   const fetchDisplayName = async () => {
     if (!user) return;
-    const { data } = await supabase.from('profiles').select('display_name, default_visibility').eq('user_id', user.id).maybeSingle();
+    const { data } = await supabase.from('profiles').select('display_name, default_visibility, avatar_url').eq('user_id', user.id).maybeSingle();
     if (data) {
       if (data.display_name) setDisplayName(data.display_name);
       if (data.default_visibility) setVisibility(data.default_visibility as Visibility);
+      if (data.avatar_url) setUserAvatarUrl(data.avatar_url);
     }
   };
 
@@ -286,10 +288,15 @@ const TodayTab = ({ onSettingsClick }: TodayTabProps) => {
   };
 
   const handleCameraCapture = (blob: Blob, previewUrl: string, isVideo?: boolean) => {
-    // Convert blob to File for upload
-    const ext = isVideo ? 'mp4' : 'jpg';
-    const mimeType = isVideo ? 'video/mp4' : 'image/jpeg';
-    const file = new File([blob], `mood-${Date.now()}.${ext}`, { type: mimeType });
+    // If the blob is already a File (from gallery), use it directly to preserve original type
+    let file: File;
+    if (blob instanceof File) {
+      file = blob;
+    } else {
+      const ext = isVideo ? 'mp4' : 'jpg';
+      const mimeType = isVideo ? 'video/mp4' : 'image/jpeg';
+      file = new File([blob], `mood-${Date.now()}.${ext}`, { type: mimeType });
+    }
     setPhoto(file);
     setPhotoPreview(previewUrl);
     setIsVideoMedia(!!isVideo);
@@ -331,8 +338,11 @@ const TodayTab = ({ onSettingsClick }: TodayTabProps) => {
     const today = getLocalDateString();
     const fileExt = photo.name.split('.').pop()?.toLowerCase() || 'jpg';
     const fileName = `${user.id}/${today}-${Date.now()}.${fileExt}`;
-    const { error } = await supabase.storage.from('mood-photos').upload(fileName, photo);
-    if (error) { console.error("Upload failed", error); return null; }
+    const { error } = await supabase.storage.from('mood-photos').upload(fileName, photo, {
+      cacheControl: '3600',
+      upsert: true,
+    });
+    if (error) { console.error("Upload failed:", error.message); return null; }
     return fileName;
   };
 
@@ -863,6 +873,8 @@ const TodayTab = ({ onSettingsClick }: TodayTabProps) => {
                   nemesisTodayMood={nemesisTodayMood}
                   userTodayRating={submittedRating}
                   rivalryStats={rivalryStats}
+                  userDisplayName={displayName}
+                  userAvatarUrl={userAvatarUrl}
                 />
               </div>
             )}

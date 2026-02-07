@@ -1,5 +1,5 @@
-// Spotify Search Service
-// Uses Spotify's public search endpoint (no auth required for basic search)
+// Music Search Service
+// Uses iTunes Search API (free, no auth required, CORS-friendly)
 
 export interface SpotifyTrack {
   id: string;
@@ -9,66 +9,20 @@ export interface SpotifyTrack {
   previewUrl: string | null;
 }
 
-interface SpotifySearchResponse {
-  tracks: {
-    items: Array<{
-      id: string;
-      name: string;
-      artists: Array<{ name: string }>;
-      album: {
-        images: Array<{ url: string; height: number }>;
-      };
-      preview_url: string | null;
-    }>;
-  };
-}
-
-// Get Spotify access token using client credentials
-// Note: For production, you'd want to handle this server-side
-const getAccessToken = async (): Promise<string | null> => {
-  // Check for cached token
-  const cached = sessionStorage.getItem('spotify_token');
-  const expiry = sessionStorage.getItem('spotify_token_expiry');
-
-  if (cached && expiry && Date.now() < parseInt(expiry)) {
-    return cached;
-  }
-
-  try {
-    // Use a public/free Spotify token endpoint or proxy
-    // For this implementation, we'll use the Spotify embed API which doesn't require auth
-    // The embed API provides search functionality through a different approach
-
-    // Alternative: Use Deezer API which is completely free and no auth required
-    return null;
-  } catch (error) {
-    console.error('Failed to get Spotify token:', error);
-    return null;
-  }
-};
-
-// Search using Deezer API (free, no auth required, CORS-friendly)
+// Search using iTunes API (free, no auth required, CORS-friendly)
 export const searchTracks = async (query: string): Promise<SpotifyTrack[]> => {
   if (!query.trim()) return [];
 
   try {
-    // Deezer API is free and doesn't require authentication
     const response = await fetch(
-      `https://api.deezer.com/search?q=${encodeURIComponent(query)}&limit=10&output=jsonp`,
-      { mode: 'no-cors' }
-    );
-
-    // Since Deezer has CORS issues, we'll use a CORS proxy or iTunes API instead
-    // iTunes Search API is free, no auth, and CORS-friendly
-    const itunesResponse = await fetch(
       `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&media=music&entity=song&limit=15`
     );
 
-    if (!itunesResponse.ok) {
+    if (!response.ok) {
       throw new Error('Search failed');
     }
 
-    const data = await itunesResponse.json();
+    const data = await response.json();
 
     return data.results.map((track: any) => ({
       id: track.trackId.toString(),
