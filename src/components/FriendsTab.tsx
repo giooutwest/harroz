@@ -144,11 +144,19 @@ const FriendsTab = ({ initialSelectedFriendId, initialSelectedMoodId, initialSel
   const handleToggleNemesis = async (friendId: string) => {
     if (!user) return;
     if (nemesisId === friendId) {
-      await removeNemesis();
-      toast({ title: "Nemesis removed" });
+      const success = await removeNemesis();
+      if (success) {
+        toast({ title: "Nemesis removed" });
+      } else {
+        toast({ title: "Failed to remove nemesis", variant: "destructive" });
+      }
     } else {
-      await setNemesis(friendId);
-      toast({ title: "Nemesis set. Ready for war." });
+      const success = await setNemesis(friendId);
+      if (success) {
+        toast({ title: "Nemesis set. Ready for war." });
+      } else {
+        toast({ title: "Failed to set nemesis", variant: "destructive" });
+      }
     }
   };
 
@@ -651,16 +659,27 @@ const FriendsTab = ({ initialSelectedFriendId, initialSelectedMoodId, initialSel
 
         {activeSection === "friends" && (
           <motion.div key="friends" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-3">
-            {friends.map(f => (
-              <div
+            {friends.map(f => {
+              const isNemesis = nemesisId === f.friend_profile?.user_id;
+              return (
+              <motion.div
                 key={f.id}
-                className="bg-foreground/5 border border-foreground/10 p-4 flex items-center justify-between"
+                className={`p-4 flex items-center justify-between ${
+                  isNemesis
+                    ? "bg-red-500/10 border-2 border-red-500/50"
+                    : "bg-foreground/5 border border-foreground/10"
+                }`}
+                style={isNemesis ? { boxShadow: "0 0 15px rgba(239, 68, 68, 0.3), inset 0 0 15px rgba(239, 68, 68, 0.05)" } : undefined}
+                animate={isNemesis ? { boxShadow: ["0 0 10px rgba(239, 68, 68, 0.2), inset 0 0 10px rgba(239, 68, 68, 0.03)", "0 0 20px rgba(239, 68, 68, 0.4), inset 0 0 20px rgba(239, 68, 68, 0.08)", "0 0 10px rgba(239, 68, 68, 0.2), inset 0 0 10px rgba(239, 68, 68, 0.03)"] } : undefined}
+                transition={isNemesis ? { duration: 2, repeat: Infinity, ease: "easeInOut" } : undefined}
               >
                 <div
                   className="flex items-center gap-3 cursor-pointer"
                   onClick={() => setSelectedFriendId(f.friend_profile?.user_id || null)}
                 >
-                  <div className="w-10 h-10 bg-white/10 flex items-center justify-center overflow-hidden">
+                  <div className={`w-10 h-10 flex items-center justify-center overflow-hidden ${
+                    isNemesis ? "bg-red-500/20 ring-2 ring-red-500/50" : "bg-white/10"
+                  }`}>
                     {f.friend_profile?.avatar_url ? (
                       <img
                         src={f.friend_profile.avatar_url}
@@ -672,12 +691,22 @@ const FriendsTab = ({ initialSelectedFriendId, initialSelectedMoodId, initialSel
                       <User className="w-5 h-5 text-foreground/40" />
                     )}
                   </div>
-                  <p
-                    className="font-medium text-foreground text-sm uppercase tracking-wide"
-                    style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-                  >
-                    {f.friend_profile?.display_name || f.friend_profile?.username}
-                  </p>
+                  <div>
+                    <p
+                      className="font-medium text-foreground text-sm uppercase tracking-wide"
+                      style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+                    >
+                      {f.friend_profile?.display_name || f.friend_profile?.username}
+                    </p>
+                    {isNemesis && (
+                      <div className="flex items-center gap-1 mt-0.5">
+                        <Swords className="w-3 h-3 text-red-500" />
+                        <span className="text-[10px] text-red-500 uppercase tracking-wider font-bold" style={{ fontFamily: "'Space Mono', monospace" }}>
+                          Nemesis
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div className="flex gap-2">
                   <button
@@ -715,8 +744,9 @@ const FriendsTab = ({ initialSelectedFriendId, initialSelectedMoodId, initialSel
                     <X className="w-4 h-4" />
                   </button>
                 </div>
-              </div>
-            ))}
+              </motion.div>
+              );
+            })}
             {friends.length === 0 && (
               <div className="text-center py-12">
                 <Users className="w-12 h-12 mx-auto mb-3 text-foreground/20" />

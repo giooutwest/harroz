@@ -186,29 +186,46 @@ export const useNemesis = () => {
     if (user) fetchNemesis();
   }, [user, fetchNemesis]);
 
-  const setNemesis = async (friendId: string) => {
-    if (!user) return;
+  const setNemesis = async (friendId: string): Promise<boolean> => {
+    if (!user) return false;
     try {
-      await (supabase as any).from("nemeses").upsert(
-        { user_id: user.id, nemesis_id: friendId },
-        { onConflict: "user_id" }
-      );
+      // Delete existing nemesis first, then insert new one
+      await (supabase as any).from("nemeses").delete().eq("user_id", user.id);
+
+      const { error } = await (supabase as any).from("nemeses").insert({
+        user_id: user.id,
+        nemesis_id: friendId,
+      });
+
+      if (error) {
+        console.error("Failed to set nemesis:", error);
+        return false;
+      }
+
       await fetchNemesis();
+      return true;
     } catch (e) {
-      console.warn("Failed to set nemesis:", e);
+      console.error("Failed to set nemesis:", e);
+      return false;
     }
   };
 
-  const removeNemesis = async () => {
-    if (!user) return;
+  const removeNemesis = async (): Promise<boolean> => {
+    if (!user) return false;
     try {
-      await (supabase as any).from("nemeses").delete().eq("user_id", user.id);
+      const { error } = await (supabase as any).from("nemeses").delete().eq("user_id", user.id);
+      if (error) {
+        console.error("Failed to remove nemesis:", error);
+        return false;
+      }
       setNemesisId(null);
       setNemesisProfile(null);
       setNemesisTodayMood(null);
       setRivalryStats(null);
+      return true;
     } catch (e) {
-      console.warn("Failed to remove nemesis:", e);
+      console.error("Failed to remove nemesis:", e);
+      return false;
     }
   };
 
