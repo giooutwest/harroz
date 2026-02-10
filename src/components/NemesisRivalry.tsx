@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Swords, User } from "lucide-react";
 import type { NemesisProfile, NemesisMood, RivalryStats } from "@/hooks/useNemesis";
+import { useTheme } from "@/hooks/useTheme";
 
 interface NemesisRivalryProps {
   nemesisProfile: NemesisProfile;
@@ -48,6 +49,7 @@ const getMoodColor = (rating: number): string => {
 const NemesisRivalry = ({ nemesisProfile, nemesisTodayMood, userTodayRating, rivalryStats, userDisplayName, userAvatarUrl }: NemesisRivalryProps) => {
   const [showVsAnimation, setShowVsAnimation] = useState(true);
   const [animationPhase, setAnimationPhase] = useState<"enter" | "clash" | "reveal" | "done">("enter");
+  const { isStudio } = useTheme();
   const differential = nemesisTodayMood ? userTodayRating - nemesisTodayMood.rating : null;
   const nemesisName = nemesisProfile.display_name || nemesisProfile.username || "???";
 
@@ -127,7 +129,7 @@ const NemesisRivalry = ({ nemesisProfile, nemesisTodayMood, userTodayRating, riv
                     animate={animationPhase !== "enter" ? { opacity: 1 } : {}}
                     transition={{ delay: 0.2 }}
                     className="text-white text-xs font-bold mt-2 text-center max-w-[80px] truncate"
-                    style={{ fontFamily: "'Space Mono', monospace" }}
+                    style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}
                   >
                     {userDisplayName || "You"}
                   </motion.p>
@@ -147,7 +149,7 @@ const NemesisRivalry = ({ nemesisProfile, nemesisTodayMood, userTodayRating, riv
                   className="relative"
                 >
                   <div className="w-14 h-14 bg-gradient-to-br from-amber-500 to-red-600 rounded-full flex items-center justify-center shadow-xl shadow-red-500/30">
-                    <span className="text-white font-black text-lg" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                    <span className="text-white font-black text-lg" style={isStudio ? undefined : { fontFamily: "'Space Grotesk', sans-serif" }}>
                       VS
                     </span>
                   </div>
@@ -200,7 +202,7 @@ const NemesisRivalry = ({ nemesisProfile, nemesisTodayMood, userTodayRating, riv
                     animate={animationPhase !== "enter" ? { opacity: 1 } : {}}
                     transition={{ delay: 0.2 }}
                     className="text-white text-xs font-bold mt-2 text-center max-w-[80px] truncate"
-                    style={{ fontFamily: "'Space Mono', monospace" }}
+                    style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}
                   >
                     {nemesisName}
                   </motion.p>
@@ -216,7 +218,7 @@ const NemesisRivalry = ({ nemesisProfile, nemesisTodayMood, userTodayRating, riv
               >
                 <p
                   className="text-[10px] text-white/40 uppercase tracking-[0.3em]"
-                  style={{ fontFamily: "'Space Mono', monospace" }}
+                  style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}
                 >
                   Head to Head
                 </p>
@@ -227,7 +229,7 @@ const NemesisRivalry = ({ nemesisProfile, nemesisTodayMood, userTodayRating, riv
                     className={`text-2xl font-black mt-1 ${
                       differential > 0 ? "text-green-400" : differential < 0 ? "text-red-400" : "text-amber-400"
                     }`}
-                    style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+                    style={isStudio ? undefined : { fontFamily: "'Space Grotesk', sans-serif" }}
                   >
                     {userTodayRating} - {nemesisTodayMood?.rating ?? "?"}
                   </motion.p>
@@ -250,7 +252,7 @@ const NemesisRivalry = ({ nemesisProfile, nemesisTodayMood, userTodayRating, riv
           <Swords className="w-4 h-4 text-red-500" />
           <span
             className="text-[10px] text-foreground/60 uppercase tracking-[0.2em]"
-            style={{ fontFamily: "'Space Mono', monospace" }}
+            style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}
           >
             Nemesis // @{nemesisProfile.username || nemesisName}
           </span>
@@ -272,7 +274,7 @@ const NemesisRivalry = ({ nemesisProfile, nemesisTodayMood, userTodayRating, riv
                     className="absolute top-3 right-3 w-10 h-10 flex items-center justify-center font-black text-white text-sm"
                     style={{
                       backgroundColor: getMoodColor(nemesisTodayMood.rating),
-                      fontFamily: "'Space Mono', monospace",
+                      ...(isStudio ? {} : { fontFamily: "'Space Mono', monospace" }),
                     }}
                   >
                     {nemesisTodayMood.rating}
@@ -300,7 +302,7 @@ const NemesisRivalry = ({ nemesisProfile, nemesisTodayMood, userTodayRating, riv
                     className="w-12 h-12 flex items-center justify-center font-black text-white text-lg"
                     style={{
                       backgroundColor: getMoodColor(nemesisTodayMood.rating),
-                      fontFamily: "'Space Mono', monospace",
+                      ...(isStudio ? {} : { fontFamily: "'Space Mono', monospace" }),
                     }}
                   >
                     {nemesisTodayMood.rating}
@@ -318,7 +320,7 @@ const NemesisRivalry = ({ nemesisProfile, nemesisTodayMood, userTodayRating, riv
               </motion.div>
               <p
                 className="text-[10px] text-foreground/30 uppercase tracking-[0.2em]"
-                style={{ fontFamily: "'Space Mono', monospace" }}
+                style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}
               >
                 Awaiting intel...
               </p>
@@ -336,14 +338,14 @@ const NemesisRivalry = ({ nemesisProfile, nemesisTodayMood, userTodayRating, riv
               <div className="text-center flex-1">
                 <p
                   className="text-[10px] text-foreground/40 uppercase tracking-wider mb-1"
-                  style={{ fontFamily: "'Space Mono', monospace" }}
+                  style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}
                 >
                   You
                 </p>
                 <p
                   className="text-4xl font-black"
                   style={{
-                    fontFamily: "'Space Grotesk', sans-serif",
+                    ...(isStudio ? {} : { fontFamily: "'Space Grotesk', sans-serif" }),
                     color: getMoodColor(userTodayRating),
                   }}
                 >
@@ -353,7 +355,7 @@ const NemesisRivalry = ({ nemesisProfile, nemesisTodayMood, userTodayRating, riv
               <div className="px-4">
                 <span
                   className="text-foreground/20 text-xs uppercase tracking-wider"
-                  style={{ fontFamily: "'Space Mono', monospace" }}
+                  style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}
                 >
                   vs
                 </span>
@@ -361,14 +363,14 @@ const NemesisRivalry = ({ nemesisProfile, nemesisTodayMood, userTodayRating, riv
               <div className="text-center flex-1">
                 <p
                   className="text-[10px] text-foreground/40 uppercase tracking-wider mb-1"
-                  style={{ fontFamily: "'Space Mono', monospace" }}
+                  style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}
                 >
                   {nemesisProfile.username || nemesisName}
                 </p>
                 <p
                   className="text-4xl font-black"
                   style={{
-                    fontFamily: "'Space Grotesk', sans-serif",
+                    ...(isStudio ? {} : { fontFamily: "'Space Grotesk', sans-serif" }),
                     color: getMoodColor(nemesisTodayMood.rating),
                   }}
                 >
@@ -382,7 +384,7 @@ const NemesisRivalry = ({ nemesisProfile, nemesisTodayMood, userTodayRating, riv
                 className={`text-2xl font-black ${
                   differential > 0 ? "text-green-500" : differential < 0 ? "text-red-500" : "text-amber-500"
                 }`}
-                style={{ fontFamily: "'Space Mono', monospace" }}
+                style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}
               >
                 {differential > 0 ? "+" : ""}{differential} DIFFERENTIAL
               </p>
@@ -397,7 +399,7 @@ const NemesisRivalry = ({ nemesisProfile, nemesisTodayMood, userTodayRating, riv
                     ? "bg-red-500/10 text-red-500 border border-red-500/30"
                     : "bg-amber-500/10 text-amber-500 border border-amber-500/30"
                 }`}
-                style={{ fontFamily: "'Space Mono', monospace" }}
+                style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}
               >
                 {statusLabel}
               </span>
@@ -417,7 +419,7 @@ const NemesisRivalry = ({ nemesisProfile, nemesisTodayMood, userTodayRating, riv
             <div className="flex items-center gap-3">
               <span
                 className="text-[10px] text-foreground/40 uppercase tracking-wider"
-                style={{ fontFamily: "'Space Mono', monospace" }}
+                style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}
               >
                 <span className="text-green-500">{rivalryStats.wins}W</span>
                 {" - "}
@@ -451,7 +453,7 @@ const NemesisRivalry = ({ nemesisProfile, nemesisTodayMood, userTodayRating, riv
                     ? "text-red-500"
                     : "text-foreground/30"
                 }`}
-                style={{ fontFamily: "'Space Mono', monospace" }}
+                style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}
               >
                 {rivalryStats.currentStreakCount}{rivalryStats.currentStreakType}
               </span>

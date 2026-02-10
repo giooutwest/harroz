@@ -13,6 +13,7 @@ import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { Textarea } from "./ui/textarea";
 import ZineProfileView from "./ZineProfileView";
+import StudioProfileView from "./StudioProfileView";
 import { useBadges } from "@/hooks/useBadges";
 import { useTheme } from "@/hooks/useTheme";
 import { useNemesis } from "@/hooks/useNemesis";
@@ -286,84 +287,23 @@ const StatsTab = ({ onSettingsClick }: StatsTabProps) => {
   return (
     <div className="pb-28">
       {isClassic ? (
-        /* Classic Profile View - Simple cards */
-        <div className="px-6 py-8 bg-background">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 bg-secondary rounded-full overflow-hidden flex items-center justify-center">
-                {profile?.avatar_url ? (
-                  <img src={profile.avatar_url} className="w-full h-full object-cover" loading="lazy" />
-                ) : (
-                  <User className="w-8 h-8 text-muted-foreground" />
-                )}
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-foreground">{profile?.display_name || "You"}</h1>
-                {profile?.username && <p className="text-sm text-muted-foreground">@{profile.username}</p>}
-              </div>
-            </div>
-            <button onClick={onSettingsClick} className="p-2 rounded-full bg-secondary hover:bg-secondary/80 transition-colors">
-              <Settings className="w-5 h-5 text-muted-foreground" />
-            </button>
-          </div>
-
-          {/* Streak */}
-          {stats.currentStreak > 0 && (
-            <div className="bg-card border border-border rounded-2xl p-4 mb-4 flex items-center gap-3">
-              <div className="w-12 h-12 bg-orange-50 rounded-full flex items-center justify-center">
-                <Flame className="w-6 h-6 text-orange-500 fill-orange-500" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground">{stats.currentStreak} Day Streak</p>
-                <p className="text-sm text-muted-foreground">Keep it going!</p>
-              </div>
-            </div>
-          )}
-
-          {/* Stats Grid */}
-          <div className="grid grid-cols-2 gap-3 mb-4">
-            <div className="bg-card border border-border rounded-2xl p-4">
-              <Flame className="w-5 h-5 text-orange-500 mb-2" />
-              <p className="text-2xl font-bold text-foreground">{stats.bestStreak}</p>
-              <p className="text-xs text-muted-foreground">Best Streak</p>
-            </div>
-            <div className="bg-card border border-border rounded-2xl p-4">
-              <Sun className="w-5 h-5 text-yellow-500 mb-2" />
-              <p className="text-2xl font-bold text-foreground">{stats.totalGoodDays}</p>
-              <p className="text-xs text-muted-foreground">Sunny Days</p>
-            </div>
-            <div className="bg-card border border-border rounded-2xl p-4">
-              <TrendingUp className="w-5 h-5 text-blue-500 mb-2" />
-              <p className="text-2xl font-bold text-foreground">{stats.yearlyAverage.toFixed(1)}</p>
-              <p className="text-xs text-muted-foreground">Average Mood</p>
-            </div>
-            <div className="bg-card border border-border rounded-2xl p-4">
-              <Activity className="w-5 h-5 text-green-500 mb-2" />
-              <p className="text-2xl font-bold text-foreground">{stats.totalEntries}</p>
-              <p className="text-xs text-muted-foreground">Total Entries</p>
-            </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex gap-3">
-            <button
-              onClick={() => setIsEditing(true)}
-              className="flex-1 py-3 bg-secondary text-foreground font-medium rounded-xl hover:bg-secondary/80 transition-colors text-sm"
-            >
-              Edit Profile
-            </button>
-            <button
-              onClick={() => setShowWeeklyRecap(true)}
-              className="py-3 px-4 bg-primary text-primary-foreground font-medium rounded-xl hover:bg-primary/90 transition-colors text-sm flex items-center gap-2"
-            >
-              <Share2 className="w-4 h-4" />
-              Weekly Recap
-            </button>
-          </div>
-        </div>
+        <StudioProfileView
+          displayName={profile?.display_name || null}
+          username={profile?.username || null}
+          avatarUrl={profile?.avatar_url || null}
+          currentStreak={stats.currentStreak}
+          bestStreak={stats.bestStreak}
+          totalGoodDays={stats.totalGoodDays}
+          totalEntries={stats.totalEntries}
+          yearlyAverage={stats.yearlyAverage}
+          equippedBadges={equippedBadges}
+          onEditClick={() => setIsEditing(true)}
+          onSettingsClick={onSettingsClick || (() => {})}
+          onWeeklyRecapClick={() => setShowWeeklyRecap(true)}
+          nemesisProfile={nemesisProfile}
+          rivalryStats={rivalryStats}
+        />
       ) : (
-        /* Zine Profile View - Dossier style */
         <>
           <ZineProfileView
             displayName={profile?.display_name || null}
@@ -396,70 +336,37 @@ const StatsTab = ({ onSettingsClick }: StatsTabProps) => {
         <TagActivityChart />
       </div>
 
-      {/* Rivalry Stats */}
-      {nemesisProfile && rivalryStats && (
+      {/* Rivalry Stats — Zine only (Studio shows it inside StudioProfileView) */}
+      {!isClassic && nemesisProfile && rivalryStats && (
         <div className="px-4 mt-4">
-          {isClassic ? (
-            <div className="bg-card border border-border rounded-2xl p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Swords className="w-5 h-5 text-red-500" />
-                <h3 className="font-bold text-foreground text-sm">
-                  Rivalry vs {nemesisProfile.display_name || nemesisProfile.username}
-                </h3>
-              </div>
-              <div className="grid grid-cols-3 gap-3 mb-3">
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-green-500">{rivalryStats.wins}</p>
-                  <p className="text-xs text-muted-foreground">Wins</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-red-500">{rivalryStats.losses}</p>
-                  <p className="text-xs text-muted-foreground">Losses</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-foreground/50">{rivalryStats.draws}</p>
-                  <p className="text-xs text-muted-foreground">Draws</p>
-                </div>
-              </div>
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>Avg Diff: {rivalryStats.avgDifferential > 0 ? '+' : ''}{rivalryStats.avgDifferential.toFixed(1)}</span>
-                {rivalryStats.currentStreakCount > 1 && rivalryStats.currentStreakType && (
-                  <span className={rivalryStats.currentStreakType === 'W' ? 'text-green-500' : rivalryStats.currentStreakType === 'L' ? 'text-red-500' : ''}>
-                    {rivalryStats.currentStreakCount}{rivalryStats.currentStreakType} Streak
-                  </span>
-                )}
-              </div>
+          <div className="border-l-2 border-red-500 pl-3">
+            <div className="flex items-center gap-2 mb-1">
+              <Swords className="w-3 h-3 text-red-500" />
+              <span
+                className="text-[10px] text-foreground/40 uppercase tracking-[0.2em]"
+                style={{ fontFamily: "'Space Mono', monospace" }}
+              >
+                Rivalry_Intel // {nemesisProfile.display_name || nemesisProfile.username}
+              </span>
             </div>
-          ) : (
-            <div className="border-l-2 border-red-500 pl-3">
-              <div className="flex items-center gap-2 mb-1">
-                <Swords className="w-3 h-3 text-red-500" />
-                <span
-                  className="text-[10px] text-foreground/40 uppercase tracking-[0.2em]"
-                  style={{ fontFamily: "'Space Mono', monospace" }}
-                >
-                  Rivalry_Intel // {nemesisProfile.display_name || nemesisProfile.username}
-                </span>
-              </div>
-              <div className="flex items-baseline gap-6 mt-2">
-                <span className="text-3xl font-black text-green-600" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-                  {rivalryStats.wins}W
-                </span>
-                <span className="text-3xl font-black text-red-500" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-                  {rivalryStats.losses}L
-                </span>
-                <span className="text-3xl font-black text-foreground/30" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-                  {rivalryStats.draws}D
-                </span>
-              </div>
-              <p className="text-[10px] text-foreground/30 mt-1" style={{ fontFamily: "'Space Mono', monospace" }}>
-                Avg_Diff: {rivalryStats.avgDifferential > 0 ? '+' : ''}{rivalryStats.avgDifferential.toFixed(1)} // Last_30d
-                {rivalryStats.currentStreakCount > 1 && rivalryStats.currentStreakType && (
-                  <> // Streak: {rivalryStats.currentStreakCount}{rivalryStats.currentStreakType}</>
-                )}
-              </p>
+            <div className="flex items-baseline gap-6 mt-2">
+              <span className="text-3xl font-black text-green-600" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                {rivalryStats.wins}W
+              </span>
+              <span className="text-3xl font-black text-red-500" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                {rivalryStats.losses}L
+              </span>
+              <span className="text-3xl font-black text-foreground/30" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                {rivalryStats.draws}D
+              </span>
             </div>
-          )}
+            <p className="text-[10px] text-foreground/30 mt-1" style={{ fontFamily: "'Space Mono', monospace" }}>
+              Avg_Diff: {rivalryStats.avgDifferential > 0 ? '+' : ''}{rivalryStats.avgDifferential.toFixed(1)} // Last_30d
+              {rivalryStats.currentStreakCount > 1 && rivalryStats.currentStreakType && (
+                <> // Streak: {rivalryStats.currentStreakCount}{rivalryStats.currentStreakType}</>
+              )}
+            </p>
+          </div>
         </div>
       )}
 

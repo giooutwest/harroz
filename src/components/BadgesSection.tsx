@@ -3,9 +3,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Award, Lock, ChevronDown, ChevronUp, Tag, Palette } from "lucide-react";
 import { useBadges, BADGES, Badge, OG_BADGE_COLORS } from "@/hooks/useBadges";
 import BadgeDisplay from "./BadgeDisplay";
+import { useTheme } from "@/hooks/useTheme";
 
 const BadgesSection = () => {
   const { earnedBadges, progress, loading, toggleEquipped, ogBadgeColor, saveOgBadgeColor } = useBadges();
+  const { isStudio } = useTheme();
   const [showQuests, setShowQuests] = useState(true);
   const [showColorPicker, setShowColorPicker] = useState(false);
 
@@ -37,7 +39,7 @@ const BadgesSection = () => {
   if (loading) {
     return (
       <div className="p-4 text-center">
-        <p className="text-white/40 text-sm" style={{ fontFamily: "'Space Mono', monospace" }}>
+        <p className="text-foreground/40 text-sm" style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}>
           Loading...
         </p>
       </div>
@@ -47,17 +49,17 @@ const BadgesSection = () => {
   return (
     <div className="space-y-4">
       {/* Current Name Tag Preview */}
-      <div className="p-4 bg-white/5 border border-white/10">
+      <div className="p-4 bg-foreground/5 border border-foreground/10">
         <div className="flex items-center gap-2 mb-3">
           <Tag className="w-4 h-4 text-[#C5A059]" />
-          <span className="text-white text-sm" style={{ fontFamily: "'Space Mono', monospace" }}>
+          <span className="text-foreground text-sm" style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}>
             Your_Name_Tag
           </span>
         </div>
 
         <div className="flex items-center gap-2 p-3 bg-black/30 rounded-lg">
-          <div className="w-8 h-8 bg-white/20 rounded-full" />
-          <span className="text-white font-medium">Your Name</span>
+          <div className="w-8 h-8 bg-foreground/20 rounded-full" />
+          <span className="text-foreground font-medium">Your Name</span>
           {equippedBadge ? (
             <BadgeDisplay
               badgeIds={[equippedBadge.badge_id]}
@@ -66,11 +68,11 @@ const BadgesSection = () => {
               customColor={equippedBadgeData?.id === "og" ? ogBadgeColor : undefined}
             />
           ) : (
-            <span className="text-white/30 text-xs italic">No tag equipped</span>
+            <span className="text-foreground/30 text-xs italic">No tag equipped</span>
           )}
         </div>
 
-        <p className="text-white/30 text-[10px] mt-2" style={{ fontFamily: "'Space Mono', monospace" }}>
+        <p className="text-foreground/30 text-[10px] mt-2" style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}>
           This shows next to your name everywhere
         </p>
       </div>
@@ -78,7 +80,7 @@ const BadgesSection = () => {
       {/* Unlocked Name Tags */}
       {earnedBadgesList.length > 0 ? (
         <div>
-          <h5 className="text-[10px] text-white/40 uppercase tracking-[0.2em] mb-3" style={{ fontFamily: "'Space Mono', monospace" }}>
+          <h5 className="text-[10px] text-foreground/40 uppercase tracking-[0.2em] mb-3" style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}>
             Unlocked_Tags ({earnedBadgesList.length})
           </h5>
           <div className="space-y-2">
@@ -89,8 +91,8 @@ const BadgesSection = () => {
                   whileTap={{ scale: 0.98 }}
                   className={`w-full p-3 border text-left transition-all flex items-center gap-3 ${
                     isEquipped(badge.id)
-                      ? "bg-white/10 border-[#C5A059]/50"
-                      : "bg-white/5 border-white/10 hover:border-white/20"
+                      ? "bg-foreground/10 border-[#C5A059]/50"
+                      : "bg-foreground/5 border-foreground/10 hover:border-foreground/20"
                   }`}
                 >
                   {/* Tag Preview */}
@@ -116,7 +118,7 @@ const BadgesSection = () => {
                   {/* Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className="text-white font-bold text-sm" style={{ fontFamily: "'Space Mono', monospace" }}>
+                      <p className="text-foreground font-bold text-sm" style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}>
                         {badge.name}
                       </p>
                       <span
@@ -130,7 +132,7 @@ const BadgesSection = () => {
                         {badge.rarity}
                       </span>
                     </div>
-                    <p className="text-white/40 text-[10px] leading-tight mt-0.5 truncate">
+                    <p className="text-foreground/40 text-[10px] leading-tight mt-0.5 truncate">
                       {badge.description}
                     </p>
                   </div>
@@ -140,14 +142,14 @@ const BadgesSection = () => {
                     {isEquipped(badge.id) ? (
                       <span
                         className="text-[10px] px-2 py-1 bg-[#C5A059]/20 text-[#C5A059] uppercase rounded"
-                        style={{ fontFamily: "'Space Mono', monospace" }}
+                        style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}
                       >
                         Active
                       </span>
                     ) : (
                       <span
-                        className="text-[10px] px-2 py-1 bg-white/5 text-white/40 uppercase rounded"
-                        style={{ fontFamily: "'Space Mono', monospace" }}
+                        className="text-[10px] px-2 py-1 bg-foreground/5 text-foreground/40 uppercase rounded"
+                        style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}
                       >
                         Tap to use
                       </span>
@@ -162,10 +164,10 @@ const BadgesSection = () => {
                     animate={{ height: "auto", opacity: 1 }}
                     className="overflow-hidden"
                   >
-                    <div className="p-3 bg-white/5 border-x border-b border-white/10">
+                    <div className="p-3 bg-foreground/5 border-x border-b border-foreground/10">
                       <button
                         onClick={() => setShowColorPicker(!showColorPicker)}
-                        className="w-full flex items-center justify-between text-xs text-white/60 mb-2"
+                        className="w-full flex items-center justify-between text-xs text-foreground/60 mb-2"
                       >
                         <span className="flex items-center gap-2">
                           <Palette className="w-3 h-3" />
@@ -190,7 +192,7 @@ const BadgesSection = () => {
                                   title={colorOption.name}
                                   className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
                                     ogBadgeColor === colorOption.color
-                                      ? "ring-2 ring-white ring-offset-2 ring-offset-black"
+                                      ? "ring-2 ring-foreground ring-offset-2 ring-offset-background"
                                       : "hover:scale-110"
                                   }`}
                                   style={{ backgroundColor: colorOption.color }}
@@ -203,7 +205,7 @@ const BadgesSection = () => {
                                 </button>
                               ))}
                             </div>
-                            <p className="text-white/30 text-[9px] mt-2" style={{ fontFamily: "'Space Mono', monospace" }}>
+                            <p className="text-foreground/30 text-[9px] mt-2" style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}>
                               Pick your badge color
                             </p>
                           </motion.div>
@@ -217,12 +219,12 @@ const BadgesSection = () => {
           </div>
         </div>
       ) : (
-        <div className="p-4 bg-white/5 border border-white/10 text-center">
-          <Award className="w-8 h-8 mx-auto mb-2 text-white/30" />
-          <p className="text-white/40 text-sm" style={{ fontFamily: "'Space Mono', monospace" }}>
+        <div className="p-4 bg-foreground/5 border border-foreground/10 text-center">
+          <Award className="w-8 h-8 mx-auto mb-2 text-foreground/30" />
+          <p className="text-foreground/40 text-sm" style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}>
             No name tags yet
           </p>
-          <p className="text-white/30 text-xs mt-1">Complete quests to unlock tags!</p>
+          <p className="text-foreground/30 text-xs mt-1">Complete quests to unlock tags!</p>
         </div>
       )}
 
@@ -230,8 +232,8 @@ const BadgesSection = () => {
       <div>
         <button
           onClick={() => setShowQuests(!showQuests)}
-          className="w-full flex items-center justify-between text-[10px] text-white/40 uppercase tracking-[0.2em] mb-3"
-          style={{ fontFamily: "'Space Mono', monospace" }}
+          className="w-full flex items-center justify-between text-[10px] text-foreground/40 uppercase tracking-[0.2em] mb-3"
+          style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}
         >
           <span className="flex items-center gap-2">
             <Lock className="w-3 h-3" /> Locked_Tags ({lockedBadges.length})
@@ -254,20 +256,20 @@ const BadgesSection = () => {
                 return (
                   <div
                     key={badge.id}
-                    className="p-3 bg-white/5 border border-white/10 opacity-60"
+                    className="p-3 bg-foreground/5 border border-foreground/10 opacity-60"
                   >
                     <div className="flex items-center gap-3">
                       {/* Locked Icon */}
                       <div
-                        className="w-12 h-12 flex items-center justify-center rounded-lg bg-white/5 border border-white/10"
+                        className="w-12 h-12 flex items-center justify-center rounded-lg bg-foreground/5 border border-foreground/10"
                       >
-                        <Lock className="w-5 h-5 text-white/30" />
+                        <Lock className="w-5 h-5 text-foreground/30" />
                       </div>
 
                       {/* Info */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <p className="text-white/60 font-bold text-sm" style={{ fontFamily: "'Space Mono', monospace" }}>
+                          <p className="text-foreground/60 font-bold text-sm" style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}>
                             {badge.name}
                           </p>
                           {badge.type === "verified" ? (
@@ -281,18 +283,18 @@ const BadgesSection = () => {
                             <span className="text-lg opacity-50">{badge.icon}</span>
                           )}
                         </div>
-                        <p className="text-white/40 text-[10px]">
+                        <p className="text-foreground/40 text-[10px]">
                           {badge.quest?.description}
                         </p>
 
                         {/* Progress bar */}
                         {prog && (
                           <div className="mt-2">
-                            <div className="flex justify-between text-[9px] text-white/40 mb-1" style={{ fontFamily: "'Space Mono', monospace" }}>
+                            <div className="flex justify-between text-[9px] text-foreground/40 mb-1" style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}>
                               <span>{prog.current}/{prog.target}</span>
                               <span>{Math.round(progressPercent)}%</span>
                             </div>
-                            <div className="h-1 bg-white/10 rounded-full overflow-hidden">
+                            <div className="h-1 bg-foreground/10 rounded-full overflow-hidden">
                               <motion.div
                                 initial={{ width: 0 }}
                                 animate={{ width: `${progressPercent}%` }}
@@ -309,8 +311,8 @@ const BadgesSection = () => {
               })}
 
               {lockedBadges.length === 0 && (
-                <div className="p-4 text-center border border-dashed border-white/10">
-                  <p className="text-white/40 text-sm" style={{ fontFamily: "'Space Mono', monospace" }}>
+                <div className="p-4 text-center border border-dashed border-foreground/10">
+                  <p className="text-foreground/40 text-sm" style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}>
                     All tags unlocked!
                   </p>
                 </div>

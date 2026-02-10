@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { formatDistanceToNow } from "date-fns";
 import { APP_VERSION } from "@/lib/appVersion";
+import { useTheme } from "@/hooks/useTheme";
 
 interface Update {
   id: string;
@@ -35,6 +36,7 @@ const UpdatesTab = () => {
   const [loading, setLoading] = useState(true);
   const [showFullChangelog, setShowFullChangelog] = useState(false);
   const { user } = useAuth();
+  const { isStudio } = useTheme();
 
   useEffect(() => {
     fetchUpdates();
@@ -87,23 +89,23 @@ const UpdatesTab = () => {
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <Zap className="w-5 h-5 text-[#C5A059]" />
-            <h3 className="text-white font-bold" style={{ fontFamily: "'Space Mono', monospace" }}>
+            <h3 className="text-foreground font-bold" style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}>
               v4.1 - Rivalries & Music
             </h3>
           </div>
-          <span className="px-2 py-0.5 bg-[#C5A059]/20 text-[#C5A059] text-[10px] uppercase" style={{ fontFamily: "'Space Mono', monospace" }}>
+          <span className="px-2 py-0.5 bg-[#C5A059]/20 text-[#C5A059] text-[10px] uppercase" style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}>
             New
           </span>
         </div>
 
-        <p className="text-white/70 text-sm mb-3">
+        <p className="text-foreground/70 text-sm mb-3">
           Nemesis head-to-head animations, music search overhaul, verified OG badge, and upload fixes.
         </p>
 
         <button
           onClick={() => setShowFullChangelog(!showFullChangelog)}
           className="w-full flex items-center justify-between py-2 text-[#C5A059] text-xs"
-          style={{ fontFamily: "'Space Mono', monospace" }}
+          style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}
         >
           <span>{showFullChangelog ? "Hide details" : "View full changelog"}</span>
           {showFullChangelog ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -117,7 +119,7 @@ const UpdatesTab = () => {
               exit={{ height: 0, opacity: 0 }}
               className="overflow-hidden"
             >
-              <div className="space-y-3 pt-3 border-t border-white/10">
+              <div className="space-y-3 pt-3 border-t border-foreground/10">
                 {V41_CHANGELOG.map((item, index) => (
                   <motion.div
                     key={index}
@@ -128,8 +130,8 @@ const UpdatesTab = () => {
                   >
                     <span className="text-lg">{item.icon}</span>
                     <div>
-                      <p className="text-white text-sm font-medium">{item.title}</p>
-                      <p className="text-white/50 text-xs">{item.description}</p>
+                      <p className="text-foreground text-sm font-medium">{item.title}</p>
+                      <p className="text-foreground/50 text-xs">{item.description}</p>
                     </div>
                   </motion.div>
                 ))}
@@ -140,25 +142,25 @@ const UpdatesTab = () => {
       </motion.div>
 
       {/* Current Version Display */}
-      <div className="flex items-center justify-center p-3 bg-white/5 border border-white/10">
-        <Tag className="w-4 h-4 mr-2 text-white/40" />
-        <span className="text-white/60 text-sm" style={{ fontFamily: "'Space Mono', monospace" }}>
+      <div className="flex items-center justify-center p-3 bg-foreground/5 border border-foreground/10">
+        <Tag className="w-4 h-4 mr-2 text-foreground/40" />
+        <span className="text-foreground/60 text-sm" style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}>
           Running v{APP_VERSION}
         </span>
       </div>
 
       {/* v4.0 Changelog */}
       <div>
-        <h4 className="text-[10px] text-white/40 uppercase tracking-[0.2em] mb-3" style={{ fontFamily: "'Space Mono', monospace" }}>
+        <h4 className="text-[10px] text-foreground/40 uppercase tracking-[0.2em] mb-3" style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}>
           v4.0 — Major Update
         </h4>
-        <div className="p-3 bg-white/5 border border-white/10 space-y-3">
+        <div className="p-3 bg-foreground/5 border border-foreground/10 space-y-3">
           {V4_CHANGELOG.map((item, index) => (
             <div key={index} className="flex gap-3">
               <span className="text-base">{item.icon}</span>
               <div>
-                <p className="text-white/70 text-sm font-medium">{item.title}</p>
-                <p className="text-white/40 text-xs">{item.description}</p>
+                <p className="text-foreground/70 text-sm font-medium">{item.title}</p>
+                <p className="text-foreground/40 text-xs">{item.description}</p>
               </div>
             </div>
           ))}
@@ -168,7 +170,7 @@ const UpdatesTab = () => {
       {/* Previous Updates from DB */}
       {updates.length > 0 && (
         <div>
-          <h4 className="text-[10px] text-white/40 uppercase tracking-[0.2em] mb-3" style={{ fontFamily: "'Space Mono', monospace" }}>
+          <h4 className="text-[10px] text-foreground/40 uppercase tracking-[0.2em] mb-3" style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}>
             Previous_Updates
           </h4>
           {updates.map((update, index) => (
@@ -177,27 +179,27 @@ const UpdatesTab = () => {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
-              className="p-3 bg-white/5 border border-white/10 mb-2"
+              className="p-3 bg-foreground/5 border border-foreground/10 mb-2"
             >
               <div className="flex items-start gap-3">
-                <div className="p-1.5 bg-white/10">
-                  <Sparkles className="w-3 h-3 text-white/40" />
+                <div className="p-1.5 bg-foreground/10">
+                  <Sparkles className="w-3 h-3 text-foreground/40" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <h4 className="text-white text-sm" style={{ fontFamily: "'Space Mono', monospace" }}>
+                    <h4 className="text-foreground text-sm" style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}>
                       {update.title}
                     </h4>
                     {update.version && (
-                      <span className="px-1.5 py-0.5 bg-white/10 text-white/60 text-[10px]">
+                      <span className="px-1.5 py-0.5 bg-foreground/10 text-foreground/60 text-[10px]">
                         v{update.version}
                       </span>
                     )}
                   </div>
-                  <p className="text-white/50 text-xs">
+                  <p className="text-foreground/50 text-xs">
                     {update.description}
                   </p>
-                  <div className="flex items-center gap-1 text-white/30 mt-2">
+                  <div className="flex items-center gap-1 text-foreground/30 mt-2">
                     <Clock className="w-3 h-3" />
                     <span className="text-[10px]">
                       {formatDistanceToNow(new Date(update.created_at), { addSuffix: true })}

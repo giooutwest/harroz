@@ -13,6 +13,7 @@ import { useHaptic } from "@/hooks/useHaptic";
 import { useLongPress } from "@/hooks/useLongPress";
 import { motion, AnimatePresence } from "framer-motion";
 import ZineFeedPost from "./ZineFeedPost";
+import { useTheme } from "@/hooks/useTheme";
 
 // --- Types ---
 interface Profile {
@@ -92,6 +93,7 @@ const FriendsFeed = ({ onFriendClick, highlightMoodId, shouldOpenComments, close
   const commentInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   const { trigger: haptic } = useHaptic();
+  const { isStudio } = useTheme();
 
   const fetchFeed = useCallback(async () => {
     try {
@@ -623,7 +625,7 @@ const FriendsFeed = ({ onFriendClick, highlightMoodId, shouldOpenComments, close
                             <div className="flex-1 min-w-0">
                               <div className="flex items-baseline justify-between gap-2">
                                 <button onClick={() => onFriendClick?.(comment.user.user_id)} className="text-xs font-semibold text-foreground hover:underline truncate">{comment.user.display_name || comment.user.username}</button>
-                                <span className="text-[10px] text-foreground/40 shrink-0" style={{ fontFamily: "'Space Mono', monospace" }}>{formatDistanceToNow(new Date(comment.created_at))} ago</span>
+                                <span className="text-[10px] text-foreground/40 shrink-0" style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}>{formatDistanceToNow(new Date(comment.created_at))} ago</span>
                               </div>
                               <p className="text-xs text-foreground/70 mt-0.5 break-words">{comment.content}</p>
                               <div className="flex items-center gap-3 mt-1">
@@ -665,7 +667,7 @@ const FriendsFeed = ({ onFriendClick, highlightMoodId, shouldOpenComments, close
                                   <div className="flex-1 min-w-0">
                                     <div className="flex items-baseline justify-between gap-2">
                                       <button onClick={() => onFriendClick?.(reply.user.user_id)} className="text-[11px] font-semibold text-foreground hover:underline truncate">{reply.user.display_name || reply.user.username}</button>
-                                      <span className="text-[9px] text-foreground/40 shrink-0" style={{ fontFamily: "'Space Mono', monospace" }}>{formatDistanceToNow(new Date(reply.created_at))} ago</span>
+                                      <span className="text-[9px] text-foreground/40 shrink-0" style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}>{formatDistanceToNow(new Date(reply.created_at))} ago</span>
                                     </div>
                                     <p className="text-[11px] text-foreground/70 mt-0.5 break-words">{reply.content}</p>
                                     <button
@@ -769,13 +771,13 @@ const FriendsFeed = ({ onFriendClick, highlightMoodId, shouldOpenComments, close
             </div>
             <p
               className="text-foreground/60 text-sm uppercase tracking-wider"
-              style={{ fontFamily: "'Space Mono', monospace" }}
+              style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}
             >
               No updates yet
             </p>
             <p
               className="text-foreground/30 text-xs mt-2 italic"
-              style={{ fontFamily: "'Playfair Display', serif" }}
+              style={isStudio ? undefined : { fontFamily: "'Playfair Display', serif" }}
             >
               Your friends are being quiet...
             </p>

@@ -11,7 +11,102 @@
 
 @layer base {
   :root {
-    /* Dark theme - Pure black aesthetic */
+    /* Studio Light — sleek, warm, high-end productivity */
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+
+    --card: 0 0% 98%;
+    --card-foreground: 240 10% 3.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+
+    --primary: 240 5.9% 10%;
+    --primary-foreground: 0 0% 98%;
+
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 240 5.9% 10%;
+
+    --radius: 1rem;
+
+    /* Mood colors (shared across all themes) */
+    --mood-1: 0 70% 50%;
+    --mood-2: 15 70% 50%;
+    --mood-3: 30 80% 55%;
+    --mood-4: 40 85% 55%;
+    --mood-5: 50 90% 55%;
+    --mood-6: 55 85% 55%;
+    --mood-7: 120 50% 45%;
+    --mood-8: 140 55% 45%;
+    --mood-9: 210 80% 55%;
+    --mood-10: 220 85% 60%;
+
+    /* Tab bar */
+    --tab-bar: 0 0% 100%;
+    --tab-active: 240 5.9% 10%;
+    --tab-inactive: 240 3.8% 46.1%;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  /* Studio Dark */
+  .studio-dark {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+
+    --card: 240 10% 6%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 240 10% 6%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 5.9% 10%;
+
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
+
+    /* Tab bar */
+    --tab-bar: 240 10% 6%;
+    --tab-active: 0 0% 98%;
+    --tab-inactive: 240 5% 64.9%;
+  }
+
+  /* Zine — pure black editorial aesthetic */
+  .theme-zine {
     --background: 0 0% 0%;
     --foreground: 0 0% 98%;
 
@@ -40,82 +135,12 @@
     --input: 0 0% 15%;
     --ring: 0 0% 98%;
 
-    --radius: 1rem;
-
-    /* Mood colors */
-    --mood-1: 0 70% 50%;
-    --mood-2: 15 70% 50%;
-    --mood-3: 30 80% 55%;
-    --mood-4: 40 85% 55%;
-    --mood-5: 50 90% 55%;
-    --mood-6: 55 85% 55%;
-    --mood-7: 120 50% 45%;
-    --mood-8: 140 55% 45%;
-    --mood-9: 210 80% 55%;
-    --mood-10: 220 85% 60%;
-
     /* Tab bar */
     --tab-bar: 0 0% 8%;
     --tab-active: 0 0% 98%;
     --tab-inactive: 0 0% 45%;
-
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
-  /* Classic theme - clean white */
-  .theme-classic {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 8%;
-
-    --card: 0 0% 98%;
-    --card-foreground: 0 0% 8%;
-
-    --popover: 0 0% 98%;
-    --popover-foreground: 0 0% 8%;
-
-    --primary: 0 0% 8%;
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 0 0% 95%;
-    --secondary-foreground: 0 0% 8%;
-
-    --muted: 0 0% 93%;
-    --muted-foreground: 0 0% 40%;
-
-    --accent: 0 0% 93%;
-    --accent-foreground: 0 0% 8%;
-
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 98%;
-
-    --border: 0 0% 88%;
-    --input: 0 0% 93%;
-    --ring: 0 0% 8%;
-
-    --radius: 1rem;
-
-    /* Tab bar */
-    --tab-bar: 0 0% 97%;
-    --tab-active: 0 0% 8%;
-    --tab-inactive: 0 0% 55%;
-
-    /* Sidebar */
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 0 0% 8%;
-    --sidebar-primary: 0 0% 95%;
-    --sidebar-primary-foreground: 0 0% 8%;
-    --sidebar-accent: 0 0% 93%;
-    --sidebar-accent-foreground: 0 0% 8%;
-    --sidebar-border: 0 0% 88%;
-    --sidebar-ring: 0 0% 8%;
-  }
 }
 
 @layer base {
@@ -158,7 +183,7 @@
   /* Glass effect for cards */
   .glass-card {
     backdrop-filter: blur(20px);
-    background: hsla(0, 0%, 8%, 0.8);
+    background: hsl(var(--card) / 0.8);
   }
 }
 

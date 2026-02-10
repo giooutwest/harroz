@@ -14,6 +14,8 @@ import { formatDistanceToNow } from "date-fns";
 import { useNemesis } from "@/hooks/useNemesis";
 import { getLocalDateString } from "@/hooks/useTimeWindow";
 import NemesisRivalry from "./NemesisRivalry";
+import { useTheme } from "@/hooks/useTheme";
+import { useThemeContent } from "@/hooks/useThemeContent";
 
 interface FriendsTabProps {
   initialSelectedFriendId?: string | null;
@@ -67,6 +69,8 @@ const FriendsTab = ({ initialSelectedFriendId, initialSelectedMoodId, initialSel
   
   const { user } = useAuth();
   const { toast } = useToast();
+  const { isStudio } = useTheme();
+  const themeContent = useThemeContent();
   const { nemesisId, nemesisProfile, nemesisTodayMood, rivalryStats, setNemesis, removeNemesis } = useNemesis();
   const [friendRivalries, setFriendRivalries] = useState<any[]>([]);
   const [userTodayRating, setUserTodayRating] = useState<number>(5);
@@ -500,48 +504,75 @@ const FriendsTab = ({ initialSelectedFriendId, initialSelectedMoodId, initialSel
 
   return (
     <div className="min-h-screen bg-background px-4 pt-12 pb-28">
-      {/* Zine Header */}
-      <div className="flex items-start justify-between mb-8">
-        <div>
-          <h1
-            className="text-5xl font-black text-foreground uppercase tracking-tight"
-            style={{
-              fontFamily: "'Abril Fatface', serif",
-              textShadow: "2px 2px 0px #C5A059, 4px 4px 0px rgba(0,0,0,0.3)"
-            }}
-          >
-            FRIENDS
-          </h1>
+      {/* Header */}
+      {isStudio ? (
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-bold tracking-tight">{themeContent.friendsTitle}</h1>
+          <div className="flex items-center gap-2">
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setShowNotifications(true)}
+              className="relative p-2.5 rounded-2xl bg-secondary hover:bg-secondary/80 transition-colors"
+            >
+              <Bell className="w-5 h-5 text-muted-foreground" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 text-white rounded-full flex items-center justify-center text-[10px] font-bold">
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              )}
+            </motion.button>
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setShowAddFriend(true)}
+              className="flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground font-semibold text-xs rounded-xl"
+            >
+              <UserPlus className="w-4 h-4" /> {themeContent.addFriendLabel}
+            </motion.button>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <motion.button
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setShowNotifications(true)}
-            className="relative p-3 bg-foreground/5 border border-foreground/10"
-          >
-            <Bell className="w-5 h-5 text-foreground/70" />
-            {unreadCount > 0 && (
-              <span
-                className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 text-white flex items-center justify-center text-[10px] font-bold"
-                style={{ fontFamily: "'Space Mono', monospace" }}
-              >
-                {unreadCount > 99 ? "99+" : unreadCount}
-              </span>
-            )}
-          </motion.button>
-          <motion.button
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setShowAddFriend(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-[#C5A059] text-black font-bold text-xs uppercase tracking-wider"
-            style={{ fontFamily: "'Space Mono', monospace" }}
-          >
-            <UserPlus className="w-4 h-4" /> Add
-          </motion.button>
+      ) : (
+        <div className="flex items-start justify-between mb-8">
+          <div>
+            <h1
+              className="text-5xl font-black text-foreground uppercase tracking-tight"
+              style={{
+                fontFamily: "'Abril Fatface', serif",
+                textShadow: "2px 2px 0px #C5A059, 4px 4px 0px rgba(0,0,0,0.3)"
+              }}
+            >
+              FRIENDS
+            </h1>
+          </div>
+          <div className="flex items-center gap-2">
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setShowNotifications(true)}
+              className="relative p-3 bg-foreground/5 border border-foreground/10"
+            >
+              <Bell className="w-5 h-5 text-foreground/70" />
+              {unreadCount > 0 && (
+                <span
+                  className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 text-white flex items-center justify-center text-[10px] font-bold"
+                  style={{ fontFamily: "'Space Mono', monospace" }}
+                >
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              )}
+            </motion.button>
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setShowAddFriend(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-[#C5A059] text-black font-bold text-xs uppercase tracking-wider"
+              style={{ fontFamily: "'Space Mono', monospace" }}
+            >
+              <UserPlus className="w-4 h-4" /> Add
+            </motion.button>
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Section Tabs - Zine style */}
-      <div className="flex gap-2 mb-6 overflow-x-auto no-scrollbar">
+      {/* Section Tabs */}
+      <div className={`flex gap-2 mb-6 overflow-x-auto no-scrollbar`}>
         {[
           { id: "feed", label: "Feed", icon: Newspaper, count: null },
           { id: "rivals", label: "Rivals", icon: Swords, count: null },
@@ -553,18 +584,28 @@ const FriendsTab = ({ initialSelectedFriendId, initialSelectedMoodId, initialSel
             key={s.id}
             onClick={() => !s.disabled && setActiveSection(s.id as any)}
             disabled={s.disabled}
-            className={`flex-1 py-2 px-3 flex items-center justify-center gap-1 border transition-all ${
-              s.disabled
-                ? "bg-transparent border-foreground/10 text-foreground/30 cursor-not-allowed"
-                : activeSection === s.id
-                ? "bg-foreground text-background border-foreground"
-                : "bg-transparent border-foreground/20 text-foreground/60 hover:border-foreground/40"
+            className={`flex-1 py-2 px-3 flex items-center justify-center gap-1 transition-all ${
+              isStudio
+                ? `rounded-xl ${
+                    s.disabled
+                      ? "bg-secondary/50 text-muted-foreground/30 cursor-not-allowed"
+                      : activeSection === s.id
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "bg-secondary text-muted-foreground hover:text-foreground"
+                  }`
+                : `border ${
+                    s.disabled
+                      ? "bg-transparent border-foreground/10 text-foreground/30 cursor-not-allowed"
+                      : activeSection === s.id
+                      ? "bg-foreground text-background border-foreground"
+                      : "bg-transparent border-foreground/20 text-foreground/60 hover:border-foreground/40"
+                  }`
             }`}
             title={s.disabled ? "Equip a badge in Settings to unlock" : undefined}
           >
             {/* @ts-ignore */}
             <s.icon className="w-4 h-4" />
-            <span className="text-[10px] uppercase tracking-wider" style={{ fontFamily: "'Space Mono', monospace" }}>
+            <span className={`text-[10px] uppercase tracking-wider ${isStudio ? 'font-medium' : ''}`} style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}>
               {s.label}
             </span>
             {s.count !== null && s.count > 0 && (

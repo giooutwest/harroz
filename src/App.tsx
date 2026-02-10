@@ -1,4 +1,4 @@
-import { useState, useEffect, Suspense, lazy } from "react"; 
+import { useState, useEffect, Suspense, lazy } from "react";
 import AppVersionManager from "@/components/AppVersionManager";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { Toaster } from "@/components/ui/toaster";
@@ -7,9 +7,10 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { NotificationNavigationProvider } from "@/hooks/useNotificationNavigation";
-import { Loader2 } from "lucide-react"; 
+import { Loader2 } from "lucide-react";
 import SplashScreen from "@/components/SplashScreen";
-import InstallGate from "@/components/InstallGate"; // <--- 1. IMPORT THIS
+import InstallGate from "@/components/InstallGate";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 
 // --- LAZY IMPORTS ---
 const Index = lazy(() => import("./pages/Index"));
@@ -66,18 +67,6 @@ const App = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('moodmemos-theme');
-      document.documentElement.classList.remove('theme-classic');
-      if (saved === 'classic') {
-        document.documentElement.classList.add('theme-classic');
-      }
-    } catch (e) {
-      // ignore
-    }
-  }, []);
-
   // --- 4. FIRST RETURN: THE INSTALL GATE ---
   // This takes priority. If they are on mobile web, STOP here.
   if (isMobileBrowser) {
@@ -92,27 +81,29 @@ const App = () => {
 
   // --- 6. THIRD RETURN: THE MAIN APP ---
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <NotificationNavigationProvider>
-          <Toaster />
-          <Sonner />
-          
-          <NotificationInitializer />
-          <AppVersionManager /> 
+    <ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <NotificationNavigationProvider>
+            <Toaster />
+            <Sonner />
 
-          <BrowserRouter>
-            <Suspense fallback={<PageLoader />}>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/auth" element={<Auth />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </Suspense>
-          </BrowserRouter>
-        </NotificationNavigationProvider>
-      </TooltipProvider>
-    </QueryClientProvider>
+            <NotificationInitializer />
+            <AppVersionManager />
+
+            <BrowserRouter>
+              <Suspense fallback={<PageLoader />}>
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/auth" element={<Auth />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </Suspense>
+            </BrowserRouter>
+          </NotificationNavigationProvider>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 };
 

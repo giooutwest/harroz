@@ -23,9 +23,11 @@ import RoutineTags from "./RoutineTags";
 import FitCheckChallenge from "./FitCheckChallenge";
 import ZineLockedView from "./ZineLockedView";
 import ZineOpenView from "./ZineOpenView";
+import StudioLockedView from "./StudioLockedView";
 import MoodCamera from "./MoodCamera";
 import { useFeatureDiscovery } from "@/hooks/useFeatureDiscovery";
 import { useTheme } from "@/hooks/useTheme";
+import { useThemeContent } from "@/hooks/useThemeContent";
 import { Settings } from "lucide-react";
 import MusicSearchModal from "./MusicSearchModal";
 import FriendSelectorModal, { SelectedFriend } from "./FriendSelectorModal";
@@ -176,7 +178,8 @@ const TodayTab = ({ onSettingsClick }: TodayTabProps) => {
   const { user } = useAuth();
   const timeWindow = useTimeWindowStatic();
   const { currentStreak } = useStreak();
-  const { isClassic } = useTheme();
+  const { isClassic, isZine } = useTheme();
+  const themeContent = useThemeContent();
   const { nemesisProfile, nemesisTodayMood, rivalryStats } = useNemesis();
 
   // Journal hooks
@@ -367,7 +370,6 @@ const TodayTab = ({ onSettingsClick }: TodayTabProps) => {
       finalPhotoPath = uploadedPath;
     }
     
-    // 🔥 FIXED: Removed 'note' column
     const { data: upsertedMood, error } = await supabase
       .from('moods')
       .upsert({
@@ -380,7 +382,7 @@ const TodayTab = ({ onSettingsClick }: TodayTabProps) => {
         song_title: selectedSong?.title || null,
         song_artist: selectedSong?.artist || null,
         song_preview_url: selectedSong?.previewUrl || null,
-      }, {
+      } as any, {
         onConflict: 'user_id,date'
       })
       .select('id')
@@ -506,111 +508,44 @@ const TodayTab = ({ onSettingsClick }: TodayTabProps) => {
   };
 
   if (showLockedState) {
-    // Use Zine aesthetic for modern theme, simple layout for classic
-    if (!isClassic) {
-      return (
-        <>
-          <ZineLockedView
-            displayName={displayName}
-            yesterdaysMood={yesterdaysMood && showYesterdaySummary ? yesterdaysMood : null}
-            onYesterdayClick={() => setShowYesterdayEngagement(true)}
-            onOpenFitCheckCamera={() => setShowFitCheckCamera(true)}
-            onSettingsClick={onSettingsClick}
-          />
-          {/* Yesterday's engagement sheet */}
-{yesterdaysMood && (
-  <MoodEngagementSheet
-    isOpen={showYesterdayEngagement}
-    onClose={() => setShowYesterdayEngagement(false)}
-    moodId={yesterdaysMood.id}
-    rating={yesterdaysMood.rating}     // <--- FIXED
-    moodOwnerId={user?.id || ''}       // <--- ADDED for safety
-  />
-)}
-        </>
-      );
-    }
+    const LockedView = isZine ? (
+      <ZineLockedView
+        displayName={displayName}
+        yesterdaysMood={yesterdaysMood && showYesterdaySummary ? yesterdaysMood : null}
+        onYesterdayClick={() => setShowYesterdayEngagement(true)}
+        onOpenFitCheckCamera={() => setShowFitCheckCamera(true)}
+        onSettingsClick={onSettingsClick}
+      />
+    ) : (
+      <StudioLockedView
+        displayName={displayName}
+        yesterdaysMood={yesterdaysMood && showYesterdaySummary ? yesterdaysMood : null}
+        onYesterdayClick={() => setShowYesterdayEngagement(true)}
+        onOpenFitCheckCamera={() => setShowFitCheckCamera(true)}
+        onSettingsClick={onSettingsClick}
+      />
+    );
 
-    // Classic theme - simple locked state
-    const YesterdayMoodIcon = yesterdaysMood ? getMoodIcon(yesterdaysMood.rating, false) : null;
     return (
-      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-120px)] px-6 py-8 pb-32 bg-background relative">
-        {/* Settings button */}
-        <button onClick={onSettingsClick} className="absolute top-6 right-6 p-2 rounded-full bg-secondary hover:bg-secondary/80 transition-colors">
-          <Settings className="w-5 h-5 text-muted-foreground" />
-        </button>
-        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-sm flex flex-col items-center text-center">
-          <motion.div animate={{ scale: [1, 1.05, 1] }} transition={{ repeat: Infinity, duration: 2 }} className={`w-24 h-24 flex items-center justify-center mb-6 bg-secondary rounded-full`}>
-            <Lock className="w-10 h-10 text-muted-foreground" />
-          </motion.div>
-          <h2 className={`font-bold mb-2 flex items-center gap-2 text-xl`}>{displayName ? `Hi ${displayName}!` : "Hey there!"}</h2>
-          {currentStreak > 0 && (<Badge variant="secondary" className="mb-4 bg-orange-50 text-orange-600 border-orange-100 gap-1.5 px-3 py-1"><Flame className="w-3 h-3 fill-orange-500" /><span className="font-bold">{currentStreak} Day Streak</span></Badge>)}
-          <p className={`text-muted-foreground mb-6 `}>Your journal opens at 9 PM so you can reflect on your whole day.</p>
-          <AnimatePresence>
-            {yesterdaysMood && showYesterdaySummary && YesterdayMoodIcon && (
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className={`w-full max-w-sm mx-auto mb-6 bg-card border border-border overflow-hidden rounded-2xl shadow-sm`}>
-                <div className="p-4 flex items-center justify-between border-b border-border/50">
-                  <span className={`text-muted-foreground font-medium text-xs`}>Yesterday's Mood</span>
-                  <button onClick={dismissYesterdaySummary} className="p-1 hover:bg-secondary rounded-full transition-colors"><X className="w-4 h-4 text-muted-foreground" /></button>
-                </div>
-                <div
-                  onClick={() => setShowYesterdayEngagement(true)}
-                  className="cursor-pointer hover:bg-secondary/20 transition-colors"
-                >
-                  {yesterdaysMood.photo_url ? (
-                    <div className="relative w-full aspect-square bg-secondary/30">
-                      <img src={yesterdaysMood.photo_url} alt="Yesterday's mood" className="w-full h-full object-cover" loading="lazy" onError={(e) => { e.currentTarget.parentElement!.innerHTML = '<div class="w-full h-48 flex items-center justify-center bg-secondary/30"><svg class="w-10 h-10 text-primary-foreground" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg></div>'; }} />
-                    </div>
-                  ) : (
-                    <div className="w-full h-48 flex items-center justify-center bg-secondary/30"><YesterdayMoodIcon className="w-10 h-10 text-primary-foreground" /></div>
-                  )}
-                  <div className="p-4">
-                    <p className={`text-foreground/90 mb-3 text-sm`}>{getMoodLabel(yesterdaysMood.rating)} ({yesterdaysMood.rating}/10)</p>
-                    {yesterdaysMood.caption && (
-                      <p className={`text-muted-foreground italic mb-3 text-xs`}>"{yesterdaysMood.caption}"</p>
-                    )}
-                    <div className="flex items-center gap-4 text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <Heart className="w-4 h-4" />
-                        <span className="text-xs">{yesterdaysMood.likes_count}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <MessageCircle className="w-4 h-4" />
-                        <span className="text-xs">{yesterdaysMood.comments_count}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-          <CountdownTimer />
-
-          {/* Fit Check Challenge */}
-          <div className="w-full mt-6">
-            <FitCheckChallenge
-              onOpenCamera={() => setShowFitCheckCamera(true)}
-            />
-          </div>
-        </motion.div>
-        {/* Yesterday's engagement sheet */}
-{yesterdaysMood && (
-  <MoodEngagementSheet
-    isOpen={showYesterdayEngagement}
-    onClose={() => setShowYesterdayEngagement(false)}
-    moodId={yesterdaysMood.id}
-    moodOwnerId={user?.id || ''}
-    photoUrl={yesterdaysMood.photo_url}
-    caption={yesterdaysMood.caption}
-    rating={yesterdaysMood.rating}     // <--- FIXED
-  />
-)}
-      </div>
+      <>
+        {LockedView}
+        {yesterdaysMood && (
+          <MoodEngagementSheet
+            isOpen={showYesterdayEngagement}
+            onClose={() => setShowYesterdayEngagement(false)}
+            moodId={yesterdaysMood.id}
+            moodOwnerId={user?.id || ''}
+            photoUrl={yesterdaysMood.photo_url}
+            caption={yesterdaysMood.caption}
+            rating={yesterdaysMood.rating}
+          />
+        )}
+      </>
     );
   }
 
-  // Show ZineOpenView when window just opened but user hasn't entered yet (modern only)
-  if (timeWindow.isOpen && !submitted && !hasEnteredRoom && !isClassic) {
+  // Show ZineOpenView when window just opened but user hasn't entered yet (Zine only)
+  if (isZine && timeWindow.isOpen && !submitted && !hasEnteredRoom) {
     return (
       <ZineOpenView onEnter={handleEnterRoom} />
     );
@@ -674,7 +609,7 @@ const TodayTab = ({ onSettingsClick }: TodayTabProps) => {
           {!submitted ? (
             <motion.div key="input" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="w-full max-w-sm flex flex-col items-center">
             <div className="flex flex-col items-center mb-2">
-              <motion.h1 className={`text-2xl md:text-3xl font-bold text-center `}>{displayName ? `Hey ${displayName}! ✨` : "Hey there! ✨"}</motion.h1>
+              <motion.h1 className={`text-2xl md:text-3xl font-bold text-center tracking-tight`}>{themeContent.greetingTemplate(displayName)}</motion.h1>
               {currentStreak > 0 && (<Badge variant="secondary" className="mt-2 bg-orange-50 text-orange-600 border-orange-100 gap-1.5 px-3 py-1"><Flame className="w-3 h-3 fill-orange-500" /><span className="font-bold">{currentStreak} Day Streak</span></Badge>)}
             </div>
             <motion.div className="relative mb-6" animate={{ scale: [1, 1.02, 1] }} transition={{ repeat: Infinity, duration: 2 }}>
@@ -697,7 +632,7 @@ const TodayTab = ({ onSettingsClick }: TodayTabProps) => {
                 </div>
               )}
             </motion.div>
-            <Input type="text" placeholder="Caption (optional)" value={caption} onChange={(e) => setCaption(e.target.value)} maxLength={500} className={`mb-2 `} />
+            <Input type="text" placeholder={themeContent.promptPlaceholder} value={caption} onChange={(e) => setCaption(e.target.value)} maxLength={500} className={`mb-2 `} />
 
             {/* Add Song Button */}
             <div className="w-full mb-4">
@@ -804,7 +739,7 @@ const TodayTab = ({ onSettingsClick }: TodayTabProps) => {
               </div>
             </div>
 
-            <motion.button onClick={handleSubmit} disabled={isUploading} className={`w-full py-4 bg-primary text-primary-foreground font-semibold touch-manipulation disabled:opacity-50 text-lg rounded-2xl`}>{isUploading ? "Saving..." : "Save My Mood ✨"}</motion.button>
+            <motion.button onClick={handleSubmit} disabled={isUploading} className={`w-full py-4 bg-primary text-primary-foreground font-semibold touch-manipulation disabled:opacity-50 text-lg rounded-2xl`}>{isUploading ? "Saving..." : themeContent.submitLabel}</motion.button>
           </motion.div>
         ) : (
           <motion.div key="result" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-sm flex flex-col items-center text-center">

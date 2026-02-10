@@ -29,11 +29,11 @@ CREATE POLICY "Users can view mood mentions"
       AND (
         m.user_id = auth.uid()
         OR EXISTS (
-          SELECT 1 FROM friends f
+          SELECT 1 FROM public.friendships f
           WHERE f.status = 'accepted'
           AND (
-            (f.user_id = auth.uid() AND f.friend_id = m.user_id)
-            OR (f.friend_id = auth.uid() AND f.user_id = m.user_id)
+            (f.requester_id = auth.uid() AND f.addressee_id = m.user_id)
+            OR (f.addressee_id = auth.uid() AND f.requester_id = m.user_id)
           )
         )
       )

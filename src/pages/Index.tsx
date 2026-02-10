@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import ZineBottomNav from "@/components/ZineBottomNav";
-import BottomNav from "@/components/BottomNav";
+import StudioBottomNav from "@/components/StudioBottomNav";
 import TodayTab from "@/components/TodayTab";
 import { useTheme } from "@/hooks/useTheme";
 import SettingsSheet from "@/components/SettingsSheet";
@@ -311,7 +311,7 @@ const Index = () => {
       {/* Camera FAB removed - photo capture is now integrated directly into TodayTab */}
 
       {isClassic ? (
-        <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
+        <StudioBottomNav activeTab={activeTab} onTabChange={setActiveTab} />
       ) : (
         <ZineBottomNav activeTab={activeTab} onTabChange={setActiveTab} />
       )}

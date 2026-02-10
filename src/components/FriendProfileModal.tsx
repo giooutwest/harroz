@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow, differenceInMinutes, differenceInHours } from "date-fns";
 import BadgeDisplay from "./BadgeDisplay";
+import { useTheme } from "@/hooks/useTheme";
 
 interface FriendProfileModalProps {
   friendId: string | null;
@@ -80,6 +81,7 @@ const FriendProfileModal = ({ friendId, onClose, onMessage, onFriendRemoved }: F
   const [confirmDelete, setConfirmDelete] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
+  const { isStudio } = useTheme();
 
   useEffect(() => {
     if (friendId && user) {
@@ -244,28 +246,34 @@ const FriendProfileModal = ({ friendId, onClose, onMessage, onFriendRemoved }: F
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.9, opacity: 0, y: 20 }}
           onClick={(e) => e.stopPropagation()}
-          className="bg-[#0a0a0a] border border-white/10 w-full max-w-sm max-h-[85vh] overflow-y-auto"
-          style={{ fontFamily: "'Space Mono', monospace" }}
+          className={isStudio
+            ? "bg-card border border-border rounded-2xl w-full max-w-sm max-h-[85vh] overflow-y-auto"
+            : "bg-[#0a0a0a] border border-foreground/10 w-full max-w-sm max-h-[85vh] overflow-y-auto"
+          }
+          style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}
         >
-          {/* Header - Classified style */}
-          <div className="border-b border-white/10 p-4 flex items-center justify-between bg-[#111]">
+          {/* Header */}
+          <div className={isStudio
+            ? "border-b border-border p-4 flex items-center justify-between bg-secondary/50 rounded-t-2xl"
+            : "border-b border-foreground/10 p-4 flex items-center justify-between bg-[#111]"
+          }>
             <div className="flex items-center gap-2">
-              <span className="text-[10px] text-red-500 uppercase tracking-[0.2em] font-bold">
-                Subject Dossier
+              <span className={`text-[10px] uppercase tracking-[0.2em] font-bold ${isStudio ? 'text-muted-foreground' : 'text-red-500'}`}>
+                {isStudio ? 'Friend Profile' : 'Subject Dossier'}
               </span>
             </div>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setShowSettings(!showSettings)}
-                className="p-2 hover:bg-white/5 transition-colors"
+                className="p-2 hover:bg-foreground/5 transition-colors"
               >
-                <Settings className="w-4 h-4 text-white/40" />
+                <Settings className="w-4 h-4 text-foreground/40" />
               </button>
               <button
                 onClick={onClose}
-                className="p-2 hover:bg-white/5 transition-colors"
+                className="p-2 hover:bg-foreground/5 transition-colors"
               >
-                <X className="w-4 h-4 text-white/40" />
+                <X className="w-4 h-4 text-foreground/40" />
               </button>
             </div>
           </div>
@@ -277,15 +285,15 @@ const FriendProfileModal = ({ friendId, onClose, onMessage, onFriendRemoved }: F
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: "auto", opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
-                className="border-b border-white/10 overflow-hidden"
+                className="border-b border-foreground/10 overflow-hidden"
               >
                 <div className="p-3 space-y-1">
                   <button
                     onClick={handleToggleCloseFriend}
-                    className="w-full flex items-center gap-3 p-3 hover:bg-white/5 text-left transition-colors"
+                    className="w-full flex items-center gap-3 p-3 hover:bg-foreground/5 text-left transition-colors"
                   >
-                    <Star className={`w-4 h-4 ${isCloseFriend ? "text-[#C5A059] fill-current" : "text-white/40"}`} />
-                    <span className="text-sm text-white/80">
+                    <Star className={`w-4 h-4 ${isCloseFriend ? "text-[#C5A059] fill-current" : "text-foreground/40"}`} />
+                    <span className="text-sm text-foreground/80">
                       {isCloseFriend ? "Remove from Close Friends" : "Add to Close Friends"}
                     </span>
                   </button>
@@ -303,13 +311,13 @@ const FriendProfileModal = ({ friendId, onClose, onMessage, onFriendRemoved }: F
                       <div className="flex gap-2">
                         <button
                           onClick={handleRemoveFriend}
-                          className="flex-1 py-2 bg-red-500 text-white text-xs font-bold"
+                          className="flex-1 py-2 bg-red-500 text-foreground text-xs font-bold"
                         >
                           REMOVE
                         </button>
                         <button
                           onClick={() => setConfirmDelete(false)}
-                          className="flex-1 py-2 bg-white/10 text-white/60 text-xs"
+                          className="flex-1 py-2 bg-foreground/10 text-foreground/60 text-xs"
                         >
                           CANCEL
                         </button>
@@ -334,7 +342,7 @@ const FriendProfileModal = ({ friendId, onClose, onMessage, onFriendRemoved }: F
               {/* Avatar with status indicator */}
               <div className="flex items-start gap-4">
                 <div className="relative">
-                  <div className="w-20 h-20 bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden">
+                  <div className="w-20 h-20 bg-foreground/5 border border-foreground/10 flex items-center justify-center overflow-hidden">
                     {profile.avatar_url ? (
                       <img
                         src={profile.avatar_url}
@@ -342,7 +350,7 @@ const FriendProfileModal = ({ friendId, onClose, onMessage, onFriendRemoved }: F
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <User className="w-8 h-8 text-white/20" />
+                      <User className="w-8 h-8 text-foreground/20" />
                     )}
                   </div>
                   {/* Status indicator */}
@@ -362,14 +370,14 @@ const FriendProfileModal = ({ friendId, onClose, onMessage, onFriendRemoved }: F
 
                 {/* Name and status info */}
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-white font-bold text-lg truncate flex items-center gap-2" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                  <h3 className="text-foreground font-bold text-lg truncate flex items-center gap-2" style={isStudio ? undefined : { fontFamily: "'Space Grotesk', sans-serif" }}>
                     {profile.display_name || "UNKNOWN"}
                     {profile.equipped_badges && profile.equipped_badges.length > 0 && (
                       <BadgeDisplay badgeIds={profile.equipped_badges} size="md" />
                     )}
                   </h3>
                   {profile.username && (
-                    <p className="text-white/40 text-xs mb-2">@{profile.username}</p>
+                    <p className="text-foreground/40 text-xs mb-2">@{profile.username}</p>
                   )}
 
                   {/* Status badge */}
@@ -396,24 +404,24 @@ const FriendProfileModal = ({ friendId, onClose, onMessage, onFriendRemoved }: F
               {/* Stats grid */}
               <div className="grid grid-cols-2 gap-2">
                 {/* Streak */}
-                <div className="bg-white/5 border border-white/10 p-3">
+                <div className="bg-foreground/5 border border-foreground/10 p-3">
                   <div className="flex items-center gap-2 text-orange-500 mb-1">
                     <Flame className="w-4 h-4 fill-current" />
                     <span className="text-[10px] uppercase tracking-wider">Streak</span>
                   </div>
-                  <p className="text-2xl font-bold text-white" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                  <p className="text-2xl font-bold text-foreground" style={isStudio ? undefined : { fontFamily: "'Space Grotesk', sans-serif" }}>
                     {profile.current_streak || 0}
-                    <span className="text-xs text-white/40 ml-1">days</span>
+                    <span className="text-xs text-foreground/40 ml-1">days</span>
                   </p>
                 </div>
 
                 {/* Friends since */}
-                <div className="bg-white/5 border border-white/10 p-3">
-                  <div className="flex items-center gap-2 text-white/40 mb-1">
+                <div className="bg-foreground/5 border border-foreground/10 p-3">
+                  <div className="flex items-center gap-2 text-foreground/40 mb-1">
                     <Calendar className="w-4 h-4" />
                     <span className="text-[10px] uppercase tracking-wider">Connected</span>
                   </div>
-                  <p className="text-sm text-white/80">
+                  <p className="text-sm text-foreground/80">
                     {friendshipDate
                       ? formatDistanceToNow(new Date(friendshipDate), { addSuffix: false })
                       : "Recently"}
@@ -447,34 +455,34 @@ const FriendProfileModal = ({ friendId, onClose, onMessage, onFriendRemoved }: F
               {/* Recent activity */}
               <div>
                 <div className="flex items-center gap-2 mb-3">
-                  <div className="h-px flex-1 bg-white/10" />
-                  <span className="text-[10px] text-white/30 uppercase tracking-[0.2em]">Recent Intel</span>
-                  <div className="h-px flex-1 bg-white/10" />
+                  <div className="h-px flex-1 bg-foreground/10" />
+                  <span className="text-[10px] text-foreground/30 uppercase tracking-[0.2em]">Recent Intel</span>
+                  <div className="h-px flex-1 bg-foreground/10" />
                 </div>
 
                 {recentMoods.length === 0 ? (
-                  <div className="text-center py-6 border border-dashed border-white/10">
-                    <p className="text-white/30 text-xs uppercase tracking-wider">No recent transmissions</p>
+                  <div className="text-center py-6 border border-dashed border-foreground/10">
+                    <p className="text-foreground/30 text-xs uppercase tracking-wider">No recent transmissions</p>
                   </div>
                 ) : (
                   <div className="space-y-2">
                     {recentMoods.map((mood) => (
                       <div
                         key={mood.id}
-                        className="bg-white/5 border border-white/10 p-3 flex items-center gap-3"
+                        className="bg-foreground/5 border border-foreground/10 p-3 flex items-center gap-3"
                       >
                         <span className="text-xl">{getMoodEmoji(mood.rating)}</span>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <span className="text-white/80 text-sm font-bold">
+                            <span className="text-foreground/80 text-sm font-bold">
                               {mood.rating}/10
                             </span>
-                            <span className="text-white/30 text-[10px] uppercase">
+                            <span className="text-foreground/30 text-[10px] uppercase">
                               {formatDistanceToNow(new Date(mood.created_at), { addSuffix: true })}
                             </span>
                           </div>
                           {mood.caption && (
-                            <p className="text-white/50 text-xs truncate mt-0.5">
+                            <p className="text-foreground/50 text-xs truncate mt-0.5">
                               {mood.caption}
                             </p>
                           )}
@@ -487,7 +495,7 @@ const FriendProfileModal = ({ friendId, onClose, onMessage, onFriendRemoved }: F
             </div>
           ) : (
             <div className="p-8 text-center">
-              <p className="text-white/30 text-xs uppercase tracking-wider">Subject not found</p>
+              <p className="text-foreground/30 text-xs uppercase tracking-wider">Subject not found</p>
             </div>
           )}
         </motion.div>

@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useTheme } from "@/hooks/useTheme";
+import { useThemeContext } from "@/contexts/ThemeContext";
+import { useThemeContent } from "@/hooks/useThemeContent";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Sparkles, User, Check, Eye, Image, MessageSquare, Activity, Camera, Loader2, Search, AtSign, Bell, Smartphone, BellRing, BellOff, MessageCircle, MessageSquareHeart, LogOut, BookOpen, Lock, KeyRound, Award, Share2, Copy } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -76,7 +78,9 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
   const [journalPinMode, setJournalPinMode] = useState<"setup" | "change">("setup");
   const [referralInput, setReferralInput] = useState("");
   const [isApplyingReferral, setIsApplyingReferral] = useState(false);
-  const { theme: currentTheme, setTheme } = useTheme();
+  const { theme: currentTheme, setTheme, isStudio } = useTheme();
+  const themeCtx = useThemeContext();
+  const themeContent = useThemeContent();
 
   useEffect(() => {
     if (isOpen && user) {
@@ -312,83 +316,77 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
             className="bg-background border-t border-foreground/10 p-6 w-full max-w-lg safe-area-bottom"
             style={{ maxHeight: "85vh", overflowY: "auto" }}
           >
-            {/* SYS.CONFIG Header */}
+            {/* Header */}
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h3
-                  className="text-2xl font-bold text-foreground uppercase tracking-wider"
-                  style={{ fontFamily: "'Space Mono', monospace" }}
-                >
-                  SYS.CONFIG
-                </h3>
-                <p
-                  className="text-[10px] text-foreground/40 uppercase tracking-[0.2em]"
-                  style={{ fontFamily: "'Space Mono', monospace" }}
-                >
-                  System Settings v4.0
-                </p>
+                {isStudio ? (
+                  <h3 className="text-2xl font-bold tracking-tight">{themeContent.settingsTitle}</h3>
+                ) : (
+                  <>
+                    <h3
+                      className="text-2xl font-bold text-foreground uppercase tracking-wider"
+                      style={{ fontFamily: "'Space Mono', monospace" }}
+                    >
+                      SYS.CONFIG
+                    </h3>
+                    <p
+                      className="text-[10px] text-foreground/40 uppercase tracking-[0.2em]"
+                      style={{ fontFamily: "'Space Mono', monospace" }}
+                    >
+                      System Settings v4.0
+                    </p>
+                  </>
+                )}
               </div>
               <button
                 onClick={onClose}
-                className="p-2 bg-foreground/10 hover:bg-foreground/20 transition-colors touch-manipulation"
+                className={`p-2 transition-colors touch-manipulation ${isStudio ? 'rounded-xl bg-secondary hover:bg-secondary/80' : 'bg-foreground/10 hover:bg-foreground/20'}`}
               >
                 <X className="w-5 h-5 text-foreground" />
               </button>
             </div>
 
-            {/* APPRVD Stamp */}
-            <div className="flex justify-center mb-6">
-              <div
-                className="px-6 py-2 border-2 border-green-500 text-green-500 uppercase tracking-widest text-xs"
-                style={{ fontFamily: "'Space Mono', monospace", transform: "rotate(-3deg)" }}
-              >
-                APPRVD
+            {/* APPRVD Stamp — Zine only */}
+            {!isStudio && (
+              <div className="flex justify-center mb-6">
+                <div
+                  className="px-6 py-2 border-2 border-green-500 text-green-500 uppercase tracking-widest text-xs"
+                  style={{ fontFamily: "'Space Mono', monospace", transform: "rotate(-3deg)" }}
+                >
+                  APPRVD
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="flex gap-2 mb-6">
-              <button
-                onClick={() => setActiveTab("settings")}
-                className={`flex-1 py-2 px-3 font-medium text-xs transition-colors ${
-                  activeTab === "settings"
-                    ? "bg-foreground text-background"
-                    : "bg-foreground/10 text-foreground/60 hover:bg-foreground/20"
-                }`}
-                style={{ fontFamily: "'Space Mono', monospace" }}
-              >
-                Config
-              </button>
-              <button
-                onClick={() => setActiveTab("badges")}
-                className={`flex-1 py-2 px-3 font-medium text-xs transition-colors ${
-                  activeTab === "badges"
-                    ? "bg-foreground text-background"
-                    : "bg-foreground/10 text-foreground/60 hover:bg-foreground/20"
-                }`}
-                style={{ fontFamily: "'Space Mono', monospace" }}
-              >
-                <span className="flex items-center justify-center gap-1">
-                  <Award className="w-3 h-3" />
-                  Badges
-                </span>
-              </button>
-              <button
-                onClick={() => { setActiveTab("updates"); refreshUnread(); }}
-                className={`flex-1 py-2 px-3 font-medium text-xs transition-colors relative ${
-                  activeTab === "updates"
-                    ? "bg-foreground text-background"
-                    : "bg-foreground/10 text-foreground/60 hover:bg-foreground/20"
-                }`}
-                style={{ fontFamily: "'Space Mono', monospace" }}
-              >
-                <span className="flex items-center justify-center gap-1">
-                  <Bell className="w-3 h-3" />
-                  Updates
-                  {hasUnread && activeTab !== "updates" && (
-                    <span className="w-2 h-2 bg-green-500 absolute top-1 right-1" />
-                  )}
-                </span>
-              </button>
+              {[
+                { key: "settings" as SettingsTab, label: isStudio ? "Settings" : "Config", icon: null },
+                { key: "badges" as SettingsTab, label: "Badges", icon: Award },
+                { key: "updates" as SettingsTab, label: "Updates", icon: Bell },
+              ].map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => { setActiveTab(tab.key); if (tab.key === "updates") refreshUnread(); }}
+                  className={`flex-1 py-2 px-3 font-medium text-xs transition-colors relative ${
+                    isStudio
+                      ? activeTab === tab.key
+                        ? "bg-primary text-primary-foreground rounded-xl"
+                        : "bg-secondary text-muted-foreground rounded-xl hover:bg-secondary/80"
+                      : activeTab === tab.key
+                        ? "bg-foreground text-background"
+                        : "bg-foreground/10 text-foreground/60 hover:bg-foreground/20"
+                  }`}
+                  style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}
+                >
+                  <span className="flex items-center justify-center gap-1">
+                    {tab.icon && <tab.icon className="w-3 h-3" />}
+                    {tab.label}
+                    {tab.key === "updates" && hasUnread && activeTab !== "updates" && (
+                      <span className={`w-2 h-2 absolute top-1 right-1 ${isStudio ? 'bg-blue-500 rounded-full' : 'bg-green-500'}`} />
+                    )}
+                  </span>
+                </button>
+              ))}
             </div>
 
             {activeTab === "updates" ? (
@@ -400,31 +398,43 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                 {/* Profile Section */}
                 <div className="mb-6">
                   <h4
-                    className="text-[10px] text-foreground/40 uppercase tracking-[0.2em] mb-4 flex items-center gap-2"
-                    style={{ fontFamily: "'Space Mono', monospace" }}
+                    className={`mb-4 flex items-center gap-2 ${
+                      isStudio
+                        ? 'text-xs font-semibold text-muted-foreground'
+                        : 'text-[10px] text-foreground/40 uppercase tracking-[0.2em]'
+                    }`}
+                    style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}
                   >
-                    <User className="w-3 h-3" /> User_Profile
+                    <User className="w-3 h-3" /> {isStudio ? 'Profile' : 'User_Profile'}
                   </h4>
                   <div className="flex items-center gap-4 mb-4">
                     <div className="relative">
-                      <div className="w-20 h-20 bg-foreground/10 flex items-center justify-center overflow-hidden border border-foreground/20">
+                      <div className={`w-20 h-20 flex items-center justify-center overflow-hidden ${
+                        isStudio
+                          ? 'bg-secondary rounded-full ring-2 ring-border'
+                          : 'bg-foreground/10 border border-foreground/20'
+                      }`}>
                         {avatarUrl ? (
-                          <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover grayscale" />
+                          <img src={avatarUrl} alt="Avatar" className={`w-full h-full object-cover ${isStudio ? '' : 'grayscale'}`} />
                         ) : (
-                          <User className="w-8 h-8 text-foreground/40" />
+                          <User className={`w-8 h-8 ${isStudio ? 'text-muted-foreground' : 'text-foreground/40'}`} />
                         )}
                       </div>
                       <button
                         onClick={() => fileInputRef.current?.click()}
                         disabled={isUploadingAvatar}
-                        className="absolute -bottom-1 -right-1 p-2 bg-foreground text-background"
+                        className={`absolute -bottom-1 -right-1 p-2 ${
+                          isStudio
+                            ? 'bg-primary text-primary-foreground rounded-full'
+                            : 'bg-foreground text-background'
+                        }`}
                       >
                         {isUploadingAvatar ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
                       </button>
                       <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAvatarSelect} className="hidden" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-foreground/40 text-xs" style={{ fontFamily: "'Space Mono', monospace" }}>
+                      <p className={`text-xs ${isStudio ? 'text-muted-foreground' : 'text-foreground/40'}`} style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}>
                         Tap camera to change avatar
                       </p>
                     </div>
@@ -432,8 +442,12 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
 
                   <div className="mb-3">
                     <label
-                      className="text-[10px] text-foreground/40 uppercase tracking-wider mb-1 block flex items-center gap-1"
-                      style={{ fontFamily: "'Space Mono', monospace" }}
+                      className={`mb-1 block flex items-center gap-1 ${
+                        isStudio
+                          ? 'text-xs text-muted-foreground'
+                          : 'text-[10px] text-foreground/40 uppercase tracking-wider'
+                      }`}
+                      style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}
                     >
                       <AtSign className="w-3 h-3" /> Username
                     </label>
@@ -444,30 +458,38 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                         value={username}
                         onChange={(e) => handleUsernameChange(e.target.value)}
                         maxLength={20}
-                        className={`flex-1 bg-foreground/5 border-foreground/10 text-foreground placeholder:text-foreground/30 ${usernameError ? "border-red-500" : ""}`}
-                        style={{ fontFamily: "'Space Mono', monospace" }}
+                        className={`flex-1 ${usernameError ? "border-red-500" : ""} ${
+                          isStudio
+                            ? 'bg-secondary border-border rounded-xl'
+                            : 'bg-foreground/5 border-foreground/10 text-foreground placeholder:text-foreground/30'
+                        }`}
+                        style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}
                       />
                       <Button
                         onClick={handleSaveUsername}
                         disabled={!hasUsernameChanged || isSavingUsername || isCheckingUsername || !!usernameError || !username.trim()}
                         size="sm"
-                        className="bg-foreground text-background hover:bg-foreground/80"
+                        className={isStudio ? 'rounded-xl' : 'bg-foreground text-background hover:bg-foreground/80'}
                       >
                         {isSavingUsername || isCheckingUsername ? "..." : <Check className="w-4 h-4" />}
                       </Button>
                     </div>
                     {usernameError && (
-                      <p className="text-red-500 mt-1 text-xs" style={{ fontFamily: "'Space Mono', monospace" }}>
+                      <p className="text-red-500 mt-1 text-xs" style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}>
                         {usernameError}
                       </p>
                     )}
                   </div>
 
                   <label
-                    className="text-[10px] text-foreground/40 uppercase tracking-wider mb-1 block"
-                    style={{ fontFamily: "'Space Mono', monospace" }}
+                    className={`mb-1 block ${
+                      isStudio
+                        ? 'text-xs text-muted-foreground'
+                        : 'text-[10px] text-foreground/40 uppercase tracking-wider'
+                    }`}
+                    style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}
                   >
-                    Display_name
+                    {isStudio ? 'Display Name' : 'Display_name'}
                   </label>
                   <div className="flex gap-2">
                     <Input
@@ -476,14 +498,18 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                       value={displayName}
                       onChange={(e) => setDisplayName(e.target.value)}
                       maxLength={50}
-                      className="flex-1 bg-foreground/5 border-foreground/10 text-foreground placeholder:text-foreground/30"
-                      style={{ fontFamily: "'Space Mono', monospace" }}
+                      className={`flex-1 ${
+                        isStudio
+                          ? 'bg-secondary border-border rounded-xl'
+                          : 'bg-foreground/5 border-foreground/10 text-foreground placeholder:text-foreground/30'
+                      }`}
+                      style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}
                     />
                     <Button
                       onClick={handleSaveName}
                       disabled={!hasNameChanged || isSaving || !displayName.trim()}
                       size="sm"
-                      className="bg-foreground text-background hover:bg-foreground/80"
+                      className={isStudio ? 'rounded-xl' : 'bg-foreground text-background hover:bg-foreground/80'}
                     >
                       {isSaving ? "..." : <Check className="w-4 h-4" />}
                     </Button>
@@ -493,33 +519,39 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                 {/* Discoverability Section */}
                 <div className="mt-6">
                   <h4
-                    className="text-[10px] text-foreground/40 uppercase tracking-[0.2em] mb-3 flex items-center gap-2"
-                    style={{ fontFamily: "'Space Mono', monospace" }}
+                    className={`mb-3 flex items-center gap-2 ${
+                      isStudio ? 'text-xs font-semibold text-muted-foreground' : 'text-[10px] text-foreground/40 uppercase tracking-[0.2em]'
+                    }`}
+                    style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}
                   >
-                    <Search className="w-3 h-3" /> Discoverability
+                    <Search className="w-3 h-3" /> {isStudio ? 'Discoverability' : 'Discoverability'}
                   </h4>
                   <div className="space-y-2">
                     {[
-                      { value: "everyone" as const, label: "EVERYONE", description: "Anyone can search for you" },
-                      { value: "friends_of_friends" as const, label: "MUTUAL_ONLY", description: "Only mutual connections" },
-                      { value: "nobody" as const, label: "HIDDEN", description: "Only existing friends can see you" },
+                      { value: "everyone" as const, label: isStudio ? "Everyone" : "EVERYONE", description: "Anyone can search for you" },
+                      { value: "friends_of_friends" as const, label: isStudio ? "Mutual Only" : "MUTUAL_ONLY", description: "Only mutual connections" },
+                      { value: "nobody" as const, label: isStudio ? "Hidden" : "HIDDEN", description: "Only existing friends can see you" },
                     ].map((option) => (
                       <button
                         key={option.value}
                         onClick={async () => { setDiscoverableBy(option.value); await supabase.from('profiles').upsert({ user_id: user?.id, discoverable_by: option.value }, { onConflict: 'user_id' }); }}
                         className={`w-full flex items-center justify-between p-3 border transition-all ${
-                          discoverableBy === option.value
-                            ? "border-foreground bg-foreground/10"
-                            : "border-foreground/10 bg-transparent hover:border-foreground/30"
+                          isStudio
+                            ? discoverableBy === option.value
+                              ? 'border-primary bg-primary/5 rounded-xl'
+                              : 'border-border bg-secondary/50 rounded-xl hover:bg-secondary'
+                            : discoverableBy === option.value
+                              ? 'border-foreground bg-foreground/10'
+                              : 'border-foreground/10 bg-transparent hover:border-foreground/30'
                         }`}
                       >
                         <div className="text-left">
-                          <p className="text-foreground text-sm" style={{ fontFamily: "'Space Mono', monospace" }}>
+                          <p className={`text-sm ${isStudio ? 'text-foreground font-medium' : 'text-foreground'}`} style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}>
                             {option.label}
                           </p>
-                          <p className="text-foreground/40 text-xs">{option.description}</p>
+                          <p className={`text-xs ${isStudio ? 'text-muted-foreground' : 'text-foreground/40'}`}>{option.description}</p>
                         </div>
-                        {discoverableBy === option.value && <Check className="w-4 h-4 text-foreground" />}
+                        {discoverableBy === option.value && <Check className={`w-4 h-4 ${isStudio ? 'text-primary' : 'text-foreground'}`} />}
                       </button>
                     ))}
                   </div>
@@ -528,19 +560,25 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                 {/* Privacy Section */}
                 <div className="mt-6">
                   <h4
-                    className="text-[10px] text-foreground/40 uppercase tracking-[0.2em] mb-3 flex items-center gap-2"
-                    style={{ fontFamily: "'Space Mono', monospace" }}
+                    className={`mb-3 flex items-center gap-2 ${
+                      isStudio ? 'text-xs font-semibold text-muted-foreground' : 'text-[10px] text-foreground/40 uppercase tracking-[0.2em]'
+                    }`}
+                    style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}
                   >
-                    <Eye className="w-3 h-3" /> Privacy_Settings
+                    <Eye className="w-3 h-3" /> {isStudio ? 'Privacy' : 'Privacy_Settings'}
                   </h4>
                   <div className="space-y-3">
                     {privacyOptions.map((option) => {
                       const Icon = option.icon;
                       return (
-                        <div key={option.key} className="flex items-center justify-between p-3 bg-foreground/5 border border-foreground/10">
+                        <div key={option.key} className={`flex items-center justify-between p-3 ${
+                          isStudio
+                            ? 'bg-secondary/50 border border-border rounded-xl'
+                            : 'bg-foreground/5 border border-foreground/10'
+                        }`}>
                           <div className="flex items-center gap-3">
-                            <Icon className="w-4 h-4 text-foreground/40" />
-                            <span className="text-foreground text-sm" style={{ fontFamily: "'Space Mono', monospace" }}>
+                            <Icon className={`w-4 h-4 ${isStudio ? 'text-muted-foreground' : 'text-foreground/40'}`} />
+                            <span className={`text-sm ${isStudio ? 'text-foreground' : 'text-foreground'}`} style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}>
                               {option.label}
                             </span>
                           </div>
@@ -554,21 +592,25 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                 {/* Notifications Section */}
                 <div className="mt-6">
                   <h4
-                    className="text-[10px] text-foreground/40 uppercase tracking-[0.2em] mb-3 flex items-center gap-2"
-                    style={{ fontFamily: "'Space Mono', monospace" }}
+                    className={`mb-3 flex items-center gap-2 ${
+                      isStudio ? 'text-xs font-semibold text-muted-foreground' : 'text-[10px] text-foreground/40 uppercase tracking-[0.2em]'
+                    }`}
+                    style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}
                   >
                     <BellRing className="w-3 h-3" /> Notifications
                   </h4>
                   {pushNotifications.isSupported ? (
                     <div className="space-y-3">
-                      <div className="flex items-center justify-between p-3 bg-foreground/5 border border-foreground/10">
+                      <div className={`flex items-center justify-between p-3 ${
+                        isStudio ? 'bg-secondary/50 border border-border rounded-xl' : 'bg-foreground/5 border border-foreground/10'
+                      }`}>
                         <div className="flex items-center gap-3">
-                          <Bell className="w-4 h-4 text-foreground/40" />
+                          <Bell className={`w-4 h-4 ${isStudio ? 'text-muted-foreground' : 'text-foreground/40'}`} />
                           <div>
-                            <span className="text-foreground text-sm" style={{ fontFamily: "'Space Mono', monospace" }}>
-                              Activity_Alerts
+                            <span className="text-foreground text-sm" style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}>
+                              {isStudio ? 'Activity Alerts' : 'Activity_Alerts'}
                             </span>
-                            <p className="text-foreground/40 text-xs">Likes, comments, and 9 PM journal</p>
+                            <p className={`text-xs ${isStudio ? 'text-muted-foreground' : 'text-foreground/40'}`}>Likes, comments, and 9 PM journal</p>
                           </div>
                         </div>
                         <Switch checked={pushNotifications.isSubscribed} onCheckedChange={handleNotificationToggle} />
@@ -580,17 +622,23 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                           size="sm"
                           onClick={handleTestNotification}
                           disabled={isSendingTest}
-                          className="w-full bg-transparent border-foreground/20 text-foreground hover:bg-foreground/10"
-                          style={{ fontFamily: "'Space Mono', monospace" }}
+                          className={`w-full ${
+                            isStudio
+                              ? 'rounded-xl'
+                              : 'bg-transparent border-foreground/20 text-foreground hover:bg-foreground/10'
+                          }`}
+                          style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}
                         >
-                          {isSendingTest ? "Sending..." : "Send_Test_Notification"}
+                          {isSendingTest ? "Sending..." : isStudio ? "Send Test Notification" : "Send_Test_Notification"}
                         </Button>
                       )}
                     </div>
                   ) : (
-                    <div className="p-3 bg-foreground/5 border border-foreground/10 text-center">
-                      <BellOff className="w-5 h-5 mx-auto mb-2 text-foreground/40" />
-                      <p className="text-foreground/40 text-sm" style={{ fontFamily: "'Space Mono', monospace" }}>
+                    <div className={`p-3 text-center ${
+                      isStudio ? 'bg-secondary/50 border border-border rounded-xl' : 'bg-foreground/5 border border-foreground/10'
+                    }`}>
+                      <BellOff className={`w-5 h-5 mx-auto mb-2 ${isStudio ? 'text-muted-foreground' : 'text-foreground/40'}`} />
+                      <p className={`text-sm ${isStudio ? 'text-muted-foreground' : 'text-foreground/40'}`} style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}>
                         Notifications not supported
                       </p>
                     </div>
@@ -600,26 +648,32 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                 {/* Private Journal PIN Section */}
                 <div className="mt-6">
                   <h4
-                    className="text-[10px] text-foreground/40 uppercase tracking-[0.2em] mb-3 flex items-center gap-2"
-                    style={{ fontFamily: "'Space Mono', monospace" }}
+                    className={`mb-3 flex items-center gap-2 ${
+                      isStudio ? 'text-xs font-semibold text-muted-foreground' : 'text-[10px] text-foreground/40 uppercase tracking-[0.2em]'
+                    }`}
+                    style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}
                   >
-                    <BookOpen className="w-3 h-3" /> Private_Journal
+                    <BookOpen className="w-3 h-3" /> {isStudio ? 'Private Journal' : 'Private_Journal'}
                   </h4>
-                  <div className="p-4 bg-foreground/5 border border-foreground/10">
+                  <div className={`p-4 ${
+                    isStudio ? 'bg-secondary/50 border border-border rounded-xl' : 'bg-foreground/5 border border-foreground/10'
+                  }`}>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-foreground/10 flex items-center justify-center">
+                        <div className={`w-10 h-10 flex items-center justify-center ${
+                          isStudio ? 'bg-secondary rounded-lg' : 'bg-foreground/10'
+                        }`}>
                           {journalPin.hasPin ? (
                             <Lock className="w-5 h-5 text-green-500" />
                           ) : (
-                            <KeyRound className="w-5 h-5 text-foreground/40" />
+                            <KeyRound className={`w-5 h-5 ${isStudio ? 'text-muted-foreground' : 'text-foreground/40'}`} />
                           )}
                         </div>
                         <div>
-                          <p className="text-foreground text-sm" style={{ fontFamily: "'Space Mono', monospace" }}>
-                            {journalPin.hasPin ? "PIN_ACTIVE" : "PIN_INACTIVE"}
+                          <p className="text-foreground text-sm" style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}>
+                            {journalPin.hasPin ? (isStudio ? "PIN Active" : "PIN_ACTIVE") : (isStudio ? "PIN Inactive" : "PIN_INACTIVE")}
                           </p>
-                          <p className="text-foreground/40 text-xs">
+                          <p className={`text-xs ${isStudio ? 'text-muted-foreground' : 'text-foreground/40'}`}>
                             {journalPin.hasPin ? "Journal is secured" : "Set a PIN to protect"}
                           </p>
                         </div>
@@ -631,10 +685,10 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                           setJournalPinMode(journalPin.hasPin ? "change" : "setup");
                           setShowJournalPinModal(true);
                         }}
-                        className="bg-transparent border-foreground/20 text-foreground hover:bg-foreground/10"
-                        style={{ fontFamily: "'Space Mono', monospace" }}
+                        className={isStudio ? 'rounded-xl' : 'bg-transparent border-foreground/20 text-foreground hover:bg-foreground/10'}
+                        style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}
                       >
-                        {journalPin.hasPin ? "Change" : "Set_PIN"}
+                        {journalPin.hasPin ? "Change" : (isStudio ? "Set PIN" : "Set_PIN")}
                       </Button>
                     </div>
                   </div>
@@ -643,31 +697,39 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                 {/* Referral Section */}
                 <div className="mt-6">
                   <h4
-                    className="text-[10px] text-foreground/40 uppercase tracking-[0.2em] mb-3 flex items-center gap-2"
-                    style={{ fontFamily: "'Space Mono', monospace" }}
+                    className={`mb-3 flex items-center gap-2 ${
+                      isStudio ? 'text-xs font-semibold text-muted-foreground' : 'text-[10px] text-foreground/40 uppercase tracking-[0.2em]'
+                    }`}
+                    style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}
                   >
-                    <Share2 className="w-3 h-3" /> Invite_Friends
+                    <Share2 className="w-3 h-3" /> {isStudio ? 'Invite Friends' : 'Invite_Friends'}
                   </h4>
-                  <div className="p-4 bg-foreground/5 border border-foreground/10 mb-3">
-                    <p className="text-foreground/60 text-xs mb-2" style={{ fontFamily: "'Space Mono', monospace" }}>
+                  <div className={`p-4 mb-3 ${
+                    isStudio ? 'bg-secondary/50 border border-border rounded-xl' : 'bg-foreground/5 border border-foreground/10'
+                  }`}>
+                    <p className={`text-xs mb-2 ${isStudio ? 'text-muted-foreground' : 'text-foreground/60'}`} style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}>
                       Your referral code
                     </p>
                     <div className="flex gap-2">
-                      <div className="flex-1 bg-foreground/10 border border-foreground/20 px-3 py-2 flex items-center justify-between">
-                        <span className="text-foreground font-bold tracking-wider" style={{ fontFamily: "'Space Mono', monospace" }}>
+                      <div className={`flex-1 px-3 py-2 flex items-center justify-between ${
+                        isStudio ? 'bg-background border border-border rounded-lg' : 'bg-foreground/10 border border-foreground/20'
+                      }`}>
+                        <span className="text-foreground font-bold tracking-wider" style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}>
                           {referralCode || "..."}
                         </span>
-                        <button onClick={handleCopyReferral} className="p-1 hover:bg-foreground/10">
-                          <Copy className="w-4 h-4 text-foreground/60" />
+                        <button onClick={handleCopyReferral} className={`p-1 ${isStudio ? 'hover:bg-secondary rounded' : 'hover:bg-foreground/10'}`}>
+                          <Copy className={`w-4 h-4 ${isStudio ? 'text-muted-foreground' : 'text-foreground/60'}`} />
                         </button>
                       </div>
                     </div>
-                    <p className="text-foreground/40 text-[10px] mt-2" style={{ fontFamily: "'Space Mono', monospace" }}>
+                    <p className={`text-[10px] mt-2 ${isStudio ? 'text-muted-foreground' : 'text-foreground/40'}`} style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}>
                       Share to unlock Community Champion badge!
                     </p>
                   </div>
-                  <div className="p-4 bg-foreground/5 border border-foreground/10">
-                    <p className="text-foreground/60 text-xs mb-2" style={{ fontFamily: "'Space Mono', monospace" }}>
+                  <div className={`p-4 ${
+                    isStudio ? 'bg-secondary/50 border border-border rounded-xl' : 'bg-foreground/5 border border-foreground/10'
+                  }`}>
+                    <p className={`text-xs mb-2 ${isStudio ? 'text-muted-foreground' : 'text-foreground/60'}`} style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}>
                       Have a friend's code?
                     </p>
                     <div className="flex gap-2">
@@ -676,14 +738,18 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                         value={referralInput}
                         onChange={(e) => setReferralInput(e.target.value.toUpperCase())}
                         maxLength={8}
-                        className="flex-1 bg-foreground/5 border-foreground/10 text-foreground placeholder:text-foreground/30 uppercase"
-                        style={{ fontFamily: "'Space Mono', monospace" }}
+                        className={`flex-1 uppercase ${
+                          isStudio
+                            ? 'bg-background border-border rounded-lg'
+                            : 'bg-foreground/5 border-foreground/10 text-foreground placeholder:text-foreground/30'
+                        }`}
+                        style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}
                       />
                       <Button
                         onClick={handleApplyReferral}
                         disabled={!referralInput.trim() || isApplyingReferral}
                         size="sm"
-                        className="bg-[#C5A059] text-black hover:bg-[#C5A059]/80"
+                        className={isStudio ? 'rounded-lg' : 'bg-[#C5A059] text-black hover:bg-[#C5A059]/80'}
                       >
                         {isApplyingReferral ? "..." : "Apply"}
                       </Button>
@@ -694,82 +760,121 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                 {/* Install App Section */}
                 <div className="mt-6">
                   <h4
-                    className="text-[10px] text-foreground/40 uppercase tracking-[0.2em] mb-3 flex items-center gap-2"
-                    style={{ fontFamily: "'Space Mono', monospace" }}
+                    className={`mb-3 flex items-center gap-2 ${
+                      isStudio ? 'text-xs font-semibold text-muted-foreground' : 'text-[10px] text-foreground/40 uppercase tracking-[0.2em]'
+                    }`}
+                    style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}
                   >
-                    <Smartphone className="w-3 h-3" /> Install_App
+                    <Smartphone className="w-3 h-3" /> {isStudio ? 'Install App' : 'Install_App'}
                   </h4>
                   <button
                     onClick={() => setShowPWATutorial(true)}
-                    className="w-full flex items-center justify-between p-4 bg-foreground/5 border border-foreground/20 hover:border-foreground/40 transition-colors"
+                    className={`w-full flex items-center justify-between p-4 transition-colors ${
+                      isStudio
+                        ? 'bg-secondary/50 border border-border rounded-xl hover:bg-secondary'
+                        : 'bg-foreground/5 border border-foreground/20 hover:border-foreground/40'
+                    }`}
                   >
                     <div className="text-left">
-                      <p className="text-foreground text-sm" style={{ fontFamily: "'Space Mono', monospace" }}>
-                        Add_to_Home_Screen
+                      <p className="text-foreground text-sm" style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}>
+                        {isStudio ? 'Add to Home Screen' : 'Add_to_Home_Screen'}
                       </p>
-                      <p className="text-foreground/40 text-xs">Install ROZ for quick access</p>
+                      <p className={`text-xs ${isStudio ? 'text-muted-foreground' : 'text-foreground/40'}`}>Install ROZ for quick access</p>
                     </div>
-                    <Smartphone className="w-5 h-5 text-foreground/60" />
+                    <Smartphone className={`w-5 h-5 ${isStudio ? 'text-muted-foreground' : 'text-foreground/60'}`} />
                   </button>
                 </div>
 
                 {/* Theme Section */}
                 <div className="mt-6">
                   <h4
-                    className="text-[10px] text-foreground/40 uppercase tracking-[0.2em] mb-3 flex items-center gap-2"
-                    style={{ fontFamily: "'Space Mono', monospace" }}
+                    className={`mb-3 flex items-center gap-2 ${
+                      isStudio ? 'text-xs font-semibold text-muted-foreground' : 'text-[10px] text-foreground/40 uppercase tracking-[0.2em]'
+                    }`}
+                    style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}
                   >
                     <Sparkles className="w-3 h-3" /> Theme
                   </h4>
-                  <div className="flex gap-2">
+
+                  {/* Persona selector: Studio / Zine */}
+                  <div className="flex gap-2 mb-3">
                     <button
-                      onClick={() => setTheme('modern')}
-                      className={`flex-1 p-4 border transition-colors ${
-                        currentTheme !== 'classic'
-                          ? 'border-foreground/60 bg-foreground/10'
-                          : 'border-foreground/10 bg-foreground/5 hover:border-foreground/30'
+                      onClick={() => themeCtx.setPersona('studio')}
+                      className={`flex-1 p-4 border transition-colors rounded-xl ${
+                        themeCtx.persona === 'studio'
+                          ? 'border-primary bg-primary/5'
+                          : 'border-border bg-secondary/50 hover:bg-secondary'
                       }`}
                     >
-                      <div className="w-full h-12 rounded bg-black border border-foreground/20 mb-2 flex items-center justify-center">
-                        <span className="text-foreground text-[10px]" style={{ fontFamily: "'Space Mono', monospace" }}>Aa</span>
+                      <div className="w-full h-12 rounded-lg bg-white border border-black/10 mb-2 flex items-center justify-center">
+                        <span className="text-black text-[10px] font-medium">Aa</span>
                       </div>
-                      <p className="text-foreground text-xs font-medium" style={{ fontFamily: "'Space Mono', monospace" }}>Modern</p>
+                      <p className={`text-xs font-medium ${themeCtx.persona === 'studio' ? 'text-foreground' : 'text-muted-foreground'}`}>Studio</p>
                     </button>
                     <button
-                      onClick={() => setTheme('classic')}
-                      className={`flex-1 p-4 border transition-colors ${
-                        currentTheme === 'classic'
-                          ? 'border-foreground/60 bg-foreground/10'
-                          : 'border-foreground/10 bg-foreground/5 hover:border-foreground/30'
+                      onClick={() => themeCtx.setPersona('zine')}
+                      className={`flex-1 p-4 border transition-colors rounded-xl ${
+                        themeCtx.persona === 'zine'
+                          ? 'border-primary bg-primary/5'
+                          : 'border-border bg-secondary/50 hover:bg-secondary'
                       }`}
                     >
-                      <div className="w-full h-12 rounded bg-white border border-black/10 mb-2 flex items-center justify-center">
-                        <span className="text-black text-[10px]" style={{ fontFamily: "'Space Mono', monospace" }}>Aa</span>
+                      <div className="w-full h-12 rounded-lg bg-black border border-white/10 mb-2 flex items-center justify-center">
+                        <span className="text-white text-[10px]" style={{ fontFamily: "'Space Mono', monospace" }}>Aa</span>
                       </div>
-                      <p className="text-foreground text-xs font-medium" style={{ fontFamily: "'Space Mono', monospace" }}>Classic</p>
+                      <p className={`text-xs font-medium ${themeCtx.persona === 'zine' ? 'text-foreground' : 'text-muted-foreground'}`}>Zine</p>
                     </button>
                   </div>
+
+                  {/* Color mode sub-option (Studio only) */}
+                  {isStudio && (
+                    <div className="flex gap-2">
+                      {([
+                        { mode: "light" as const, label: "Light" },
+                        { mode: "dark" as const, label: "Dark" },
+                        { mode: "system" as const, label: "System" },
+                      ]).map((opt) => (
+                        <button
+                          key={opt.mode}
+                          onClick={() => themeCtx.setColorMode(opt.mode)}
+                          className={`flex-1 py-2 px-3 text-xs font-medium rounded-lg transition-colors ${
+                            themeCtx.colorMode === opt.mode
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-secondary text-muted-foreground hover:bg-secondary/80'
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* Feedback Section */}
                 <div className="mt-6">
                   <h4
-                    className="text-[10px] text-foreground/40 uppercase tracking-[0.2em] mb-3 flex items-center gap-2"
-                    style={{ fontFamily: "'Space Mono', monospace" }}
+                    className={`mb-3 flex items-center gap-2 ${
+                      isStudio ? 'text-xs font-semibold text-muted-foreground' : 'text-[10px] text-foreground/40 uppercase tracking-[0.2em]'
+                    }`}
+                    style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}
                   >
                     <MessageSquareHeart className="w-3 h-3" /> Feedback
                   </h4>
                   <button
                     onClick={() => setShowFeedback(true)}
-                    className="w-full flex items-center justify-between p-4 bg-foreground/5 border border-foreground/10 hover:border-foreground/30 transition-colors"
+                    className={`w-full flex items-center justify-between p-4 transition-colors ${
+                      isStudio
+                        ? 'bg-secondary/50 border border-border rounded-xl hover:bg-secondary'
+                        : 'bg-foreground/5 border border-foreground/10 hover:border-foreground/30'
+                    }`}
                   >
                     <div className="text-left">
-                      <p className="text-foreground text-sm" style={{ fontFamily: "'Space Mono', monospace" }}>
-                        Send_Feedback
+                      <p className="text-foreground text-sm" style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}>
+                        {isStudio ? 'Send Feedback' : 'Send_Feedback'}
                       </p>
-                      <p className="text-foreground/40 text-xs">Help us improve</p>
+                      <p className={`text-xs ${isStudio ? 'text-muted-foreground' : 'text-foreground/40'}`}>Help us improve</p>
                     </div>
-                    <MessageSquareHeart className="w-5 h-5 text-foreground/60" />
+                    <MessageSquareHeart className={`w-5 h-5 ${isStudio ? 'text-muted-foreground' : 'text-foreground/60'}`} />
                   </button>
                 </div>
 
@@ -777,11 +882,13 @@ const SettingsSheet = ({ isOpen, onClose }: SettingsSheetProps) => {
                 <div className="mt-6">
                   <button
                     onClick={handleLogout}
-                    className="w-full flex items-center justify-between p-4 bg-red-500/10 border border-red-500/30 hover:bg-red-500/20 transition-colors"
+                    className={`w-full flex items-center justify-between p-4 bg-red-500/10 border border-red-500/30 hover:bg-red-500/20 transition-colors ${
+                      isStudio ? 'rounded-xl' : ''
+                    }`}
                   >
                     <div className="text-left">
-                      <p className="text-red-500 text-sm" style={{ fontFamily: "'Space Mono', monospace" }}>
-                        LOGOUT
+                      <p className="text-red-500 text-sm" style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}>
+                        {isStudio ? 'Log Out' : 'LOGOUT'}
                       </p>
                       <p className="text-red-500/60 text-xs">Sign out of your account</p>
                     </div>

@@ -10,6 +10,7 @@ import { formatDistanceToNow, format } from "date-fns";
 import VoiceRecorder from "./VoiceRecorder";
 import VoiceMessage from "./VoiceMessage";
 import ZineConversationCard from "./ZineConversationCard";
+import { useTheme } from "@/hooks/useTheme";
 
 interface MessagesTabProps {
   onFriendClick?: (friendId: string) => void;
@@ -74,6 +75,7 @@ const MessagesTab = ({ onFriendClick }: MessagesTabProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
   const { toast } = useToast();
+  const { isStudio } = useTheme();
 
   useEffect(() => {
     if (user) {
@@ -467,7 +469,7 @@ const MessagesTab = ({ onFriendClick }: MessagesTabProps) => {
             </Avatar>
             <span
               className="font-bold text-black uppercase tracking-wide"
-              style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+              style={isStudio ? undefined : { fontFamily: "'Space Grotesk', sans-serif" }}
             >
               {selectedFriend.name}
             </span>
@@ -480,7 +482,7 @@ const MessagesTab = ({ onFriendClick }: MessagesTabProps) => {
             <div className="flex items-center justify-center h-full">
               <p
                 className="text-black/40 text-sm"
-                style={{ fontFamily: "'Space Mono', monospace" }}
+                style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}
               >
                 No messages yet. Say hi!
               </p>
@@ -517,7 +519,7 @@ const MessagesTab = ({ onFriendClick }: MessagesTabProps) => {
                     ) : (
                       <p
                         className="break-words text-sm"
-                        style={{ fontFamily: "'Space Mono', monospace" }}
+                        style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}
                       >
                         {msg.content}
                       </p>
@@ -546,7 +548,7 @@ const MessagesTab = ({ onFriendClick }: MessagesTabProps) => {
                       >
                         <span
                           className="text-[10px] text-black/40"
-                          style={{ fontFamily: "'Space Mono', monospace" }}
+                          style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}
                         >
                           {format(new Date(msg.created_at), 'MMM d, h:mm a')}
                         </span>
@@ -555,7 +557,7 @@ const MessagesTab = ({ onFriendClick }: MessagesTabProps) => {
                         {isMine && (
                           <span
                             className="flex items-center text-[10px] text-black/40"
-                            style={{ fontFamily: "'Space Mono', monospace" }}
+                            style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}
                           >
                             {msg.read_at ? (
                               <>
@@ -626,7 +628,7 @@ const MessagesTab = ({ onFriendClick }: MessagesTabProps) => {
                     }
                   }}
                   className="bg-white border-2 border-black/10 text-black placeholder:text-black/30"
-                  style={{ fontFamily: "'Space Mono', monospace" }}
+                  style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}
                 />
 
                 {/* Mic button - show when no text */}
@@ -671,7 +673,7 @@ const MessagesTab = ({ onFriendClick }: MessagesTabProps) => {
               </h1>
               <p
                 className="text-[10px] text-black/40 uppercase tracking-[0.2em] mt-1"
-                style={{ fontFamily: "'Space Mono', monospace" }}
+                style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}
               >
                 {conversations.length} conversation{conversations.length !== 1 ? 's' : ''}
               </p>
@@ -697,13 +699,13 @@ const MessagesTab = ({ onFriendClick }: MessagesTabProps) => {
             </div>
             <p
               className="text-black/40 text-sm uppercase tracking-wider"
-              style={{ fontFamily: "'Space Mono', monospace" }}
+              style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}
             >
               No messages yet
             </p>
             <p
               className="text-black/30 text-xs mt-2 italic"
-              style={{ fontFamily: "'Playfair Display', serif" }}
+              style={isStudio ? undefined : { fontFamily: "'Playfair Display', serif" }}
             >
               Tap + to start a conversation
             </p>
@@ -755,7 +757,7 @@ const MessagesTab = ({ onFriendClick }: MessagesTabProps) => {
               <div className="flex-shrink-0 flex items-center justify-between p-4 border-b-2 border-black/10">
                 <h3
                   className="font-bold text-black uppercase tracking-wide"
-                  style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+                  style={isStudio ? undefined : { fontFamily: "'Space Grotesk', sans-serif" }}
                 >
                   New Message
                 </h3>
@@ -774,7 +776,7 @@ const MessagesTab = ({ onFriendClick }: MessagesTabProps) => {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="bg-white border-2 border-black/10 text-black placeholder:text-black/30"
-                  style={{ fontFamily: "'Space Mono', monospace" }}
+                  style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}
                 />
               </div>
 
@@ -785,13 +787,13 @@ const MessagesTab = ({ onFriendClick }: MessagesTabProps) => {
                     <User className="w-12 h-12 mb-3 text-black/20" />
                     <p
                       className="text-black/40 text-sm"
-                      style={{ fontFamily: "'Space Mono', monospace" }}
+                      style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}
                     >
                       No friends yet
                     </p>
                     <p
                       className="text-black/30 text-xs mt-1 italic"
-                      style={{ fontFamily: "'Playfair Display', serif" }}
+                      style={isStudio ? undefined : { fontFamily: "'Playfair Display', serif" }}
                     >
                       Add friends to start messaging!
                     </p>
@@ -800,7 +802,7 @@ const MessagesTab = ({ onFriendClick }: MessagesTabProps) => {
                   <div className="text-center py-8">
                     <p
                       className="text-black/40 text-sm"
-                      style={{ fontFamily: "'Space Mono', monospace" }}
+                      style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}
                     >
                       No friends found
                     </p>
@@ -823,14 +825,14 @@ const MessagesTab = ({ onFriendClick }: MessagesTabProps) => {
                         <div>
                           <p
                             className="font-bold text-black text-sm uppercase tracking-wide"
-                            style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+                            style={isStudio ? undefined : { fontFamily: "'Space Grotesk', sans-serif" }}
                           >
                             {friend.display_name || friend.username || 'Friend'}
                           </p>
                           {friend.username && friend.display_name && (
                             <p
                               className="text-black/40 text-xs"
-                              style={{ fontFamily: "'Space Mono', monospace" }}
+                              style={isStudio ? undefined : { fontFamily: "'Space Mono', monospace" }}
                             >
                               @{friend.username}
                             </p>

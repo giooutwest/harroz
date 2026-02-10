@@ -18,6 +18,8 @@ import JournalView from "./JournalView";
 import { useJournalPin } from "@/hooks/useJournalPin";
 import { useJournalEntries, useJournalEntry } from "@/hooks/useJournalEntry";
 import { useNemesis } from "@/hooks/useNemesis";
+import { useTheme } from "@/hooks/useTheme";
+import StudioCalendarView from "./StudioCalendarView";
 
 // --- SNAKE PATH MATH ---
 // This calculates the x/y position for any day index automatically.
@@ -85,6 +87,7 @@ const CalendarTab = () => {
 
   const { user } = useAuth();
   const { nemesisId } = useNemesis();
+  const { isStudio } = useTheme();
   const journalPin = useJournalPin();
   const { entries: journalEntries } = useJournalEntries(
     currentDate.getFullYear(),
@@ -272,6 +275,27 @@ const CalendarTab = () => {
   const yearNum = currentDate.getFullYear();
   const totalDays = getDaysInMonth();
   const today = getLocalDateString();
+
+  if (isStudio) {
+    return (
+      <>
+        <StudioCalendarView
+          currentDate={currentDate}
+          moods={moods}
+          nemesisMoods={nemesisMoods}
+          journalEntries={journalEntries}
+          viewMode={viewMode}
+          onViewModeChange={handleViewModeChange}
+          onNavigateMonth={navigateMonth}
+          onDayClick={handleDayClick}
+        />
+        <CalendarDayDetail isOpen={!!selectedDate} onClose={() => setSelectedDate(null)} date={selectedDate || ""} onFriendClick={(id) => setSelectedFriendId(id)} />
+        <FriendProfileModal friendId={selectedFriendId} onClose={() => setSelectedFriendId(null)} />
+        <PinEntryModal isOpen={showPinModal} onClose={() => { setShowPinModal(false); setPendingJournalDate(null); }} onSuccess={handlePinSuccess} mode={journalPin.hasPin ? "verify" : "setup"} verifyPin={journalPin.verifyPin} setupPin={journalPin.setupPin} />
+        <JournalView isOpen={!!selectedJournalDate && isJournalUnlocked} entry={selectedJournalEntry.entry} onClose={() => setSelectedJournalDate(null)} canEdit={selectedJournalEntry.canEdit} />
+      </>
+    );
+  }
 
   return (
     <div className="relative min-h-screen text-white overflow-hidden flex flex-col"
