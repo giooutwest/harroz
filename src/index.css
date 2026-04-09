@@ -1,9 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,900;1,400&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Abril+Fatface&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -11,338 +6,258 @@
 
 @layer base {
   :root {
-    /* Studio Light — sleek, warm, high-end productivity */
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
-
-    --card: 0 0% 98%;
-    --card-foreground: 240 10% 3.9%;
-
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-
-    --primary: 240 5.9% 10%;
-    --primary-foreground: 0 0% 98%;
-
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
-
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 98%;
-
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 240 5.9% 10%;
-
-    --radius: 1rem;
-
-    /* Mood colors (shared across all themes) */
-    --mood-1: 0 70% 50%;
-    --mood-2: 15 70% 50%;
-    --mood-3: 30 80% 55%;
-    --mood-4: 40 85% 55%;
-    --mood-5: 50 90% 55%;
-    --mood-6: 55 85% 55%;
-    --mood-7: 120 50% 45%;
-    --mood-8: 140 55% 45%;
-    --mood-9: 210 80% 55%;
-    --mood-10: 220 85% 60%;
-
-    /* Tab bar */
-    --tab-bar: 0 0% 100%;
-    --tab-active: 240 5.9% 10%;
-    --tab-inactive: 240 3.8% 46.1%;
-
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --background: 0 0% 75%;
+    --foreground: 0 0% 0%;
+    --radius: 0rem;
   }
 
-  /* Studio Dark */
-  .studio-dark {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-
-    --card: 240 10% 6%;
-    --card-foreground: 0 0% 98%;
-
-    --popover: 240 10% 6%;
-    --popover-foreground: 0 0% 98%;
-
-    --primary: 0 0% 98%;
-    --primary-foreground: 240 5.9% 10%;
-
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 83.9%;
-
-    /* Tab bar */
-    --tab-bar: 240 10% 6%;
-    --tab-active: 0 0% 98%;
-    --tab-inactive: 240 5% 64.9%;
-  }
-
-  /* Zine — pure black editorial aesthetic */
-  .theme-zine {
-    --background: 0 0% 0%;
-    --foreground: 0 0% 98%;
-
-    --card: 0 0% 5%;
-    --card-foreground: 0 0% 98%;
-
-    --popover: 0 0% 5%;
-    --popover-foreground: 0 0% 98%;
-
-    --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 0%;
-
-    --secondary: 0 0% 12%;
-    --secondary-foreground: 0 0% 98%;
-
-    --muted: 0 0% 15%;
-    --muted-foreground: 0 0% 60%;
-
-    --accent: 0 0% 15%;
-    --accent-foreground: 0 0% 98%;
-
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 98%;
-
-    --border: 0 0% 15%;
-    --input: 0 0% 15%;
-    --ring: 0 0% 98%;
-
-    /* Tab bar */
-    --tab-bar: 0 0% 8%;
-    --tab-active: 0 0% 98%;
-    --tab-inactive: 0 0% 45%;
-  }
-
-}
-
-@layer base {
   * {
-    @apply border-border;
-  }
-
-  html, body {
-    background-color: hsl(var(--background));
-    min-height: 100%;
+    box-sizing: border-box;
   }
 
   body {
-    @apply bg-background text-foreground antialiased;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    -webkit-tap-highlight-color: transparent;
-    touch-action: manipulation;
+    background-color: #008080; /* Win98 teal desktop */
+    font-family: "MS Sans Serif", "Microsoft Sans Serif", Tahoma, sans-serif;
+    font-size: 11px;
+    -webkit-font-smoothing: none;
+    -moz-osx-font-smoothing: unset;
+    user-select: none;
+    overscroll-behavior: none;
   }
 
-  /* Safe area support for notched phones */
-  .safe-area-bottom {
-    padding-bottom: env(safe-area-inset-bottom, 0);
-  }
-
-  .safe-area-top {
-    padding-top: env(safe-area-inset-top, 0);
+  input, textarea, select {
+    font-family: "MS Sans Serif", "Microsoft Sans Serif", Tahoma, sans-serif;
+    font-size: 11px;
+    -webkit-font-smoothing: none;
   }
 }
 
 @layer components {
-  /* Mood circle colors */
-  .mood-1, .mood-2 { @apply bg-mood-low; }
-  .mood-3, .mood-4 { @apply bg-mood-mid-low; }
-  .mood-5, .mood-6 { @apply bg-mood-mid; }
-  .mood-7, .mood-8 { @apply bg-mood-mid-high; }
-  .mood-9, .mood-10 { @apply bg-mood-high; }
+  /* ===== WIN98 BORDER UTILITIES ===== */
 
-  /* Glass effect for cards */
-  .glass-card {
-    backdrop-filter: blur(20px);
-    background: hsl(var(--card) / 0.8);
-  }
-}
-
-@layer utilities {
-  .no-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
-  .no-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
+  /* Raised panel / default button */
+  .win98-raised {
+    box-shadow:
+      inset -1px -1px #0a0a0a,
+      inset 1px 1px #ffffff,
+      inset -2px -2px #808080,
+      inset 2px 2px #dfdfdf;
   }
 
-  /* DailyReel Film Strip Styles */
-  .splice-line {
-    background: linear-gradient(
-      90deg,
-      transparent 0%,
-      rgba(255, 255, 255, 0.8) 2%,
-      transparent 4%,
-      rgba(255, 255, 255, 0.6) 6%,
-      transparent 8%,
-      rgba(255, 255, 255, 0.9) 10%,
-      transparent 12%,
-      rgba(255, 255, 255, 0.7) 15%,
-      transparent 17%,
-      rgba(255, 255, 255, 0.8) 20%,
-      transparent 22%,
-      rgba(255, 255, 255, 0.5) 25%,
-      transparent 27%,
-      rgba(255, 255, 255, 0.9) 30%,
-      transparent 32%,
-      rgba(255, 255, 255, 0.6) 35%,
-      transparent 38%,
-      rgba(255, 255, 255, 0.8) 42%,
-      transparent 45%,
-      rgba(255, 255, 255, 0.7) 48%,
-      transparent 50%,
-      rgba(255, 255, 255, 0.9) 53%,
-      transparent 55%,
-      rgba(255, 255, 255, 0.6) 58%,
-      transparent 60%,
-      rgba(255, 255, 255, 0.8) 63%,
-      transparent 66%,
-      rgba(255, 255, 255, 0.7) 70%,
-      transparent 73%,
-      rgba(255, 255, 255, 0.9) 76%,
-      transparent 78%,
-      rgba(255, 255, 255, 0.5) 82%,
-      transparent 85%,
-      rgba(255, 255, 255, 0.8) 88%,
-      transparent 90%,
-      rgba(255, 255, 255, 0.7) 93%,
-      transparent 95%,
-      rgba(255, 255, 255, 0.6) 98%,
-      transparent 100%
-    );
-    height: 3px;
-    position: relative;
+  /* Sunken panel / active button / input fields */
+  .win98-sunken {
+    box-shadow:
+      inset -1px -1px #ffffff,
+      inset 1px 1px #0a0a0a,
+      inset -2px -2px #dfdfdf,
+      inset 2px 2px #808080;
   }
 
-  .splice-line::before {
-    content: '';
-    position: absolute;
-    top: -1px;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: rgba(255, 255, 255, 0.2);
+  /* Simple 1px inset (for field borders) */
+  .win98-inset {
+    box-shadow:
+      inset 1px 1px #808080,
+      inset -1px -1px #dfdfdf;
   }
 
-  .splice-line::after {
-    content: '';
-    position: absolute;
-    bottom: -1px;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: rgba(255, 255, 255, 0.2);
+  /* ===== WIN98 BUTTON ===== */
+  .win98-btn {
+    background-color: #C0C0C0;
+    box-shadow:
+      inset -1px -1px #0a0a0a,
+      inset 1px 1px #ffffff,
+      inset -2px -2px #808080,
+      inset 2px 2px #dfdfdf;
+    padding: 4px 12px;
+    font-family: "MS Sans Serif", "Microsoft Sans Serif", Tahoma, sans-serif;
+    font-size: 11px;
+    cursor: pointer;
+    white-space: nowrap;
+    min-height: 23px;
+    min-width: 75px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
 
-  .film-frame {
-    position: relative;
-    border-left: 1px solid rgba(255, 255, 255, 0.05);
-    border-right: 1px solid rgba(255, 255, 255, 0.05);
+  .win98-btn:active, .win98-btn.active {
+    box-shadow:
+      inset -1px -1px #ffffff,
+      inset 1px 1px #0a0a0a,
+      inset -2px -2px #dfdfdf,
+      inset 2px 2px #808080;
+    padding-top: 5px;
+    padding-left: 13px;
   }
 
-  .film-frame::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 100%;
-    background: linear-gradient(
-      to right,
-      rgba(0, 0, 0, 0.3) 0%,
-      transparent 5%,
-      transparent 95%,
-      rgba(0, 0, 0, 0.3) 100%
-    );
-    pointer-events: none;
+  .win98-btn:focus {
+    outline: 1px dotted #000;
+    outline-offset: -4px;
   }
 
-  /* Film grain animation */
-  @keyframes grain {
-    0%, 100% { transform: translate(0, 0); }
-    10% { transform: translate(-1%, -1%); }
-    20% { transform: translate(1%, 1%); }
-    30% { transform: translate(-1%, 1%); }
-    40% { transform: translate(1%, -1%); }
-    50% { transform: translate(-1%, 0%); }
-    60% { transform: translate(1%, 0%); }
-    70% { transform: translate(0%, 1%); }
-    80% { transform: translate(0%, -1%); }
-    90% { transform: translate(1%, 1%); }
+  .win98-btn.primary {
+    font-weight: bold;
   }
 
-  .film-grain {
-    animation: grain 0.5s steps(1) infinite;
+  /* ===== WIN98 TITLE BAR ===== */
+  .win98-titlebar {
+    background: linear-gradient(to right, #000080, #1084d0);
+    color: #ffffff;
+    font-family: "MS Sans Serif", "Microsoft Sans Serif", Tahoma, sans-serif;
+    font-size: 11px;
+    font-weight: bold;
+    padding: 3px 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: default;
+    height: 22px;
+    flex-shrink: 0;
   }
-  /* Ensure scrollbars are always on top */
+
+  .win98-titlebar-inactive {
+    background: linear-gradient(to right, #808080, #a0a0a0);
+  }
+
+  /* ===== WIN98 WINDOW ===== */
+  .win98-window {
+    background-color: #C0C0C0;
+    box-shadow:
+      inset -1px -1px #0a0a0a,
+      inset 1px 1px #ffffff,
+      inset -2px -2px #808080,
+      inset 2px 2px #dfdfdf;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ===== WIN98 INPUT ===== */
+  .win98-input {
+    background-color: #ffffff;
+    box-shadow:
+      inset -1px -1px #ffffff,
+      inset 1px 1px #808080,
+      inset -2px -2px #dfdfdf,
+      inset 2px 2px #0a0a0a;
+    padding: 2px 4px;
+    font-family: "MS Sans Serif", "Microsoft Sans Serif", Tahoma, sans-serif;
+    font-size: 11px;
+    color: #000;
+    outline: none;
+    border: none;
+    width: 100%;
+  }
+
+  /* ===== WIN98 MENU BAR ===== */
+  .win98-menubar {
+    background-color: #C0C0C0;
+    border-bottom: 1px solid #808080;
+    display: flex;
+    padding: 2px 4px;
+    gap: 0;
+  }
+
+  .win98-menuitem {
+    padding: 2px 6px;
+    font-size: 11px;
+    cursor: pointer;
+  }
+
+  .win98-menuitem:hover {
+    background-color: #000080;
+    color: #ffffff;
+  }
+
+  /* ===== WIN98 SCROLLBAR ===== */
   ::-webkit-scrollbar {
-    z-index: 9999;
-    width: 6px;
+    width: 16px;
+    height: 16px;
   }
 
   ::-webkit-scrollbar-track {
-    background: transparent;
+    background: #C0C0C0;
+    box-shadow: inset 1px 1px #808080, inset -1px -1px #ffffff;
   }
 
   ::-webkit-scrollbar-thumb {
-    background-color: hsl(var(--muted-foreground) / 0.3);
-    border-radius: 20px;
+    background-color: #C0C0C0;
+    box-shadow:
+      inset -1px -1px #0a0a0a,
+      inset 1px 1px #ffffff,
+      inset -2px -2px #808080,
+      inset 2px 2px #dfdfdf;
   }
 
-  /* Zine/Magazine theme utilities */
-  .font-display {
-    font-family: 'Abril Fatface', serif;
+  /* ===== TASKBAR ===== */
+  .win98-taskbar {
+    background-color: #C0C0C0;
+    box-shadow: inset 0 1px 0 #ffffff;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    padding: 2px 4px;
+    gap: 4px;
   }
 
-  .font-serif-zine {
-    font-family: 'Playfair Display', serif;
+  /* ===== DESKTOP BACKGROUND PATTERN ===== */
+  .win98-desktop {
+    background-color: #008080;
   }
 
-  .font-mono-zine {
-    font-family: 'Space Mono', monospace;
+  /* ===== LARGE PIXEL FONT ===== */
+  .font-win98-header {
+    font-family: 'VT323', monospace;
+    -webkit-font-smoothing: none;
   }
+}
 
-  .jagged-line {
-    height: 2px;
-    background-color: currentColor;
-    clip-path: polygon(0% 0%, 5% 100%, 10% 0%, 15% 100%, 20% 0%, 25% 100%, 30% 0%, 35% 100%, 40% 0%, 45% 100%, 50% 0%, 55% 100%, 60% 0%, 65% 100%, 70% 0%, 75% 100%, 80% 0%, 85% 100%, 90% 0%, 95% 100%, 100% 0%);
-  }
+/* Disable pull-to-refresh */
+html {
+  overscroll-behavior-y: none;
+}
 
-  .glitch-text {
-    text-shadow: 2px 0 #D93025, -2px 0 #C5A059;
-  }
+/* Snap scrolling for feed */
+.snap-container {
+  scroll-snap-type: y mandatory;
+  overflow-y: scroll;
+  height: 100%;
+}
 
-  .noise-overlay {
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-  }
+.snap-item {
+  scroll-snap-align: start;
+  height: 100%;
+  flex-shrink: 0;
+}
+
+/* Recording indicator blink */
+@keyframes rec-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.rec-blink {
+  animation: rec-blink 1s step-end infinite;
+}
+
+/* Win98 progress bar */
+@keyframes win98-progress {
+  0% { background-position: 0 0; }
+  100% { background-position: 32px 0; }
+}
+
+.win98-progress-bar {
+  background-color: #000080;
+  background-image: repeating-linear-gradient(
+    90deg,
+    #000080 0px,
+    #000080 16px,
+    #1084d0 16px,
+    #1084d0 32px
+  );
+  animation: win98-progress 0.5s linear infinite;
+}
+
+/* Pixelated rendering for icons */
+.pixelated {
+  image-rendering: pixelated;
 }

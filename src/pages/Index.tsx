@@ -1,345 +1,265 @@
-import { useState, useEffect, Suspense, lazy } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Loader2 } from "lucide-react";
-import ZineBottomNav from "@/components/ZineBottomNav";
-import StudioBottomNav from "@/components/StudioBottomNav";
-import TodayTab from "@/components/TodayTab";
-import { useTheme } from "@/hooks/useTheme";
-import SettingsSheet from "@/components/SettingsSheet";
-import Onboarding from "@/components/Onboarding";
-import UpdateBanner from "@/components/UpdateBanner";
-import InstallPrompt from "@/components/InstallPrompt";
-import PWAInstallTutorial from "@/components/PWAInstallTutorial";
-import NotificationPrompt from "@/components/NotificationPrompt";
-import BetaPrompt from "@/components/BetaPrompt";
-import FitCheckCamera from "@/components/FitCheckCamera";
-import WhatsNewModal, { WHATS_NEW_VERSION } from "@/components/WhatsNewModal";
-import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { useUnreadUpdates } from "@/hooks/useUnreadUpdates";
-import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
-import { useNotificationNavigation } from "@/hooks/useNotificationNavigation";
+import CameraState from "@/components/CameraState";
+import RatingState from "@/components/RatingState";
+import FeedState from "@/components/FeedState";
+import ProfileWindow from "@/components/ProfileWindow";
 
-const CalendarTab = lazy(() => import("@/components/CalendarTab"));
-const StatsTab = lazy(() => import("@/components/StatsTab"));
-const FriendsTab = lazy(() => import("@/components/FriendsTab"));
-const MessagesTab = lazy(() => import("@/components/MessagesTab"));
+type AppState = "camera" | "rating" | "feed";
 
-type Tab = "today" | "calendar" | "stats" | "friends" | "messages";
+interface RecordingData {
+  videoBlob: Blob;
+  audioBlob: Blob;
+  thumbnailBlob: Blob;
+  thumbnailUrl: string; // local object URL for display
+}
 
-const TabLoader = () => (
-  <div className="flex items-center justify-center h-[50vh]">
-    <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-  </div>
-);
+interface UserProfile {
+  id: string;
+  display_name: string;
+  username: string;
+}
+
+// Upload a blob to a Supabase Storage bucket, return public URL
+async function uploadBlob(
+  bucket: string,
+  path: string,
+  blob: Blob,
+  contentType: string
+): Promise<string> {
+  const { data, error } = await supabase.storage.from(bucket).upload(path, blob, {
+    contentType,
+    upsert: true,
+  });
+  if (error) throw error;
+  const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(data.path);
+  return urlData.publicUrl;
+}
 
 const Index = () => {
-  const [activeTab, setActiveTab] = useState<Tab>("today");
-  const [showSettings, setShowSettings] = useState(false);
-  const [showOnboarding, setShowOnboarding] = useState(false);
-  const [showInstallPrompt, setShowInstallPrompt] = useState(false);
-  const [showInstallTutorial, setShowInstallTutorial] = useState(false);
-  const [showNotificationPrompt, setShowNotificationPrompt] = useState(false);
-  const [showBetaPrompt, setShowBetaPrompt] = useState(false);
-  const [showFitCheck, setShowFitCheck] = useState(false);
-  const [showWhatsNew, setShowWhatsNew] = useState(false);
-  const [displayName, setDisplayName] = useState<string | null>(null);
-  
-  const [selectedFriendFromNotification, setSelectedFriendFromNotification] = useState<string | null>(null);
-  const [selectedMoodFromNotification, setSelectedMoodFromNotification] = useState<string | null>(null);
-  const [selectedCommentFromNotification, setSelectedCommentFromNotification] = useState<string | null>(null);
-  const [showRequestsFromNotification, setShowRequestsFromNotification] = useState(false);
-  const [openCommentsFromNotification, setOpenCommentsFromNotification] = useState(false);
-
-  const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
-  const { hasUnread } = useUnreadUpdates();
-  const { navigation, clearNavigation } = useNotificationNavigation();
-  const { isClassic } = useTheme();
+  const [appState, setAppState] = useState<AppState>("camera");
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [recording, setRecording] = useState<RecordingData | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
 
-  useRealtimeNotifications();
-
-  const handleFriendProfileClick = (friendId: string) => {
-    setActiveTab("friends");
-    setSelectedFriendFromNotification(friendId);
-    setSelectedMoodFromNotification(null);
-    setSelectedCommentFromNotification(null);
-    setShowRequestsFromNotification(false);
-    setOpenCommentsFromNotification(false);
-  };
-
+  // ── Auth check ──────────────────────────────────────────────────────────────
   useEffect(() => {
-    if (navigation.tab === "friends" && navigation.friendId) {
-      setActiveTab("friends");
-      
-      if (navigation.type === "friend_request") {
-        setShowRequestsFromNotification(true);
-        setSelectedFriendFromNotification(null);
-        setSelectedMoodFromNotification(null);
-        setSelectedCommentFromNotification(null);
-        setOpenCommentsFromNotification(false);
-      } else {
-        setSelectedFriendFromNotification(navigation.friendId);
-        setSelectedMoodFromNotification(navigation.moodId);
-        setSelectedCommentFromNotification(navigation.commentId);
-        setShowRequestsFromNotification(false);
-        
-        if (navigation.type === 'comment') {
-          setOpenCommentsFromNotification(true);
-        } else {
-          setOpenCommentsFromNotification(false);
-        }
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!session) {
+        navigate("/auth");
+        return;
       }
-      clearNavigation();
-    }
-  }, [navigation, clearNavigation]);
+      loadProfile(session.user.id);
+    });
 
-  useEffect(() => {
-    if (!loading && !user) {
-      navigate("/auth", { replace: true });
-    }
-  }, [user, loading, navigate]);
-
-  useEffect(() => {
-    if (user) {
-      const onboardingKey = `moodmemos-onboarded-${user.id}`;
-      const hasOnboarded = localStorage.getItem(onboardingKey);
-      if (!hasOnboarded) {
-        setShowOnboarding(true);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) {
+        navigate("/auth");
+        setAuthLoading(false);
+        return;
       }
-      const fetchProfile = async () => {
-        const { data } = await supabase
-          .from('profiles')
-          .select('display_name')
-          .eq('user_id', user.id)
-          .maybeSingle();
-        if (data?.display_name) {
-          setDisplayName(data.display_name);
-        }
-      };
-      fetchProfile();
-    }
-  }, [user]);
+      loadProfile(session.user.id);
+    });
 
-  const handleOnboardingComplete = () => {
-    if (user) {
-      const onboardingKey = `moodmemos-onboarded-${user.id}`;
-      localStorage.setItem(onboardingKey, "true");
-      
-      const installPromptKey = `moodmemos-install-prompted-${user.id}`;
-      const hasPrompted = localStorage.getItem(installPromptKey);
-      const isInstalled = window.matchMedia('(display-mode: standalone)').matches;
-      
-      if (!hasPrompted && !isInstalled) {
-        setTimeout(() => setShowInstallPrompt(true), 500);
-        localStorage.setItem(installPromptKey, "true");
+    return () => subscription.unsubscribe();
+  }, [navigate]);
+
+  const loadProfile = async (userId: string) => {
+    try {
+      const { data } = await supabase
+        .from("profiles")
+        .select("user_id, display_name, username")
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (data) {
+        setProfile({ id: userId, display_name: data.display_name ?? "User", username: data.username ?? "user" });
       }
-    }
-    setShowOnboarding(false);
-  };
-
-  const handleInstallPromptAction = () => {
-    setShowInstallPrompt(false);
-    setShowInstallTutorial(true);
-  };
-
-  const handleInstallTutorialClose = () => {
-    setShowInstallTutorial(false);
-    const notifPromptKey = `moodmemos-notif-prompted-${user?.id}`;
-    const hasPromptedNotif = localStorage.getItem(notifPromptKey);
-    if (!hasPromptedNotif && user) {
-      setTimeout(() => setShowNotificationPrompt(true), 500);
-      localStorage.setItem(notifPromptKey, "true");
+    } catch (err) {
+      console.error("Profile load error:", err);
+    } finally {
+      setAuthLoading(false);
     }
   };
 
-  const handleNotificationPromptClose = () => {
-    setShowNotificationPrompt(false);
-    const betaPromptKey = `moodmemos-beta-prompted-${user?.id}`;
-    const hasPromptedBeta = localStorage.getItem(betaPromptKey);
-    if (!hasPromptedBeta && user) {
-      setTimeout(() => setShowBetaPrompt(true), 500);
-      localStorage.setItem(betaPromptKey, "true");
-    }
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    navigate("/auth");
   };
 
-  useEffect(() => {
-    if (user && !showOnboarding && !showInstallPrompt && !showInstallTutorial && !showNotificationPrompt) {
-      const isInstalled = window.matchMedia('(display-mode: standalone)').matches;
-      const notifPermission = typeof Notification !== 'undefined' ? Notification.permission : 'default';
-      
-      if (isInstalled && notifPermission !== 'granted') {
-        const pwaNotifPromptKey = `moodmemos-pwa-notif-prompted-${user.id}-session`;
-        const hasPromptedThisSession = sessionStorage.getItem(pwaNotifPromptKey);
-        
-        if (!hasPromptedThisSession) {
-          const timer = setTimeout(() => {
-            setShowNotificationPrompt(true);
-            sessionStorage.setItem(pwaNotifPromptKey, "true");
-          }, 1500);
-           () => clearTimeout(timer);
-        }
-      }
-      
-      const notifPromptKey = `moodmemos-notif-prompted-${user.id}`;
-      const hasPromptedNotif = localStorage.getItem(notifPromptKey);
-      
-      if (!hasPromptedNotif && notifPermission !== 'granted') {
-        const timer = setTimeout(() => {
-          setShowNotificationPrompt(true);
-          localStorage.setItem(notifPromptKey, "true");
-        }, 1500);
-        return () => clearTimeout(timer);
-      }
+  // ── Camera → Rating transition ───────────────────────────────────────────────
+  const handleRecordingComplete = useCallback((videoBlob: Blob, audioBlob: Blob, thumbnailBlob: Blob) => {
+    const thumbnailUrl = URL.createObjectURL(thumbnailBlob);
+    setRecording({ videoBlob, audioBlob, thumbnailBlob, thumbnailUrl });
+    setAppState("rating");
+  }, []);
+
+  // ── Rating → Feed transition (with upload + DB write) ────────────────────────
+  const handleRatingSubmit = useCallback(async (rating: number) => {
+    if (!recording || !profile) return;
+    setIsSubmitting(true);
+
+    try {
+      const now = new Date();
+      const dateStr = now.toISOString().slice(0, 10).replace(/-/g, "");
+      const uid = profile.id;
+      const basePath = `${uid}/${dateStr}_${Date.now()}`;
+
+      // Upload video + audio + thumbnail in parallel
+      const [videoUrl, audioUrl, thumbnailUrl] = await Promise.all([
+        uploadBlob("videos", `${basePath}.webm`, recording.videoBlob, "video/webm"),
+        uploadBlob("audio", `${basePath}.webm`, recording.audioBlob, "audio/webm"),
+        uploadBlob("thumbnails", `${basePath}.jpg`, recording.thumbnailBlob, "image/jpeg"),
+      ]);
+
+      // Insert DB row
+      await (supabase as any).from("video_entries").insert({
+        user_id: uid,
+        rating,
+        video_url: videoUrl,
+        audio_url: audioUrl,
+        thumbnail_url: thumbnailUrl,
+        entry_date: now.toISOString().slice(0, 10),
+      });
+
+      // Revoke the object URL
+      URL.revokeObjectURL(recording.thumbnailUrl);
+      setRecording(null);
+
+      // Transition to feed
+      setAppState("feed");
+    } catch (err) {
+      console.error("Submit error:", err);
+      alert("Upload failed. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
-  }, [user, showOnboarding, showInstallPrompt, showInstallTutorial, showNotificationPrompt]);
+  }, [recording, profile]);
 
-  useEffect(() => {
-    if (user && !showOnboarding && !showInstallPrompt && !showInstallTutorial && !showNotificationPrompt) {
-      const betaPromptKey = `moodmemos-beta-prompted-${user.id}`;
-      const notifPromptKey = `moodmemos-notif-prompted-${user.id}`;
-      const hasPromptedBeta = localStorage.getItem(betaPromptKey);
-      const hasPromptedNotif = localStorage.getItem(notifPromptKey);
-      
-      if (!hasPromptedBeta && hasPromptedNotif) {
-        const timer = setTimeout(() => {
-          setShowBetaPrompt(true);
-          localStorage.setItem(betaPromptKey, "true");
-        }, 2000);
-        return () => clearTimeout(timer);
-      }
-    }
-  }, [user, showOnboarding, showInstallPrompt, showInstallTutorial, showNotificationPrompt]);
+  // ── Loading screen ──────────────────────────────────────────────────────────
+  if (authLoading) {
+    return (
+      <div
+        style={{
+          height: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "#008080",
+          fontFamily: '"MS Sans Serif", Tahoma, sans-serif',
+          fontSize: 11,
+        }}
+      >
+        <div className="win98-window" style={{ width: 260 }}>
+          <div className="win98-titlebar">
+            <span>📹</span>
+            <span>DayLog 98 — Starting Up</span>
+          </div>
+          <div style={{ padding: 16 }}>
+            <div className="win98-progress-bar" style={{ width: "100%", height: 18, marginBottom: 8 }} />
+            <div style={{ textAlign: "center", fontSize: 11 }}>Please wait...</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-  // What's New modal is now disabled - using contextual feature discovery instead
-  // Features are shown as tooltips when users interact with specific screens/buttons
-
-  // DailyReel feature announcement is now disabled - using contextual feature discovery instead
-
-  if (loading) return <div className="min-h-screen bg-background flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin" /></div>;
-  if (!user) return null;
-  if (showOnboarding) return <Onboarding onComplete={handleOnboardingComplete} />;
-
+  // ── Main app shell ──────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      {hasUnread && <UpdateBanner />}
-
-      <main className="relative pb-32">
-        <AnimatePresence mode="wait">
-          {activeTab === "today" && (
-            <motion.div
-              key="today"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
-              transition={{ duration: 0.2 }}
-            >
-              <TodayTab onSettingsClick={() => setShowSettings(true)} />
-            </motion.div>
-          )}
-          {activeTab === "calendar" && (
-            <motion.div
-              key="calendar"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
-              transition={{ duration: 0.2 }}
-            >
-              <Suspense fallback={<TabLoader />}>
-                <CalendarTab />
-              </Suspense>
-            </motion.div>
-          )}
-          {activeTab === "friends" && (
-            <motion.div
-              key="friends"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
-              transition={{ duration: 0.2 }}
-            >
-              <Suspense fallback={<TabLoader />}>
-                <FriendsTab
-                  initialSelectedFriendId={selectedFriendFromNotification}
-                  initialSelectedMoodId={selectedMoodFromNotification}
-                  initialSelectedCommentId={selectedCommentFromNotification}
-                  initialShowRequests={showRequestsFromNotification}
-                  initialOpenComments={openCommentsFromNotification}
-                  onClearInitialFriend={() => {
-                    setSelectedFriendFromNotification(null);
-                    setSelectedMoodFromNotification(null);
-                    setSelectedCommentFromNotification(null);
-                    setShowRequestsFromNotification(false);
-                    setOpenCommentsFromNotification(false);
-                  }}
-                />
-              </Suspense>
-            </motion.div>
-          )}
-          {activeTab === "stats" && (
-            <motion.div
-              key="stats"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
-              transition={{ duration: 0.2 }}
-            >
-              <Suspense fallback={<TabLoader />}>
-                <StatsTab onSettingsClick={() => setShowSettings(true)} />
-              </Suspense>
-            </motion.div>
-          )}
-          {activeTab === "messages" && (
-            <motion.div
-              key="messages"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
-              transition={{ duration: 0.2 }}
-            >
-              <Suspense fallback={<TabLoader />}>
-                <MessagesTab
-                  onFriendClick={handleFriendProfileClick}
-                />
-              </Suspense>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </main>
-
-      {/* Camera FAB removed - photo capture is now integrated directly into TodayTab */}
-
-      {isClassic ? (
-        <StudioBottomNav activeTab={activeTab} onTabChange={setActiveTab} />
-      ) : (
-        <ZineBottomNav activeTab={activeTab} onTabChange={setActiveTab} />
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "#000",
+        overflow: "hidden",
+        fontFamily: '"MS Sans Serif", Tahoma, sans-serif',
+        fontSize: 11,
+      }}
+    >
+      {/* STATE: Camera */}
+      {appState === "camera" && (
+        <CameraState onRecordingComplete={handleRecordingComplete} />
       )}
 
-      <SettingsSheet
-        isOpen={showSettings}
-        onClose={() => {
-          setShowSettings(false);
-          if (user) {
-            supabase
-              .from('profiles')
-              .select('display_name')
-              .eq('user_id', user.id)
-              .maybeSingle()
-              .then(({ data }) => {
-                if (data?.display_name) {
-                  setDisplayName(data.display_name);
-                }
-              });
-          }
-        }}
-      />
+      {/* STATE: Rating */}
+      {appState === "rating" && recording && (
+        <RatingState
+          thumbnailUrl={recording.thumbnailUrl}
+          onSubmit={handleRatingSubmit}
+          isSubmitting={isSubmitting}
+        />
+      )}
 
-      <InstallPrompt isOpen={showInstallPrompt} onClose={() => setShowInstallPrompt(false)} onInstall={handleInstallPromptAction} />
-      <PWAInstallTutorial isOpen={showInstallTutorial} onClose={handleInstallTutorialClose} />
-      <NotificationPrompt isOpen={showNotificationPrompt} onClose={handleNotificationPromptClose} />
-      <BetaPrompt isOpen={showBetaPrompt} onClose={() => setShowBetaPrompt(false)} />
-      <FitCheckCamera isOpen={showFitCheck} onClose={() => setShowFitCheck(false)} />
+      {/* STATE: Feed */}
+      {appState === "feed" && profile && (
+        <FeedState
+          currentUserId={profile.id}
+          onOpenProfile={() => setShowProfile(true)}
+        />
+      )}
+
+      {/* Floating Profile / Start Menu window */}
+      {showProfile && profile && (
+        <ProfileWindow
+          userId={profile.id}
+          displayName={profile.display_name}
+          username={profile.username}
+          onClose={() => setShowProfile(false)}
+          onSignOut={handleSignOut}
+        />
+      )}
+
+      {/* Global Start button (visible in camera + rating states) */}
+      {appState !== "feed" && profile && (
+        <button
+          className="win98-btn"
+          onClick={() => setShowProfile(p => !p)}
+          style={{
+            position: "fixed",
+            bottom: 6,
+            left: 6,
+            zIndex: 500,
+            fontFamily: "'VT323', monospace",
+            fontSize: 14,
+            height: 24,
+            padding: "0 10px",
+            background: "rgba(192,192,192,0.92)",
+          }}
+          title="Profile & Analytics"
+        >
+          🪟 Start
+        </button>
+      )}
+
+      {/* State indicator dots (camera / rating states) */}
+      {appState !== "feed" && (
+        <div
+          style={{
+            position: "fixed",
+            top: 10,
+            right: 10,
+            zIndex: 500,
+            display: "flex",
+            gap: 6,
+            alignItems: "center",
+          }}
+        >
+          {(["camera", "rating", "feed"] as AppState[]).map(s => (
+            <div
+              key={s}
+              style={{
+                width: 8,
+                height: 8,
+                background: appState === s ? "#ffffff" : "rgba(255,255,255,0.3)",
+                boxShadow: appState === s ? "0 0 4px #fff" : "none",
+              }}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 };

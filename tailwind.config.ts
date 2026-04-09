@@ -14,8 +14,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
-        pixel: ['"Press Start 2P"', 'monospace'],
+        sans: ['"MS Sans Serif"', 'Tahoma', 'sans-serif'],
+        pixel: ['"VT323"', 'monospace'],
       },
       colors: {
         border: "hsl(var(--border))",
