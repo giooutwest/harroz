@@ -27,7 +27,7 @@ const CameraState = ({ onRecordingComplete }: CameraStateProps) => {
     }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: mode, width: { ideal: 1080 }, height: { ideal: 1920 } },
+        video: { facingMode: mode },
         audio: true,
       });
       streamRef.current = stream;
@@ -151,9 +151,8 @@ const CameraState = ({ onRecordingComplete }: CameraStateProps) => {
   return (
     <div
       style={{
-        position: "relative",
-        width: "100%",
-        height: "100%",
+        position: "fixed",
+        inset: 0,
         background: "#000",
         overflow: "hidden",
         display: "flex",
