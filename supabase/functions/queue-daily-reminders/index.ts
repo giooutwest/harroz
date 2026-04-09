@@ -51,7 +51,7 @@ Deno.serve(async (req) => {
     // Filter users who should get reminder at this hour
     const usersToCheck = profiles.filter(profile => {
       const userTimezone = profile.timezone || 'America/Los_Angeles';
-      const reminderHour = profile.reminder_time || 21;
+      const reminderHour = profile.reminder_time || 19;
 
       try {
         // Get current time in user's timezone
@@ -108,21 +108,21 @@ Deno.serve(async (req) => {
       const userDate = new Date(now.toLocaleString('en-US', { timeZone: userTimezone }));
       const userToday = userDate.toISOString().split('T')[0];
 
-      // Check if user logged a mood today
-      const { data: mood } = await supabase
-        .from('moods')
+      // Check if user recorded a video today
+      const { data: entry } = await supabase
+        .from('video_entries')
         .select('id')
         .eq('user_id', userId)
-        .eq('date', userToday)
+        .eq('entry_date', userToday)
         .limit(1)
         .single();
 
-      // Only notify if they haven't logged yet
-      if (!mood) {
+      // Only notify if they haven't recorded yet
+      if (!entry) {
         notifications.push({
           user_id: userId,
-          title: "Time to Journal! 📔",
-          body: "It's time for your daily reflection. How was your day?",
+          title: "📹 record your video.",
+          body: "it'll only take 15 seconds. open the app, press record, done.",
           data: { type: 'daily_reminder' }
         });
       }
