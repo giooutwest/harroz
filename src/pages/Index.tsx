@@ -131,9 +131,10 @@ const Index = () => {
 
       // Transition to feed
       setAppState("feed");
-    } catch (err) {
+    } catch (err: any) {
       console.error("Submit error:", err);
-      alert("Upload failed. Please try again.");
+      const msg = err?.message || err?.error_description || JSON.stringify(err);
+      alert(`Upload failed: ${msg}\n\nMake sure the 'videos', 'audio', and 'thumbnails' storage buckets exist in Supabase with public access and upload policies enabled.`);
     } finally {
       setIsSubmitting(false);
     }

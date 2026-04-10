@@ -211,7 +211,7 @@ const CameraState = ({ onRecordingComplete }: CameraStateProps) => {
         <div
           style={{
             position: "absolute",
-            top: 16,
+            top: "calc(env(safe-area-inset-top, 0px) + 16px)",
             left: 0,
             right: 0,
             display: "flex",
@@ -283,7 +283,7 @@ const CameraState = ({ onRecordingComplete }: CameraStateProps) => {
           bottom: 0,
           left: 0,
           right: 0,
-          padding: "20px 24px 36px",
+          padding: "20px 24px calc(env(safe-area-inset-bottom, 0px) + 24px)",
           background: "linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 100%)",
           display: "flex",
           alignItems: "flex-end",
@@ -351,7 +351,7 @@ const CameraState = ({ onRecordingComplete }: CameraStateProps) => {
         <div
           style={{
             position: "absolute",
-            bottom: 120,
+            bottom: "calc(env(safe-area-inset-bottom, 0px) + 120px)",
             left: 0,
             right: 0,
             textAlign: "center",
