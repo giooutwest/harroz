@@ -223,6 +223,10 @@ body {
   min-height: 100dvh;
 }
 
+/* Safe area utility */
+.safe-top    { padding-top:    env(safe-area-inset-top,    0px); }
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
+
 /* Snap scrolling for feed */
 .snap-container {
   scroll-snap-type: y mandatory;

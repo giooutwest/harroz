@@ -164,12 +164,17 @@ const CameraState = ({ onRecordingComplete }: CameraStateProps) => {
         ref={videoRef}
         style={{
           position: "absolute",
-          inset: 0,
+          top: 0,
+          left: 0,
           width: "100%",
           height: "100%",
+          minWidth: "100%",
+          minHeight: "100%",
           objectFit: "cover",
+          objectPosition: "center",
           transform: facingMode === "user" ? "scaleX(-1)" : "none",
           background: "#000",
+          display: "block",
         }}
         playsInline
         muted
