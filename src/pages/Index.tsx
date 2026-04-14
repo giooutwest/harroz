@@ -12,7 +12,9 @@ interface RecordingData {
   videoBlob: Blob;
   audioBlob: Blob;
   thumbnailBlob: Blob;
-  thumbnailUrl: string; // local object URL for display
+  thumbnailUrl: string;
+  videoMime: string;
+  audioMime: string;
 }
 
 interface UserProfile {
@@ -91,9 +93,9 @@ const Index = () => {
   };
 
   // ── Camera → Rating transition ───────────────────────────────────────────────
-  const handleRecordingComplete = useCallback((videoBlob: Blob, audioBlob: Blob, thumbnailBlob: Blob) => {
+  const handleRecordingComplete = useCallback((videoBlob: Blob, audioBlob: Blob, thumbnailBlob: Blob, videoMime: string, audioMime: string) => {
     const thumbnailUrl = URL.createObjectURL(thumbnailBlob);
-    setRecording({ videoBlob, audioBlob, thumbnailBlob, thumbnailUrl });
+    setRecording({ videoBlob, audioBlob, thumbnailBlob, thumbnailUrl, videoMime, audioMime });
     setAppState("rating");
   }, []);
 
@@ -107,12 +109,14 @@ const Index = () => {
       const dateStr = now.toISOString().slice(0, 10).replace(/-/g, "");
       const uid = profile.id;
       const basePath = `${uid}/${dateStr}_${Date.now()}`;
+      const videoExt = recording.videoMime.includes("mp4") ? "mp4" : "webm";
+      const audioExt = recording.audioMime.includes("mp4") ? "mp4" : "webm";
 
       // Upload video + audio + thumbnail in parallel
       const [videoUrl, audioUrl, thumbnailUrl] = await Promise.all([
-        uploadBlob("videos", `${basePath}.webm`, recording.videoBlob, "video/webm"),
-        uploadBlob("audio", `${basePath}.webm`, recording.audioBlob, "audio/webm"),
-        uploadBlob("thumbnails", `${basePath}.jpg`, recording.thumbnailBlob, "image/jpeg"),
+        uploadBlob("videos",     `${basePath}.${videoExt}`, recording.videoBlob,     recording.videoMime),
+        uploadBlob("audio",      `${basePath}.${audioExt}`, recording.audioBlob,     recording.audioMime),
+        uploadBlob("thumbnails", `${basePath}.jpg`,         recording.thumbnailBlob, "image/jpeg"),
       ]);
 
       // Insert DB row

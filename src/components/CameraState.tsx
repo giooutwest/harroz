@@ -3,7 +3,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 const MAX_SECONDS = 15;
 
 interface CameraStateProps {
-  onRecordingComplete: (videoBlob: Blob, audioBlob: Blob, thumbnailBlob: Blob) => void;
+  onRecordingComplete: (videoBlob: Blob, audioBlob: Blob, thumbnailBlob: Blob, videoMime: string, audioMime: string) => void;
 }
 
 const CameraState = ({ onRecordingComplete }: CameraStateProps) => {
@@ -81,32 +81,44 @@ const CameraState = ({ onRecordingComplete }: CameraStateProps) => {
     audioChunksRef.current = [];
     setSeconds(0);
 
+    // Pick MIME types — iOS Safari only supports mp4, not webm
+    const videoMime =
+      MediaRecorder.isTypeSupported("video/webm;codecs=vp9") ? "video/webm;codecs=vp9" :
+      MediaRecorder.isTypeSupported("video/webm")            ? "video/webm" :
+      MediaRecorder.isTypeSupported("video/mp4")             ? "video/mp4" :
+      "";
+
+    const audioMime =
+      MediaRecorder.isTypeSupported("audio/webm;codecs=opus") ? "audio/webm;codecs=opus" :
+      MediaRecorder.isTypeSupported("audio/webm")             ? "audio/webm" :
+      MediaRecorder.isTypeSupported("audio/mp4")              ? "audio/mp4" :
+      "";
+
+    const mrOptions = videoMime ? { mimeType: videoMime } : {};
+    const arOptions = audioMime ? { mimeType: audioMime } : {};
+
     // Video recorder (full stream)
-    const videoMime = MediaRecorder.isTypeSupported("video/webm;codecs=vp9")
-      ? "video/webm;codecs=vp9"
-      : "video/webm";
-    const mr = new MediaRecorder(streamRef.current, { mimeType: videoMime });
+    const mr = new MediaRecorder(streamRef.current, mrOptions);
     mr.ondataavailable = e => { if (e.data.size > 0) chunksRef.current.push(e.data); };
     mediaRecorderRef.current = mr;
 
     // Audio-only recorder (for transcription)
     const audioStream = new MediaStream(streamRef.current.getAudioTracks());
-    const audioMime = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
-      ? "audio/webm;codecs=opus"
-      : "audio/webm";
-    const ar = new MediaRecorder(audioStream, { mimeType: audioMime });
+    const ar = new MediaRecorder(audioStream, arOptions);
     ar.ondataavailable = e => { if (e.data.size > 0) audioChunksRef.current.push(e.data); };
     audioRecorderRef.current = ar;
 
     // Wait for both to stop before firing callback
+    const resolvedVideoMime = videoMime || mr.mimeType || "video/mp4";
+    const resolvedAudioMime = audioMime || ar.mimeType || "audio/mp4";
     let stopped = 0;
     let thumbBlobFinal: Blob | null = null;
     const checkDone = () => {
       stopped++;
       if (stopped === 2 && thumbBlobFinal) {
-        const videoBlob = new Blob(chunksRef.current, { type: videoMime });
-        const audioBlob = new Blob(audioChunksRef.current, { type: audioMime });
-        onRecordingComplete(videoBlob, audioBlob, thumbBlobFinal);
+        const videoBlob = new Blob(chunksRef.current, { type: resolvedVideoMime });
+        const audioBlob = new Blob(audioChunksRef.current, { type: resolvedAudioMime });
+        onRecordingComplete(videoBlob, audioBlob, thumbBlobFinal, resolvedVideoMime, resolvedAudioMime);
       }
     };
 
