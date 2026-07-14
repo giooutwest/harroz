@@ -22,15 +22,10 @@ const PageLoader = () => (
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      background: "#008080",
-      fontFamily: '"MS Sans Serif", Tahoma, sans-serif',
-      fontSize: 11,
+      background: "hsl(var(--paper))",
     }}
   >
-    <div className="win98-window" style={{ padding: "16px 24px", display: "flex", gap: 12, alignItems: "center" }}>
-      <div className="win98-progress-bar" style={{ width: 150, height: 16 }} />
-      <span>Loading...</span>
-    </div>
+    <div className="journal-progress-bar" style={{ width: 160, height: 3 }} />
   </div>
 );
 

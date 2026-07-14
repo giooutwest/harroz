@@ -33,10 +33,10 @@ function angleToRating(angle: number): number {
 
 function getRatingColor(r: number): string {
   const colors = [
-    "#cc0000", "#dd2200", "#dd4400", "#cc7700", "#bbaa00",
-    "#88bb00", "#55aa00", "#229900", "#008800", "#006600",
+    "#A8523F", "#AD5C42", "#B26647", "#B4744C", "#B08255",
+    "#A38F5E", "#909A66", "#7CA26C", "#6B9670", "#5E8A6A",
   ];
-  return colors[r - 1] ?? "#000080";
+  return colors[r - 1] ?? "#5E8A6A";
 }
 
 function getRatingLabel(r: number): string {
@@ -148,7 +148,7 @@ const RatingState = ({ thumbnailUrl, onSubmit, isSubmitting }: RatingStateProps)
         height: "100%",
         display: "flex",
         flexDirection: "column",
-        background: "#C0C0C0",
+        background: "hsl(var(--ink))",
       }}
     >
       {/* Frozen thumbnail as background (blurred) */}
@@ -159,28 +159,25 @@ const RatingState = ({ thumbnailUrl, onSubmit, isSubmitting }: RatingStateProps)
           backgroundImage: `url(${thumbnailUrl})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
-          filter: "blur(12px) brightness(0.3)",
+          filter: "blur(16px) brightness(0.35)",
           zIndex: 0,
         }}
       />
 
-      {/* Thumbnail thumbnail (small, top) */}
+      {/* Thumbnail card (small, top) */}
       <div
         style={{
           position: "relative",
           zIndex: 1,
-          padding: "20px 20px 0",
+          padding: "24px 20px 0",
           display: "flex",
           justifyContent: "center",
         }}
       >
         <div
-          className="win98-window"
-          style={{ width: 160, padding: 3 }}
+          className="journal-card"
+          style={{ width: 150, overflow: "hidden", border: "1px solid rgba(255,255,255,0.15)" }}
         >
-          <div className="win98-titlebar" style={{ fontSize: 10, height: 18, padding: "1px 4px" }}>
-            <span>📷 Final Frame (No Re-Watch)</span>
-          </div>
           <img
             src={thumbnailUrl}
             style={{ width: "100%", display: "block", aspectRatio: "9/16", objectFit: "cover" }}
@@ -195,17 +192,18 @@ const RatingState = ({ thumbnailUrl, onSubmit, isSubmitting }: RatingStateProps)
           position: "relative",
           zIndex: 1,
           textAlign: "center",
-          marginTop: 12,
-          fontFamily: "'VT323', monospace",
-          fontSize: 36,
+          marginTop: 16,
+          fontFamily: "'Inter', sans-serif",
+          fontSize: 13,
+          fontWeight: 500,
+          letterSpacing: 1.5,
+          textTransform: "uppercase",
           color: color,
-          textShadow: "2px 2px 0 rgba(0,0,0,0.8)",
-          letterSpacing: 3,
         }}
       >
         {getRatingLabel(rating)}
-        <div style={{ fontSize: 52, lineHeight: 0.9 }}>{rating}</div>
-        <div style={{ fontSize: 16, color: "#ccc", letterSpacing: 2 }}>/ 10</div>
+        <div className="font-journal-display" style={{ fontSize: 48, lineHeight: 1.1, fontWeight: 600, color: "#fff", letterSpacing: 0 }}>{rating}</div>
+        <div style={{ fontSize: 14, color: "rgba(255,255,255,0.5)", letterSpacing: 1, textTransform: "none" }}>out of 10</div>
       </div>
 
       {/* Half-dial SVG */}
@@ -236,33 +234,17 @@ const RatingState = ({ thumbnailUrl, onSubmit, isSubmitting }: RatingStateProps)
           <path
             d={describeArc(CX, CY, R, START_ANGLE, END_ANGLE)}
             fill="none"
-            stroke="rgba(255,255,255,0.15)"
-            strokeWidth={18}
-            strokeLinecap="butt"
-          />
-          {/* Dark track outline */}
-          <path
-            d={describeArc(CX, CY, R, START_ANGLE, END_ANGLE)}
-            fill="none"
-            stroke="rgba(0,0,0,0.4)"
-            strokeWidth={22}
-            strokeLinecap="butt"
-          />
-          {/* Background track fill */}
-          <path
-            d={describeArc(CX, CY, R, START_ANGLE, END_ANGLE)}
-            fill="none"
-            stroke="#333"
-            strokeWidth={18}
-            strokeLinecap="butt"
+            stroke="rgba(255,255,255,0.12)"
+            strokeWidth={14}
+            strokeLinecap="round"
           />
           {/* Filled arc up to rating */}
           <path
             d={describeFilledArc(CX, CY, R, START_ANGLE, filledEnd)}
             fill="none"
             stroke={color}
-            strokeWidth={18}
-            strokeLinecap="butt"
+            strokeWidth={14}
+            strokeLinecap="round"
           />
 
           {/* Tick marks */}
@@ -276,15 +258,16 @@ const RatingState = ({ thumbnailUrl, onSubmit, isSubmitting }: RatingStateProps)
                 <line
                   x1={inner.x} y1={inner.y}
                   x2={outer.x} y2={outer.y}
-                  stroke="rgba(255,255,255,0.6)"
-                  strokeWidth={v === rating ? 3 : 1.5}
+                  stroke="rgba(255,255,255,0.35)"
+                  strokeWidth={v === rating ? 2.5 : 1}
                 />
                 <text
                   x={label.x}
                   y={label.y}
-                  fill={v === rating ? color : "rgba(255,255,255,0.5)"}
-                  fontSize={v === rating ? 14 : 11}
-                  fontFamily="'VT323', monospace"
+                  fill={v === rating ? color : "rgba(255,255,255,0.45)"}
+                  fontSize={v === rating ? 13 : 10}
+                  fontFamily="'Lora', Georgia, serif"
+                  fontWeight={v === rating ? 600 : 400}
                   textAnchor="middle"
                   dominantBaseline="middle"
                 >
@@ -298,24 +281,14 @@ const RatingState = ({ thumbnailUrl, onSubmit, isSubmitting }: RatingStateProps)
           <circle
             cx={knobPos.x}
             cy={knobPos.y}
-            r={14}
-            fill="#C0C0C0"
-            style={{
-              filter: "drop-shadow(1px 1px 0 #0a0a0a)",
-            }}
-          />
-          <circle
-            cx={knobPos.x - 2}
-            cy={knobPos.y - 2}
-            r={14}
-            fill="none"
-            stroke="#ffffff"
-            strokeWidth={1.5}
+            r={11}
+            fill="#fff"
+            style={{ filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.4))" }}
           />
           <circle
             cx={knobPos.x}
             cy={knobPos.y}
-            r={6}
+            r={5}
             fill={color}
           />
 
@@ -323,12 +296,13 @@ const RatingState = ({ thumbnailUrl, onSubmit, isSubmitting }: RatingStateProps)
           <text
             x={CX}
             y={CY + 30}
-            fill="rgba(255,255,255,0.5)"
-            fontSize={11}
-            fontFamily="'MS Sans Serif', Tahoma, sans-serif"
+            fill="rgba(255,255,255,0.4)"
+            fontSize={12}
+            fontFamily="'Inter', sans-serif"
+            letterSpacing={0.5}
             textAnchor="middle"
           >
-            DRAG TO RATE
+            drag to rate
           </text>
         </svg>
       </div>
@@ -344,23 +318,20 @@ const RatingState = ({ thumbnailUrl, onSubmit, isSubmitting }: RatingStateProps)
         }}
       >
         <button
-          className="win98-btn primary"
+          className="journal-btn journal-btn-primary"
           onClick={() => onSubmit(rating)}
           disabled={isSubmitting}
           style={{
             width: "100%",
             maxWidth: 300,
-            height: 44,
-            fontSize: 16,
-            fontFamily: "'VT323', monospace",
-            letterSpacing: 2,
-            background: isSubmitting ? "#888" : "#C0C0C0",
+            height: 48,
+            fontSize: 15,
           }}
         >
           {isSubmitting ? (
-            <span className="win98-progress-bar" style={{ display: "inline-block", width: "100%", height: 20 }} />
+            <span className="journal-progress-bar" style={{ display: "inline-block", width: "100%", height: 4 }} />
           ) : (
-            `SUBMIT — DAY RATED ${rating}/10`
+            `Save today's entry — ${rating}/10`
           )}
         </button>
       </div>

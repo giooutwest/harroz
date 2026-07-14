@@ -17,20 +17,20 @@ interface ProfileWindowProps {
 
 type Tab = "week" | "month" | "newsletter";
 
+// Muted rust (low) → sage (high) scale
 const BAR_COLORS = [
-  "#cc0000", "#dd2200", "#dd4400", "#cc7700", "#bbaa00",
-  "#88bb00", "#55aa00", "#229900", "#008800", "#006600",
+  "#A8523F", "#AD5C42", "#B26647", "#B4744C", "#B08255",
+  "#A38F5E", "#909A66", "#7CA26C", "#6B9670", "#5E8A6A",
 ];
 
 function ratingColor(r: number): string {
   return BAR_COLORS[Math.min(Math.max(r, 1), 10) - 1];
 }
 
-// Retro bar chart (no external lib)
 const RetroBarChart = ({ entries, label }: { entries: DayEntry[]; label: string }) => {
   if (entries.length === 0) {
     return (
-      <div style={{ padding: 16, textAlign: "center", fontSize: 11, color: "#444" }}>
+      <div style={{ padding: 20, textAlign: "center", fontSize: 13, color: "hsl(var(--ink-soft))" }}>
         No entries yet.
       </div>
     );
@@ -42,20 +42,19 @@ const RetroBarChart = ({ entries, label }: { entries: DayEntry[]; label: string 
   const avg = entries.reduce((s, e) => s + e.rating, 0) / entries.length;
 
   return (
-    <div style={{ padding: "8px 12px" }}>
-      <div style={{ fontSize: 10, marginBottom: 4, color: "#444" }}>
-        {label} — Avg: <strong>{avg.toFixed(1)}</strong> / 10
+    <div style={{ padding: "10px 14px" }}>
+      <div style={{ fontSize: 12, marginBottom: 8, color: "hsl(var(--ink-soft))" }}>
+        {label} — Avg: <strong className="font-journal-display" style={{ color: "hsl(var(--ink))" }}>{avg.toFixed(1)}</strong> / 10
       </div>
 
       {/* Chart */}
       <div
-        className="win98-sunken"
+        className="journal-well"
         style={{
-          background: "#ffffff",
-          padding: "8px 8px 4px",
+          padding: "10px 10px 6px",
           display: "flex",
           alignItems: "flex-end",
-          gap: 2,
+          gap: 4,
           height: chartH + 24,
           overflowX: "auto",
         }}
@@ -68,25 +67,22 @@ const RetroBarChart = ({ entries, label }: { entries: DayEntry[]; label: string 
           return (
             <div
               key={i}
-              style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}
+              style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}
               title={`${e.date}: ${e.rating}/10`}
             >
-              {/* Value on top */}
-              <span style={{ fontSize: 9, fontFamily: "'VT323', monospace", lineHeight: 1 }}>
+              <span className="font-journal-display" style={{ fontSize: 11, lineHeight: 1, color: "hsl(var(--ink-soft))" }}>
                 {e.rating}
               </span>
-              {/* Bar */}
               <div
                 style={{
                   width: barWidth,
-                  height: barH,
+                  height: Math.max(barH, 3),
                   background: ratingColor(e.rating),
-                  boxShadow: "inset -1px -1px #0a0a0a, inset 1px 1px rgba(255,255,255,0.4)",
+                  borderRadius: 3,
                   flexShrink: 0,
                 }}
               />
-              {/* Day label */}
-              <span style={{ fontSize: 9, color: "#666", lineHeight: 1 }}>{dayLabel}</span>
+              <span style={{ fontSize: 10, color: "hsl(var(--ink-soft))", lineHeight: 1 }}>{dayLabel}</span>
             </div>
           );
         })}
@@ -148,7 +144,7 @@ const ProfileWindow = ({ userId, displayName, username, onClose, onSignOut }: Pr
           month: "long",
           year: "numeric",
         });
-        setNewsletter(`=== ${period.toUpperCase()} MONTHLY REVIEW ===\n\n${nlData.content}`);
+        setNewsletter(`${period} Monthly Review\n\n${nlData.content}`);
       }
     } catch (err) {
       console.error("Stats load error:", err);
@@ -160,14 +156,8 @@ const ProfileWindow = ({ userId, displayName, username, onClose, onSignOut }: Pr
   const tabBtn = (t: Tab, label: string) => (
     <button
       key={t}
-      className={`win98-menuitem${tab === t ? " active" : ""}`}
+      className={`journal-tab${tab === t ? " active" : ""}`}
       onClick={() => setTab(t)}
-      style={{
-        background: tab === t ? "#000080" : undefined,
-        color: tab === t ? "#fff" : undefined,
-        fontFamily: '"MS Sans Serif", Tahoma, sans-serif',
-        fontSize: 11,
-      }}
     >
       {label}
     </button>
@@ -175,99 +165,99 @@ const ProfileWindow = ({ userId, displayName, username, onClose, onSignOut }: Pr
 
   return (
     <Win98Window
-      title={`${displayName} — Profile & Analytics`}
-      icon="📊"
+      title={`${displayName} · Analytics`}
       onClose={onClose}
       initialX={20}
       initialY={60}
       width={280}
       menuBar={
-        <div style={{ display: "flex", gap: 0 }}>
-          {tabBtn("week", "This Week")}
-          {tabBtn("month", "This Month")}
-          {tabBtn("newsletter", "📰 Review")}
+        <div style={{ display: "flex", gap: 4 }}>
+          {tabBtn("week", "Week")}
+          {tabBtn("month", "Month")}
+          {tabBtn("newsletter", "Review")}
         </div>
       }
     >
-      <div style={{ background: "#C0C0C0" }}>
-
+      <div>
         {/* User identity */}
         <div
           style={{
-            padding: "6px 12px",
-            borderBottom: "1px solid #808080",
+            padding: "12px 14px",
+            borderBottom: "1px solid hsl(var(--line))",
             display: "flex",
             alignItems: "center",
-            gap: 8,
+            gap: 10,
+            marginTop: 8,
           }}
         >
           <div
             style={{
               width: 36,
               height: 36,
-              background: "#000080",
+              borderRadius: "50%",
+              background: "hsl(var(--accent) / 0.15)",
+              color: "hsl(var(--accent))",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              fontSize: 20,
-              boxShadow: "inset 1px 1px #808080, inset -1px -1px #dfdfdf",
+              fontFamily: "'Lora', Georgia, serif",
+              fontWeight: 600,
+              fontSize: 15,
             }}
           >
-            👤
+            {displayName.charAt(0).toUpperCase()}
           </div>
           <div>
-            <div style={{ fontWeight: "bold", fontSize: 12 }}>{displayName}</div>
-            <div style={{ fontSize: 10, color: "#444" }}>@{username}</div>
+            <div className="font-journal-display" style={{ fontWeight: 600, fontSize: 14 }}>{displayName}</div>
+            <div style={{ fontSize: 12, color: "hsl(var(--ink-soft))" }}>@{username}</div>
           </div>
         </div>
 
         {/* Content area */}
         {loading ? (
-          <div style={{ padding: 16, textAlign: "center" }}>
-            <div className="win98-progress-bar" style={{ width: "100%", height: 18 }} />
-            <div style={{ marginTop: 8, fontSize: 11 }}>Loading...</div>
+          <div style={{ padding: 20, textAlign: "center" }}>
+            <div className="journal-progress-bar" style={{ width: "100%", height: 4 }} />
+            <div style={{ marginTop: 10, fontSize: 13, color: "hsl(var(--ink-soft))" }}>Loading...</div>
           </div>
         ) : (
           <>
             {tab === "week" && (
-              <RetroBarChart entries={weekEntries} label="7-Day History" />
+              <RetroBarChart entries={weekEntries} label="Past 7 days" />
             )}
 
             {tab === "month" && (
-              <RetroBarChart entries={monthEntries} label="Monthly History" />
+              <RetroBarChart entries={monthEntries} label="This month" />
             )}
 
             {tab === "newsletter" && (
-              <div style={{ padding: "8px 12px" }}>
+              <div style={{ padding: "10px 14px" }}>
                 {newsletter ? (
                   <div
-                    className="win98-sunken"
+                    className="journal-well"
                     style={{
-                      background: "#ffffcc",
-                      padding: 8,
+                      padding: 12,
                       lineHeight: 1.6,
                       maxHeight: 220,
                       overflowY: "auto",
                       whiteSpace: "pre-wrap",
-                      fontFamily: "'VT323', monospace",
-                      fontSize: 14,
+                      fontFamily: "'Lora', Georgia, serif",
+                      fontSize: 13,
                     }}
                   >
                     {newsletter}
                   </div>
                 ) : (
                   <div
-                    className="win98-sunken"
+                    className="journal-well"
                     style={{
-                      background: "#ffffff",
-                      padding: 16,
+                      padding: 20,
                       textAlign: "center",
-                      fontSize: 11,
+                      fontSize: 13,
+                      color: "hsl(var(--ink-soft))",
                     }}
                   >
-                    <div style={{ fontSize: 32, marginBottom: 8 }}>📭</div>
                     <div>No monthly review yet.</div>
-                    <div style={{ color: "#666", marginTop: 4, fontSize: 10 }}>
+                    <div style={{ marginTop: 4, fontSize: 12 }}>
                       Your first review will arrive after your first full month.
                     </div>
                   </div>
@@ -280,20 +270,20 @@ const ProfileWindow = ({ userId, displayName, username, onClose, onSignOut }: Pr
         {/* Footer */}
         <div
           style={{
-            padding: "6px 12px",
-            borderTop: "1px solid #808080",
+            padding: "10px 14px",
+            borderTop: "1px solid hsl(var(--line))",
             display: "flex",
             justifyContent: "flex-end",
-            gap: 6,
+            gap: 8,
           }}
         >
-          <button className="win98-btn" onClick={loadStats} style={{ minWidth: 60 }}>
-            🔄 Refresh
+          <button className="journal-btn" onClick={loadStats}>
+            Refresh
           </button>
           <button
-            className="win98-btn"
+            className="journal-btn"
             onClick={onSignOut}
-            style={{ minWidth: 60, color: "#880000" }}
+            style={{ color: "hsl(var(--accent))" }}
           >
             Sign Out
           </button>

@@ -20,8 +20,8 @@ interface FeedStateProps {
 
 function getRatingColor(r: number): string {
   const colors = [
-    "#cc0000", "#dd2200", "#dd4400", "#cc7700", "#bbaa00",
-    "#88bb00", "#55aa00", "#229900", "#008800", "#006600",
+    "#A8523F", "#AD5C42", "#B26647", "#B4744C", "#B08255",
+    "#A38F5E", "#909A66", "#7CA26C", "#6B9670", "#5E8A6A",
   ];
   return colors[Math.min(Math.max(r, 1), 10) - 1];
 }
@@ -117,49 +117,55 @@ const VideoCard = ({ entry, isActive }: { entry: FeedEntry; isActive: boolean })
         onClick={e => e.stopPropagation()}
       >
         <div
-          className="win98-window"
-          style={{ padding: 0 }}
+          style={{
+            background: "rgba(20,17,14,0.55)",
+            backdropFilter: "blur(8px)",
+            borderRadius: "var(--radius)",
+            border: "1px solid rgba(255,255,255,0.12)",
+            padding: "10px 14px",
+            maxWidth: 240,
+          }}
         >
-          <div
-            className="win98-titlebar"
-            style={{ height: 18, fontSize: 10, padding: "1px 4px" }}
-          >
-            <span>👤 {entry.username}</span>
+          <div className="font-journal-display" style={{ fontWeight: 600, fontSize: 15, color: "#fff", marginBottom: 2 }}>
+            {entry.display_name}
           </div>
-          <div style={{ padding: "6px 10px 8px", background: "#C0C0C0" }}>
-            <div style={{ fontWeight: "bold", fontSize: 13, marginBottom: 2 }}>
-              {entry.display_name}
-            </div>
-            <div style={{ fontSize: 10, color: "#444", marginBottom: 4 }}>
-              {dateStr} · {timeStr}
-            </div>
-            {entry.transcript && (
-              <button
-                className="win98-btn"
-                style={{ fontSize: 10, minWidth: 60, height: 18, padding: "0 6px" }}
-                onClick={() => setShowTranscript(s => !s)}
-              >
-                {showTranscript ? "▲ Hide" : "▼ Transcript"}
-              </button>
-            )}
-            {showTranscript && entry.transcript && (
-              <div
-                className="win98-sunken"
-                style={{
-                  marginTop: 6,
-                  padding: "4px 6px",
-                  fontSize: 10,
-                  maxHeight: 80,
-                  overflowY: "auto",
-                  background: "#ffffff",
-                  maxWidth: 220,
-                  lineHeight: 1.4,
-                }}
-              >
-                {entry.transcript}
-              </div>
-            )}
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", marginBottom: 6 }}>
+            {dateStr} · {timeStr}
           </div>
+          {entry.transcript && (
+            <button
+              className="journal-btn"
+              style={{
+                fontSize: 11,
+                height: 24,
+                padding: "0 10px",
+                background: "rgba(255,255,255,0.1)",
+                borderColor: "rgba(255,255,255,0.2)",
+                color: "#fff",
+              }}
+              onClick={() => setShowTranscript(s => !s)}
+            >
+              {showTranscript ? "Hide" : "Transcript"}
+            </button>
+          )}
+          {showTranscript && entry.transcript && (
+            <div
+              style={{
+                marginTop: 8,
+                padding: "8px 10px",
+                fontSize: 12,
+                maxHeight: 100,
+                overflowY: "auto",
+                background: "rgba(0,0,0,0.3)",
+                borderRadius: 8,
+                maxWidth: 220,
+                lineHeight: 1.5,
+                color: "rgba(255,255,255,0.85)",
+              }}
+            >
+              {entry.transcript}
+            </div>
+          )}
         </div>
       </div>
 
@@ -174,29 +180,23 @@ const VideoCard = ({ entry, isActive }: { entry: FeedEntry; isActive: boolean })
         onClick={e => e.stopPropagation()}
       >
         <div
-          className="win98-window"
-          style={{ padding: 0, width: 64 }}
+          style={{
+            width: 56,
+            height: 56,
+            borderRadius: "50%",
+            background: getRatingColor(entry.rating),
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            border: "2px solid rgba(255,255,255,0.85)",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.25)",
+          }}
         >
-          <div
-            className="win98-titlebar"
-            style={{ height: 18, fontSize: 9, padding: "1px 4px", justifyContent: "center" }}
-          >
-            DAY SCORE
-          </div>
-          <div
-            style={{
-              background: getRatingColor(entry.rating),
-              color: "#ffffff",
-              fontFamily: "'VT323', monospace",
-              fontSize: 40,
-              lineHeight: 1,
-              textAlign: "center",
-              padding: "4px 0",
-            }}
-          >
+          <span className="font-journal-display" style={{ color: "#fff", fontSize: 20, fontWeight: 600, lineHeight: 1 }}>
             {entry.rating}
-            <div style={{ fontSize: 12 }}>/ 10</div>
-          </div>
+          </span>
+          <span style={{ color: "rgba(255,255,255,0.75)", fontSize: 9 }}>/ 10</span>
         </div>
       </div>
     </div>
@@ -279,18 +279,15 @@ const FeedState = ({ currentUserId, onOpenProfile }: FeedStateProps) => {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: "#C0C0C0",
+          background: "hsl(var(--paper))",
           flexDirection: "column",
           gap: 12,
         }}
       >
-        <div className="win98-window" style={{ padding: "16px 24px" }}>
-          <div className="win98-titlebar">📡 DayLog 98 — Loading Feed...</div>
-          <div style={{ padding: 12 }}>
-            <div className="win98-progress-bar" style={{ width: 200, height: 18 }} />
-            <div style={{ marginTop: 8, fontSize: 11, textAlign: "center" }}>
-              Fetching today's entries...
-            </div>
+        <div className="journal-card" style={{ padding: "20px 28px", alignItems: "center" }}>
+          <div className="journal-progress-bar" style={{ width: 180, height: 4 }} />
+          <div style={{ marginTop: 12, fontSize: 13, textAlign: "center", color: "hsl(var(--ink-soft))" }}>
+            Fetching today's entries...
           </div>
         </div>
       </div>
@@ -305,22 +302,20 @@ const FeedState = ({ currentUserId, onOpenProfile }: FeedStateProps) => {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: "#C0C0C0",
+          background: "hsl(var(--paper))",
           padding: 24,
         }}
       >
-        <div className="win98-window" style={{ width: "100%", maxWidth: 300 }}>
-          <div className="win98-titlebar">📭 No Entries Today</div>
-          <div style={{ padding: 16, textAlign: "center" }}>
-            <div style={{ fontSize: 48, marginBottom: 8 }}>📭</div>
-            <p style={{ fontSize: 11, marginBottom: 12 }}>
-              None of your friends have posted today yet.<br />
-              Check back later!
-            </p>
-            <button className="win98-btn" onClick={loadFeed}>
-              🔄 Refresh
-            </button>
+        <div className="journal-card" style={{ width: "100%", maxWidth: 300, padding: 28, textAlign: "center" }}>
+          <div className="font-journal-display" style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>
+            Nothing here yet
           </div>
+          <p style={{ fontSize: 13, color: "hsl(var(--ink-soft))", marginBottom: 16, lineHeight: 1.5 }}>
+            None of your friends have posted today yet. Check back later.
+          </p>
+          <button className="journal-btn" onClick={loadFeed}>
+            Refresh
+          </button>
         </div>
       </div>
     );
@@ -342,42 +337,55 @@ const FeedState = ({ currentUserId, onOpenProfile }: FeedStateProps) => {
 
       {/* Top bar */}
       <div
-        className="win98-taskbar"
         style={{
           position: "absolute",
           top: 0,
           left: 0,
           right: 0,
           zIndex: 10,
+          display: "flex",
+          alignItems: "center",
           justifyContent: "space-between",
-          background: "rgba(192,192,192,0.95)",
+          padding: "calc(env(safe-area-inset-top, 0px) + 12px) 16px 12px",
+          background: "linear-gradient(to bottom, rgba(0,0,0,0.45), transparent)",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: "'VT323', monospace", fontSize: 16 }}>
-          <span>📹</span>
-          <span>DAYLOG 98</span>
-          <span style={{ fontFamily: '"MS Sans Serif", Tahoma, sans-serif', fontSize: 10, color: "#444" }}>
-            — Friends Feed
-          </span>
+        <div className="font-journal-display" style={{ fontSize: 17, fontWeight: 600, color: "#fff" }}>
+          Daylog
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           {/* Entry counter */}
           <div
-            className="win98-sunken"
-            style={{ padding: "1px 6px", fontSize: 10, background: "#fff" }}
+            style={{
+              padding: "3px 10px",
+              fontSize: 12,
+              color: "rgba(255,255,255,0.85)",
+              background: "rgba(255,255,255,0.15)",
+              borderRadius: 999,
+            }}
           >
             {activeIndex + 1} / {entries.length}
           </div>
 
-          {/* Profile / Start button */}
+          {/* Profile button */}
           <button
-            className="win98-btn"
             onClick={onOpenProfile}
-            style={{ fontSize: 12, padding: "2px 8px", height: 22, minWidth: 0 }}
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: "50%",
+              border: "1px solid rgba(255,255,255,0.3)",
+              background: "rgba(255,255,255,0.15)",
+              color: "#fff",
+              fontSize: 14,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
             title="Profile & Analytics"
           >
-            🪟 Start
+            ⚬
           </button>
         </div>
       </div>

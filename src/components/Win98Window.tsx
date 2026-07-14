@@ -15,7 +15,7 @@ interface Win98WindowProps {
 
 const Win98Window = ({
   title,
-  icon = "📋",
+  icon,
   children,
   onClose,
   initialX = 40,
@@ -31,8 +31,7 @@ const Win98Window = ({
   const windowRef = useRef<HTMLDivElement>(null);
 
   const onMouseDown = useCallback((e: React.MouseEvent) => {
-    // Only drag from title bar
-    if ((e.target as HTMLElement).closest(".win98-titlebar-btn")) return;
+    if ((e.target as HTMLElement).closest(".journal-window-close")) return;
     dragging.current = true;
     offset.current = {
       x: e.clientX - pos.x,
@@ -58,7 +57,7 @@ const Win98Window = ({
 
   // Touch dragging
   const onTouchStart = useCallback((e: React.TouchEvent) => {
-    if ((e.target as HTMLElement).closest(".win98-titlebar-btn")) return;
+    if ((e.target as HTMLElement).closest(".journal-window-close")) return;
     const touch = e.touches[0];
     dragging.current = true;
     offset.current = {
@@ -86,7 +85,7 @@ const Win98Window = ({
   return (
     <div
       ref={windowRef}
-      className="win98-window"
+      className="journal-card"
       style={{
         position: "fixed",
         left: pos.x,
@@ -97,32 +96,42 @@ const Win98Window = ({
         ...style,
       }}
     >
-      {/* Title Bar */}
+      {/* Header */}
       <div
-        className="win98-titlebar"
+        className="journal-header"
         onMouseDown={onMouseDown}
         onTouchStart={onTouchStart}
-        style={{ cursor: "default" }}
+        style={{ cursor: "grab" }}
       >
-        <span style={{ fontSize: 14, lineHeight: 1 }}>{icon}</span>
+        {icon && <span style={{ fontSize: 15, lineHeight: 1 }}>{icon}</span>}
         <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {title}
         </span>
-        <div style={{ display: "flex", gap: 2, marginLeft: 4 }}>
-          <button
-            className="win98-btn win98-titlebar-btn"
-            onClick={onClose}
-            style={{ minWidth: 16, width: 16, height: 14, padding: 0, fontSize: 9, lineHeight: "12px" }}
-            title="Close"
-          >
-            ✕
-          </button>
-        </div>
+        <button
+          className="journal-window-close"
+          onClick={onClose}
+          style={{
+            width: 22,
+            height: 22,
+            borderRadius: "50%",
+            border: "none",
+            background: "transparent",
+            color: "hsl(var(--ink-soft))",
+            fontSize: 13,
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+          title="Close"
+        >
+          ✕
+        </button>
       </div>
 
-      {/* Optional menu bar */}
+      {/* Optional tab bar */}
       {menuBar && (
-        <div className="win98-menubar">{menuBar}</div>
+        <div style={{ display: "flex", gap: 2, padding: "8px 12px 0" }}>{menuBar}</div>
       )}
 
       {/* Content */}

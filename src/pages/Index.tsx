@@ -80,6 +80,18 @@ const Index = () => {
       if (data) {
         setProfile({ id: userId, display_name: data.display_name ?? "User", username: data.username ?? "user" });
       }
+
+      // Only one entry per day is allowed — skip straight to the feed if today's is already saved
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const { data: todayEntry } = await (supabase as any)
+        .from("video_entries")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("entry_date", todayStr)
+        .maybeSingle();
+      if (todayEntry) {
+        setAppState("feed");
+      }
     } catch (err) {
       console.error("Profile load error:", err);
     } finally {
@@ -137,7 +149,15 @@ const Index = () => {
       setAppState("feed");
     } catch (err: any) {
       console.error("Submit error:", err);
-      alert("Something went wrong. Please try again.");
+      if (err?.code === "23505") {
+        // Already have an entry for today (e.g. saved from another tab)
+        alert("You've already saved today's entry. Come back tomorrow!");
+        URL.revokeObjectURL(recording.thumbnailUrl);
+        setRecording(null);
+        setAppState("feed");
+      } else {
+        alert("Something went wrong. Please try again.");
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -152,20 +172,14 @@ const Index = () => {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: "#008080",
-          fontFamily: '"MS Sans Serif", Tahoma, sans-serif',
-          fontSize: 11,
+          background: "hsl(var(--paper))",
         }}
       >
-        <div className="win98-window" style={{ width: 260 }}>
-          <div className="win98-titlebar">
-            <span>📹</span>
-            <span>DayLog 98 — Starting Up</span>
+        <div style={{ textAlign: "center" }}>
+          <div className="font-journal-display" style={{ fontSize: 22, fontWeight: 600, marginBottom: 16, color: "hsl(var(--ink))" }}>
+            Daylog
           </div>
-          <div style={{ padding: 16 }}>
-            <div className="win98-progress-bar" style={{ width: "100%", height: 18, marginBottom: 8 }} />
-            <div style={{ textAlign: "center", fontSize: 11 }}>Please wait...</div>
-          </div>
+          <div className="journal-progress-bar" style={{ width: 160, height: 3 }} />
         </div>
       </div>
     );
@@ -184,8 +198,8 @@ const Index = () => {
         height: "100dvh",
         background: "#000",
         overflow: "hidden",
-        fontFamily: '"MS Sans Serif", Tahoma, sans-serif',
-        fontSize: 11,
+        fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        fontSize: 15,
       }}
     >
       {/* STATE: Camera */}
@@ -224,22 +238,23 @@ const Index = () => {
       {/* Global Start button (visible in camera + rating states) */}
       {appState !== "feed" && profile && (
         <button
-          className="win98-btn"
           onClick={() => setShowProfile(p => !p)}
           style={{
             position: "fixed",
-            bottom: 6,
-            left: 6,
+            bottom: 10,
+            left: 10,
             zIndex: 500,
-            fontFamily: "'VT323', monospace",
+            width: 34,
+            height: 34,
+            borderRadius: "50%",
+            border: "1px solid rgba(255,255,255,0.25)",
+            background: "rgba(255,255,255,0.12)",
+            color: "#fff",
             fontSize: 14,
-            height: 24,
-            padding: "0 10px",
-            background: "rgba(192,192,192,0.92)",
           }}
           title="Profile & Analytics"
         >
-          🪟 Start
+          ⚬
         </button>
       )}
 
@@ -248,7 +263,7 @@ const Index = () => {
         <div
           style={{
             position: "fixed",
-            top: 10,
+            top: "calc(env(safe-area-inset-top, 0px) + 10px)",
             right: 10,
             zIndex: 500,
             display: "flex",
@@ -260,8 +275,9 @@ const Index = () => {
             <div
               key={s}
               style={{
-                width: 8,
-                height: 8,
+                width: 6,
+                height: 6,
+                borderRadius: "50%",
                 background: appState === s ? "#ffffff" : "rgba(255,255,255,0.3)",
                 boxShadow: appState === s ? "0 0 4px #fff" : "none",
               }}

@@ -14,6 +14,7 @@ const CameraState = ({ onRecordingComplete }: CameraStateProps) => {
   const chunksRef = useRef<Blob[]>([]);
   const audioChunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const thumbBlobRef = useRef<Blob | null>(null);
 
   const [isRecording, setIsRecording] = useState(false);
   const [seconds, setSeconds] = useState(0);
@@ -58,7 +59,12 @@ const CameraState = ({ onRecordingComplete }: CameraStateProps) => {
       const v = videoRef.current!;
       canvas.width = v.videoWidth || 640;
       canvas.height = v.videoHeight || 480;
-      canvas.getContext("2d")!.drawImage(v, 0, 0);
+      const ctx = canvas.getContext("2d")!;
+      if (facingMode === "user") {
+        ctx.translate(canvas.width, 0);
+        ctx.scale(-1, 1);
+      }
+      ctx.drawImage(v, 0, 0);
       canvas.toBlob(blob => resolve(blob!), "image/jpeg", 0.8);
     });
   };
@@ -66,9 +72,7 @@ const CameraState = ({ onRecordingComplete }: CameraStateProps) => {
   const stopRecording = useCallback(async () => {
     if (!isRecording) return;
     if (timerRef.current) clearInterval(timerRef.current);
-
-    const thumbBlob = await captureThumbnail();
-
+    thumbBlobRef.current = await captureThumbnail();
     mediaRecorderRef.current?.stop();
     audioRecorderRef.current?.stop();
     setIsRecording(false);
@@ -79,6 +83,7 @@ const CameraState = ({ onRecordingComplete }: CameraStateProps) => {
 
     chunksRef.current = [];
     audioChunksRef.current = [];
+    thumbBlobRef.current = null;
     setSeconds(0);
 
     // Pick MIME types — iOS Safari only supports mp4, not webm
@@ -112,23 +117,17 @@ const CameraState = ({ onRecordingComplete }: CameraStateProps) => {
     const resolvedVideoMime = videoMime || mr.mimeType || "video/mp4";
     const resolvedAudioMime = audioMime || ar.mimeType || "audio/mp4";
     let stopped = 0;
-    let thumbBlobFinal: Blob | null = null;
     const checkDone = () => {
       stopped++;
-      if (stopped === 2 && thumbBlobFinal) {
+      if (stopped === 2 && thumbBlobRef.current) {
         const videoBlob = new Blob(chunksRef.current, { type: resolvedVideoMime });
         const audioBlob = new Blob(audioChunksRef.current, { type: resolvedAudioMime });
-        onRecordingComplete(videoBlob, audioBlob, thumbBlobFinal, resolvedVideoMime, resolvedAudioMime);
+        onRecordingComplete(videoBlob, audioBlob, thumbBlobRef.current, resolvedVideoMime, resolvedAudioMime);
       }
     };
 
     mr.onstop = checkDone;
     ar.onstop = checkDone;
-
-    // Capture thumbnail at end
-    const thumbCapture = async () => {
-      thumbBlobFinal = await captureThumbnail();
-    };
 
     mr.start(100);
     ar.start(100);
@@ -140,7 +139,8 @@ const CameraState = ({ onRecordingComplete }: CameraStateProps) => {
         const next = s + 1;
         if (next >= MAX_SECONDS) {
           clearInterval(timerRef.current!);
-          thumbCapture().then(() => {
+          captureThumbnail().then(thumb => {
+            thumbBlobRef.current = thumb;
             mediaRecorderRef.current?.stop();
             audioRecorderRef.current?.stop();
             setIsRecording(false);
@@ -207,15 +207,15 @@ const CameraState = ({ onRecordingComplete }: CameraStateProps) => {
           }}
         >
           <div
-            className="win98-window"
-            style={{ width: 280, padding: "0" }}
+            className="journal-card"
+            style={{ width: 280 }}
           >
-            <div className="win98-titlebar">
-              <span>⚠️ Camera Error</span>
+            <div className="journal-header">
+              <span>Camera unavailable</span>
             </div>
-            <div style={{ padding: 16, textAlign: "center" }}>
-              <p style={{ marginBottom: 12, fontSize: 11 }}>{cameraError}</p>
-              <button className="win98-btn" onClick={() => startCamera(facingMode)}>
+            <div style={{ padding: 20, textAlign: "center" }}>
+              <p style={{ marginBottom: 14, fontSize: 14, color: "hsl(var(--ink-soft))" }}>{cameraError}</p>
+              <button className="journal-btn journal-btn-primary" onClick={() => startCamera(facingMode)}>
                 Retry
               </button>
             </div>
@@ -241,27 +241,32 @@ const CameraState = ({ onRecordingComplete }: CameraStateProps) => {
           {/* REC badge */}
           <div
             style={{
-              background: "#cc0000",
+              background: "rgba(0,0,0,0.55)",
               color: "#fff",
-              fontFamily: "'VT323', monospace",
-              fontSize: 20,
-              padding: "2px 8px",
+              fontFamily: "'Inter', sans-serif",
+              fontSize: 13,
+              fontWeight: 500,
+              letterSpacing: 0.5,
+              padding: "5px 10px",
+              borderRadius: 999,
               display: "flex",
               alignItems: "center",
               gap: 6,
             }}
           >
-            <span className="rec-blink">●</span> REC
+            <span className="rec-blink" style={{ color: "#C9705C" }}>●</span> REC
           </div>
 
           {/* Countdown */}
           <div
             style={{
-              background: "rgba(0,0,0,0.7)",
-              color: remaining <= 5 ? "#ff4444" : "#ffffff",
-              fontFamily: "'VT323', monospace",
-              fontSize: 28,
-              padding: "2px 10px",
+              background: "rgba(0,0,0,0.55)",
+              color: remaining <= 5 ? "#D98A78" : "#ffffff",
+              fontFamily: "'Lora', Georgia, serif",
+              fontWeight: 600,
+              fontSize: 20,
+              padding: "4px 12px",
+              borderRadius: 999,
             }}
           >
             {remaining}s
@@ -277,16 +282,19 @@ const CameraState = ({ onRecordingComplete }: CameraStateProps) => {
             top: 56,
             left: 16,
             right: 16,
-            height: 8,
-            background: "rgba(0,0,0,0.5)",
+            height: 5,
+            borderRadius: 999,
+            background: "rgba(0,0,0,0.35)",
             zIndex: 5,
+            overflow: "hidden",
           }}
         >
           <div
             style={{
               width: `${progress}%`,
               height: "100%",
-              background: remaining <= 5 ? "#ff4444" : "#00cc00",
+              background: remaining <= 5 ? "#C9705C" : "#8FA88F",
+              borderRadius: 999,
               transition: "width 0.5s linear",
             }}
           />
@@ -312,18 +320,22 @@ const CameraState = ({ onRecordingComplete }: CameraStateProps) => {
         <button
           onClick={toggleFacing}
           disabled={isRecording || !cameraReady}
-          className="win98-btn"
           style={{
-            background: "rgba(192,192,192,0.9)",
-            fontSize: 20,
+            background: "rgba(255,255,255,0.15)",
+            border: "1px solid rgba(255,255,255,0.25)",
+            borderRadius: "50%",
+            color: "#fff",
+            fontSize: 18,
             width: 44,
             height: 44,
             minWidth: 44,
             padding: 0,
+            cursor: isRecording || !cameraReady ? "default" : "pointer",
+            opacity: isRecording || !cameraReady ? 0.4 : 1,
           }}
           title="Flip camera"
         >
-          🔄
+          ↺
         </button>
 
         {/* Main RECORD button */}
@@ -331,32 +343,28 @@ const CameraState = ({ onRecordingComplete }: CameraStateProps) => {
           onClick={isRecording ? stopRecording : startRecording}
           disabled={!cameraReady}
           style={{
-            width: 80,
-            height: 80,
-            background: isRecording ? "#cc0000" : "#C0C0C0",
-            border: "none",
+            width: 76,
+            height: 76,
+            borderRadius: "50%",
+            background: "transparent",
+            border: "3px solid #fff",
             cursor: cameraReady ? "pointer" : "not-allowed",
             display: "flex",
-            flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-            gap: 2,
-            boxShadow: isRecording
-              ? "inset -1px -1px #ffffff, inset 1px 1px #0a0a0a, inset -2px -2px #dfdfdf, inset 2px 2px #808080"
-              : "inset -1px -1px #0a0a0a, inset 1px 1px #ffffff, inset -2px -2px #808080, inset 2px 2px #dfdfdf",
+            padding: 6,
           }}
         >
-          <span style={{ fontSize: 28 }}>{isRecording ? "⏹" : "⏺"}</span>
           <span
             style={{
-              fontFamily: "'VT323', monospace",
-              fontSize: 14,
-              color: isRecording ? "#ffffff" : "#000000",
-              letterSpacing: 1,
+              display: "block",
+              width: "100%",
+              height: "100%",
+              borderRadius: isRecording ? 8 : "50%",
+              background: isRecording ? "#C9705C" : "#fff",
+              transition: "border-radius 0.15s ease",
             }}
-          >
-            {isRecording ? "STOP" : "RECORD"}
-          </span>
+          />
         </button>
 
         {/* Spacer */}
@@ -368,18 +376,18 @@ const CameraState = ({ onRecordingComplete }: CameraStateProps) => {
         <div
           style={{
             position: "absolute",
-            bottom: "calc(env(safe-area-inset-bottom, 0px) + 120px)",
+            bottom: "calc(env(safe-area-inset-bottom, 0px) + 116px)",
             left: 0,
             right: 0,
             textAlign: "center",
-            fontFamily: "'VT323', monospace",
-            fontSize: 16,
+            fontFamily: "'Inter', sans-serif",
+            fontSize: 13,
             color: "rgba(255,255,255,0.6)",
             zIndex: 5,
-            letterSpacing: 1,
+            letterSpacing: 0.3,
           }}
         >
-          MAX {MAX_SECONDS} SECONDS
+          Up to {MAX_SECONDS} seconds
         </div>
       )}
     </div>
