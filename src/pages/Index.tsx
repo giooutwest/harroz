@@ -1,10 +1,16 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import CameraState from "@/components/CameraState";
-import RatingState from "@/components/RatingState";
+import RatingState, { SelectedSong } from "@/components/RatingState";
 import FeedState from "@/components/FeedState";
 import ProfileWindow from "@/components/ProfileWindow";
+
+// Matches the existing entry_date convention used when writing video_entries below.
+function todayDateString(): string {
+  return new Date().toISOString().slice(0, 10);
+}
 
 type AppState = "camera" | "rating" | "feed";
 
@@ -47,6 +53,7 @@ const Index = () => {
   const [recording, setRecording] = useState<RecordingData | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  const [viewDate, setViewDate] = useState<string>(todayDateString());
 
   // ── Auth check ──────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -112,7 +119,7 @@ const Index = () => {
   }, []);
 
   // ── Rating → Feed transition (with upload + DB write) ────────────────────────
-  const handleRatingSubmit = useCallback(async (rating: number) => {
+  const handleRatingSubmit = useCallback(async (rating: number, song: SelectedSong | null) => {
     if (!recording || !profile) return;
     setIsSubmitting(true);
 
@@ -132,31 +139,39 @@ const Index = () => {
       ]);
 
       // Insert DB row
-      await (supabase as any).from("video_entries").insert({
+      const { error: insertError } = await (supabase as any).from("video_entries").insert({
         user_id: uid,
         rating,
         video_url: videoUrl,
         audio_url: audioUrl,
         thumbnail_url: thumbnailUrl,
         entry_date: now.toISOString().slice(0, 10),
+        song_title: song?.title ?? null,
+        song_artist: song?.artist ?? null,
+        song_preview_url: song?.previewUrl ?? null,
       });
+
+      if (insertError) throw insertError;
 
       // Revoke the object URL
       URL.revokeObjectURL(recording.thumbnailUrl);
       setRecording(null);
 
+      toast.success("Saved!");
+      setViewDate(todayDateString());
       // Transition to feed
       setAppState("feed");
     } catch (err: any) {
       console.error("Submit error:", err);
       if (err?.code === "23505") {
         // Already have an entry for today (e.g. saved from another tab)
-        alert("You've already saved today's entry. Come back tomorrow!");
+        toast.info("You've already saved today's entry. Come back tomorrow!");
         URL.revokeObjectURL(recording.thumbnailUrl);
         setRecording(null);
+        setViewDate(todayDateString());
         setAppState("feed");
       } else {
-        alert("Something went wrong. Please try again.");
+        toast.error("Something went wrong saving your entry. Please try again.");
       }
     } finally {
       setIsSubmitting(false);
@@ -221,6 +236,8 @@ const Index = () => {
         <FeedState
           currentUserId={profile.id}
           onOpenProfile={() => setShowProfile(true)}
+          viewDate={viewDate}
+          onChangeViewDate={setViewDate}
         />
       )}
 

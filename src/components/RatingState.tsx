@@ -1,8 +1,16 @@
 import { useState, useRef, useCallback, useEffect } from "react";
+import { Music, X } from "lucide-react";
+import MusicSearchModal from "@/components/MusicSearchModal";
+
+export interface SelectedSong {
+  title: string;
+  artist: string;
+  previewUrl: string | null;
+}
 
 interface RatingStateProps {
   thumbnailUrl: string;
-  onSubmit: (rating: number) => void;
+  onSubmit: (rating: number, song: SelectedSong | null) => void;
   isSubmitting: boolean;
 }
 
@@ -68,6 +76,8 @@ const TICK_VALUES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
 const RatingState = ({ thumbnailUrl, onSubmit, isSubmitting }: RatingStateProps) => {
   const [rating, setRating] = useState(5);
+  const [selectedSong, setSelectedSong] = useState<SelectedSong | null>(null);
+  const [showMusicSearch, setShowMusicSearch] = useState(false);
   const svgRef = useRef<SVGSVGElement>(null);
   const isDragging = useRef(false);
 
@@ -307,6 +317,74 @@ const RatingState = ({ thumbnailUrl, onSubmit, isSubmitting }: RatingStateProps)
         </svg>
       </div>
 
+      {/* Song picker */}
+      <div
+        style={{
+          position: "relative",
+          zIndex: 1,
+          padding: "0 24px 12px",
+          display: "flex",
+          justifyContent: "center",
+        }}
+      >
+        {selectedSong ? (
+          <div
+            style={{
+              width: "100%",
+              maxWidth: 300,
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              padding: "8px 12px",
+              borderRadius: 10,
+              background: "rgba(255,255,255,0.1)",
+              border: "1px solid rgba(255,255,255,0.15)",
+            }}
+          >
+            <Music size={14} color="rgba(255,255,255,0.7)" style={{ flexShrink: 0 }} />
+            <span
+              style={{
+                flex: 1,
+                fontSize: 12,
+                color: "#fff",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {selectedSong.artist} — {selectedSong.title}
+            </span>
+            <button
+              onClick={() => setSelectedSong(null)}
+              style={{ display: "flex", color: "rgba(255,255,255,0.6)" }}
+              aria-label="Remove song"
+            >
+              <X size={14} />
+            </button>
+          </div>
+        ) : (
+          <button
+            className="journal-btn"
+            onClick={() => setShowMusicSearch(true)}
+            style={{
+              width: "100%",
+              maxWidth: 300,
+              height: 40,
+              fontSize: 13,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 6,
+              background: "rgba(255,255,255,0.08)",
+              borderColor: "rgba(255,255,255,0.15)",
+              color: "rgba(255,255,255,0.85)",
+            }}
+          >
+            <Music size={14} /> Add a song
+          </button>
+        )}
+      </div>
+
       {/* Submit button */}
       <div
         style={{
@@ -319,7 +397,7 @@ const RatingState = ({ thumbnailUrl, onSubmit, isSubmitting }: RatingStateProps)
       >
         <button
           className="journal-btn journal-btn-primary"
-          onClick={() => onSubmit(rating)}
+          onClick={() => onSubmit(rating, selectedSong)}
           disabled={isSubmitting}
           style={{
             width: "100%",
@@ -335,6 +413,15 @@ const RatingState = ({ thumbnailUrl, onSubmit, isSubmitting }: RatingStateProps)
           )}
         </button>
       </div>
+
+      <MusicSearchModal
+        isOpen={showMusicSearch}
+        onClose={() => setShowMusicSearch(false)}
+        onSelect={(track) => {
+          setSelectedSong({ title: track.title, artist: track.artist, previewUrl: track.previewUrl });
+          setShowMusicSearch(false);
+        }}
+      />
     </div>
   );
 };

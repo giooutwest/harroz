@@ -1,6 +1,7 @@
 import { Suspense, lazy } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Toaster } from "sonner";
 
 const Index = lazy(() => import("./pages/Index"));
 const Auth = lazy(() => import("./pages/Auth"));
@@ -39,6 +40,7 @@ const App = () => (
           <Route path="*" element={<Index />} />
         </Routes>
       </Suspense>
+      <Toaster position="top-center" richColors />
     </BrowserRouter>
   </QueryClientProvider>
 );

@@ -18,6 +18,22 @@
     --background: var(--paper);
     --foreground: var(--ink);
     --radius: 0.875rem;
+
+    /* Aliases so shadcn-style components (e.g. MusicSearchModal) resolve to
+       this app's paper/ink palette instead of undefined CSS variables. */
+    --border: var(--line);
+    --card: var(--paper-raised);
+    --card-foreground: var(--ink);
+    --popover: var(--paper-raised);
+    --popover-foreground: var(--ink);
+    --primary: var(--accent);
+    --primary-foreground: var(--accent-foreground);
+    --secondary: var(--line);
+    --secondary-foreground: var(--ink);
+    --muted: var(--line);
+    --muted-foreground: var(--ink-soft);
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 100%;
   }
 
   * {
