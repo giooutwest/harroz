@@ -7,6 +7,17 @@ interface DayEntry {
   rating: number;
 }
 
+interface FriendProfile {
+  user_id: string;
+  display_name: string | null;
+  username: string | null;
+}
+
+interface FriendEntry {
+  friendshipId: string;
+  profile: FriendProfile;
+}
+
 interface ProfileWindowProps {
   userId: string;
   displayName: string;
@@ -15,7 +26,7 @@ interface ProfileWindowProps {
   onSignOut: () => void;
 }
 
-type Tab = "week" | "month" | "newsletter";
+type Tab = "week" | "month" | "newsletter" | "friends";
 
 // Muted rust (low) → sage (high) scale
 const BAR_COLORS = [
@@ -98,9 +109,147 @@ const ProfileWindow = ({ userId, displayName, username, onClose, onSignOut }: Pr
   const [newsletter, setNewsletter] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const [friends, setFriends] = useState<FriendEntry[]>([]);
+  const [incomingRequests, setIncomingRequests] = useState<FriendEntry[]>([]);
+  const [friendsLoading, setFriendsLoading] = useState(true);
+  const [addUsername, setAddUsername] = useState("");
+  const [addStatus, setAddStatus] = useState<{ type: "error" | "success"; text: string } | null>(null);
+  const [isAdding, setIsAdding] = useState(false);
+  const [processingId, setProcessingId] = useState<string | null>(null);
+
   useEffect(() => {
     loadStats();
+    loadFriends();
   }, [userId]);
+
+  const loadFriends = async () => {
+    setFriendsLoading(true);
+    try {
+      const { data: friendships } = await supabase
+        .from("friendships")
+        .select("id, requester_id, addressee_id, status")
+        .or(`requester_id.eq.${userId},addressee_id.eq.${userId}`);
+
+      const accepted = (friendships || []).filter(f => f.status === "accepted");
+      const incoming = (friendships || []).filter(f => f.status === "pending" && f.addressee_id === userId);
+
+      const otherIds = [
+        ...accepted.map(f => (f.requester_id === userId ? f.addressee_id : f.requester_id)),
+        ...incoming.map(f => f.requester_id),
+      ];
+
+      if (otherIds.length === 0) {
+        setFriends([]);
+        setIncomingRequests([]);
+        return;
+      }
+
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id, display_name, username")
+        .in("user_id", otherIds);
+
+      const profileMap = new Map((profiles || []).map(p => [p.user_id, p]));
+
+      setFriends(
+        accepted
+          .map(f => ({
+            friendshipId: f.id,
+            profile: profileMap.get(f.requester_id === userId ? f.addressee_id : f.requester_id),
+          }))
+          .filter((f): f is FriendEntry => !!f.profile)
+      );
+
+      setIncomingRequests(
+        incoming
+          .map(f => ({ friendshipId: f.id, profile: profileMap.get(f.requester_id) }))
+          .filter((f): f is FriendEntry => !!f.profile)
+      );
+    } catch (err) {
+      console.error("Friends load error:", err);
+    } finally {
+      setFriendsLoading(false);
+    }
+  };
+
+  const handleAddFriend = async () => {
+    const uname = addUsername.trim().replace(/^@/, "");
+    if (!uname) return;
+
+    setIsAdding(true);
+    setAddStatus(null);
+    try {
+      if (uname.toLowerCase() === username.toLowerCase()) {
+        setAddStatus({ type: "error", text: "That's you!" });
+        return;
+      }
+
+      const { data: target } = await supabase
+        .from("profiles")
+        .select("user_id, username")
+        .ilike("username", uname)
+        .maybeSingle();
+
+      if (!target) {
+        setAddStatus({ type: "error", text: "No user with that username." });
+        return;
+      }
+
+      const { data: existing } = await supabase
+        .from("friendships")
+        .select("status")
+        .or(
+          `and(requester_id.eq.${userId},addressee_id.eq.${target.user_id}),and(requester_id.eq.${target.user_id},addressee_id.eq.${userId})`
+        )
+        .maybeSingle();
+
+      if (existing) {
+        setAddStatus({
+          type: "error",
+          text: existing.status === "accepted" ? "Already friends." : "Request already pending.",
+        });
+        return;
+      }
+
+      const { error: insertError } = await supabase
+        .from("friendships")
+        .insert({ requester_id: userId, addressee_id: target.user_id, status: "pending" });
+
+      if (insertError) throw insertError;
+
+      setAddStatus({ type: "success", text: `Request sent to @${target.username}!` });
+      setAddUsername("");
+    } catch (err) {
+      console.error("Add friend error:", err);
+      setAddStatus({ type: "error", text: "Something went wrong." });
+    } finally {
+      setIsAdding(false);
+    }
+  };
+
+  const handleRespondRequest = async (friendshipId: string, accept: boolean) => {
+    setProcessingId(friendshipId);
+    try {
+      if (accept) {
+        await supabase.from("friendships").update({ status: "accepted" }).eq("id", friendshipId);
+      } else {
+        await supabase.from("friendships").delete().eq("id", friendshipId);
+      }
+      await loadFriends();
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleRemoveFriend = async (friendshipId: string) => {
+    setProcessingId(friendshipId);
+    try {
+      await supabase.from("friendships").delete().eq("id", friendshipId);
+      await loadFriends();
+    } finally {
+      setProcessingId(null);
+    }
+  };
 
   const loadStats = async () => {
     setLoading(true);
@@ -153,13 +302,13 @@ const ProfileWindow = ({ userId, displayName, username, onClose, onSignOut }: Pr
     }
   };
 
-  const tabBtn = (t: Tab, label: string) => (
+  const tabBtn = (t: Tab, label: string, badge?: number) => (
     <button
       key={t}
       className={`journal-tab${tab === t ? " active" : ""}`}
       onClick={() => setTab(t)}
     >
-      {label}
+      {label}{badge ? ` (${badge})` : ""}
     </button>
   );
 
@@ -175,6 +324,7 @@ const ProfileWindow = ({ userId, displayName, username, onClose, onSignOut }: Pr
           {tabBtn("week", "Week")}
           {tabBtn("month", "Month")}
           {tabBtn("newsletter", "Review")}
+          {tabBtn("friends", "Friends", incomingRequests.length)}
         </div>
       }
     >
@@ -214,7 +364,170 @@ const ProfileWindow = ({ userId, displayName, username, onClose, onSignOut }: Pr
         </div>
 
         {/* Content area */}
-        {loading ? (
+        {tab === "friends" ? (
+          friendsLoading ? (
+            <div style={{ padding: 20, textAlign: "center" }}>
+              <div className="journal-progress-bar" style={{ width: "100%", height: 4 }} />
+              <div style={{ marginTop: 10, fontSize: 13, color: "hsl(var(--ink-soft))" }}>Loading...</div>
+            </div>
+          ) : (
+            <div style={{ padding: "10px 14px" }}>
+              {incomingRequests.length > 0 && (
+                <div style={{ marginBottom: 14 }}>
+                  <div
+                    style={{
+                      fontSize: 11,
+                      textTransform: "uppercase",
+                      letterSpacing: 0.5,
+                      color: "hsl(var(--ink-soft))",
+                      marginBottom: 6,
+                    }}
+                  >
+                    Requests
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    {incomingRequests.map(r => (
+                      <div
+                        key={r.friendshipId}
+                        className="journal-well"
+                        style={{
+                          padding: "8px 10px",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          gap: 8,
+                        }}
+                      >
+                        <span style={{ fontSize: 13 }}>
+                          {r.profile.display_name || `@${r.profile.username}`}
+                        </span>
+                        <div style={{ display: "flex", gap: 6 }}>
+                          <button
+                            className="journal-btn journal-btn-primary"
+                            style={{ padding: "4px 10px", fontSize: 12 }}
+                            disabled={processingId === r.friendshipId}
+                            onClick={() => handleRespondRequest(r.friendshipId, true)}
+                          >
+                            Accept
+                          </button>
+                          <button
+                            className="journal-btn"
+                            style={{ padding: "4px 10px", fontSize: 12 }}
+                            disabled={processingId === r.friendshipId}
+                            onClick={() => handleRespondRequest(r.friendshipId, false)}
+                          >
+                            Decline
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div style={{ marginBottom: 14 }}>
+                <div
+                  style={{
+                    fontSize: 11,
+                    textTransform: "uppercase",
+                    letterSpacing: 0.5,
+                    color: "hsl(var(--ink-soft))",
+                    marginBottom: 6,
+                  }}
+                >
+                  Add a friend
+                </div>
+                <div style={{ display: "flex", gap: 6 }}>
+                  <input
+                    value={addUsername}
+                    onChange={e => { setAddUsername(e.target.value); setAddStatus(null); }}
+                    onKeyDown={e => { if (e.key === "Enter") handleAddFriend(); }}
+                    placeholder="@username"
+                    style={{
+                      flex: 1,
+                      minWidth: 0,
+                      padding: "6px 10px",
+                      fontSize: 13,
+                      borderRadius: "calc(var(--radius) - 4px)",
+                      border: "1px solid hsl(var(--line))",
+                      background: "hsl(var(--paper-raised))",
+                      color: "hsl(var(--ink))",
+                    }}
+                  />
+                  <button
+                    className="journal-btn journal-btn-primary"
+                    style={{ padding: "6px 12px", fontSize: 12 }}
+                    disabled={isAdding || !addUsername.trim()}
+                    onClick={handleAddFriend}
+                  >
+                    {isAdding ? "..." : "Add"}
+                  </button>
+                </div>
+                {addStatus && (
+                  <div
+                    style={{
+                      marginTop: 6,
+                      fontSize: 12,
+                      color: addStatus.type === "error" ? "hsl(var(--accent))" : "hsl(var(--sage))",
+                    }}
+                  >
+                    {addStatus.text}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <div
+                  style={{
+                    fontSize: 11,
+                    textTransform: "uppercase",
+                    letterSpacing: 0.5,
+                    color: "hsl(var(--ink-soft))",
+                    marginBottom: 6,
+                  }}
+                >
+                  Friends{friends.length > 0 ? ` (${friends.length})` : ""}
+                </div>
+                {friends.length === 0 ? (
+                  <div
+                    className="journal-well"
+                    style={{ padding: 16, textAlign: "center", fontSize: 12, color: "hsl(var(--ink-soft))" }}
+                  >
+                    No friends yet.
+                  </div>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    {friends.map(f => (
+                      <div
+                        key={f.friendshipId}
+                        className="journal-well"
+                        style={{
+                          padding: "8px 10px",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          gap: 8,
+                        }}
+                      >
+                        <span style={{ fontSize: 13 }}>
+                          {f.profile.display_name || `@${f.profile.username}`}
+                        </span>
+                        <button
+                          className="journal-btn"
+                          style={{ padding: "3px 8px", fontSize: 11 }}
+                          disabled={processingId === f.friendshipId}
+                          onClick={() => handleRemoveFriend(f.friendshipId)}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )
+        ) : loading ? (
           <div style={{ padding: 20, textAlign: "center" }}>
             <div className="journal-progress-bar" style={{ width: "100%", height: 4 }} />
             <div style={{ marginTop: 10, fontSize: 13, color: "hsl(var(--ink-soft))" }}>Loading...</div>
@@ -277,7 +590,7 @@ const ProfileWindow = ({ userId, displayName, username, onClose, onSignOut }: Pr
             gap: 8,
           }}
         >
-          <button className="journal-btn" onClick={loadStats}>
+          <button className="journal-btn" onClick={() => { loadStats(); loadFriends(); }}>
             Refresh
           </button>
           <button
