@@ -371,6 +371,39 @@ const CameraState = ({ onRecordingComplete }: CameraStateProps) => {
         <div style={{ width: 44 }} />
       </div>
 
+      {/* Daily prompt */}
+      {!isRecording && cameraReady && (
+        <div
+          style={{
+            position: "absolute",
+            top: "calc(env(safe-area-inset-top, 0px) + 20px)",
+            left: 0,
+            right: 0,
+            display: "flex",
+            justifyContent: "center",
+            zIndex: 5,
+            padding: "0 24px",
+          }}
+        >
+          <div
+            style={{
+              background: "rgba(0,0,0,0.5)",
+              backdropFilter: "blur(6px)",
+              color: "#fff",
+              fontFamily: "'Lora', Georgia, serif",
+              fontStyle: "italic",
+              fontSize: 15,
+              textAlign: "center",
+              padding: "10px 18px",
+              borderRadius: 999,
+              border: "1px solid rgba(255,255,255,0.15)",
+            }}
+          >
+            How was your day today?
+          </div>
+        </div>
+      )}
+
       {/* Max time label */}
       {!isRecording && cameraReady && (
         <div

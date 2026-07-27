@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import CameraState from "@/components/CameraState";
+import ReviewState from "@/components/ReviewState";
 import RatingState, { SelectedSong } from "@/components/RatingState";
 import FeedState from "@/components/FeedState";
 import ProfileWindow from "@/components/ProfileWindow";
@@ -12,13 +13,14 @@ function todayDateString(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-type AppState = "camera" | "rating" | "feed";
+type AppState = "camera" | "review" | "rating" | "feed";
 
 interface RecordingData {
   videoBlob: Blob;
   audioBlob: Blob;
   thumbnailBlob: Blob;
   thumbnailUrl: string;
+  videoUrl: string;
   videoMime: string;
   audioMime: string;
 }
@@ -111,10 +113,26 @@ const Index = () => {
     navigate("/auth");
   };
 
-  // ── Camera → Rating transition ───────────────────────────────────────────────
+  // ── Camera → Review transition ───────────────────────────────────────────────
   const handleRecordingComplete = useCallback((videoBlob: Blob, audioBlob: Blob, thumbnailBlob: Blob, videoMime: string, audioMime: string) => {
     const thumbnailUrl = URL.createObjectURL(thumbnailBlob);
-    setRecording({ videoBlob, audioBlob, thumbnailBlob, thumbnailUrl, videoMime, audioMime });
+    const videoUrl = URL.createObjectURL(videoBlob);
+    setRecording({ videoBlob, audioBlob, thumbnailBlob, thumbnailUrl, videoUrl, videoMime, audioMime });
+    setAppState("review");
+  }, []);
+
+  // ── Review: retake discards the recording and goes back to the camera ───────
+  const handleRetake = useCallback(() => {
+    if (recording) {
+      URL.revokeObjectURL(recording.thumbnailUrl);
+      URL.revokeObjectURL(recording.videoUrl);
+    }
+    setRecording(null);
+    setAppState("camera");
+  }, [recording]);
+
+  // ── Review → Rating transition ───────────────────────────────────────────────
+  const handleConfirmRecording = useCallback(() => {
     setAppState("rating");
   }, []);
 
@@ -153,8 +171,9 @@ const Index = () => {
 
       if (insertError) throw insertError;
 
-      // Revoke the object URL
+      // Revoke the object URLs
       URL.revokeObjectURL(recording.thumbnailUrl);
+      URL.revokeObjectURL(recording.videoUrl);
       setRecording(null);
 
       toast.success("Saved!");
@@ -167,6 +186,7 @@ const Index = () => {
         // Already have an entry for today (e.g. saved from another tab)
         toast.info("You've already saved today's entry. Come back tomorrow!");
         URL.revokeObjectURL(recording.thumbnailUrl);
+        URL.revokeObjectURL(recording.videoUrl);
         setRecording(null);
         setViewDate(todayDateString());
         setAppState("feed");
@@ -220,6 +240,15 @@ const Index = () => {
       {/* STATE: Camera */}
       {appState === "camera" && (
         <CameraState onRecordingComplete={handleRecordingComplete} />
+      )}
+
+      {/* STATE: Review */}
+      {appState === "review" && recording && (
+        <ReviewState
+          videoUrl={recording.videoUrl}
+          onRetake={handleRetake}
+          onConfirm={handleConfirmRecording}
+        />
       )}
 
       {/* STATE: Rating */}
@@ -288,7 +317,7 @@ const Index = () => {
             alignItems: "center",
           }}
         >
-          {(["camera", "rating", "feed"] as AppState[]).map(s => (
+          {(["camera", "review", "rating", "feed"] as AppState[]).map(s => (
             <div
               key={s}
               style={{
