@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import Win98Window from "./Win98Window";
 import { supabase } from "@/integrations/supabase/client";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 
 interface DayEntry {
   date: string; // YYYY-MM-DD
@@ -116,6 +117,18 @@ const ProfileWindow = ({ userId, displayName, username, onClose, onSignOut }: Pr
   const [addStatus, setAddStatus] = useState<{ type: "error" | "success"; text: string } | null>(null);
   const [isAdding, setIsAdding] = useState(false);
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [isEnablingPush, setIsEnablingPush] = useState(false);
+
+  const { isSubscribed, subscribeToPush, isSupported: pushSupported } = usePushNotifications();
+
+  const handleEnablePush = async () => {
+    setIsEnablingPush(true);
+    try {
+      await subscribeToPush();
+    } finally {
+      setIsEnablingPush(false);
+    }
+  };
 
   useEffect(() => {
     loadStats();
@@ -372,6 +385,32 @@ const ProfileWindow = ({ userId, displayName, username, onClose, onSignOut }: Pr
             </div>
           ) : (
             <div style={{ padding: "10px 14px" }}>
+              {pushSupported && !isSubscribed && (
+                <div
+                  className="journal-well"
+                  style={{
+                    marginBottom: 14,
+                    padding: "10px 12px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 10,
+                  }}
+                >
+                  <span style={{ fontSize: 12, color: "hsl(var(--ink-soft))" }}>
+                    Get notified about friend requests
+                  </span>
+                  <button
+                    className="journal-btn journal-btn-primary"
+                    style={{ padding: "4px 10px", fontSize: 12, whiteSpace: "nowrap" }}
+                    disabled={isEnablingPush}
+                    onClick={handleEnablePush}
+                  >
+                    {isEnablingPush ? "..." : "Enable"}
+                  </button>
+                </div>
+              )}
+
               {incomingRequests.length > 0 && (
                 <div style={{ marginBottom: 14 }}>
                   <div

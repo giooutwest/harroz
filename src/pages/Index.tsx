@@ -212,7 +212,7 @@ const Index = () => {
       >
         <div style={{ textAlign: "center" }}>
           <div className="font-journal-display" style={{ fontSize: 22, fontWeight: 600, marginBottom: 16, color: "hsl(var(--ink))" }}>
-            Daylog
+            Roz
           </div>
           <div className="journal-progress-bar" style={{ width: 160, height: 3 }} />
         </div>

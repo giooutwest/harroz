@@ -86,7 +86,7 @@ const Auth = () => {
         {/* Wordmark */}
         <div style={{ textAlign: "center", marginBottom: 28 }}>
           <div className="font-journal-display" style={{ fontSize: 28, fontWeight: 600, color: "hsl(var(--ink))" }}>
-            Daylog
+            Roz
           </div>
           <div style={{ fontSize: 13, color: "hsl(var(--ink-soft))", marginTop: 4 }}>
             A short daily video, kept just for you
