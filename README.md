@@ -1,12 +1,12 @@
 # Harroz
 
-A daily video journal for you and your friends. Each night, post a 10-second video about your day, then watch and react to your friends' days.
+A daily video journal for you and your friends. Each night, post a short video about your day, then watch and react to your friends' days.
 
 Built as an installable web app (PWA) for a small private group of friends, and used daily.
 
 ## What it does
 
-- **Daily reel:** record a short video of your day and add it to your journal.
+- **Daily reel:** record a few seconds of video from your day and add it to your journal.
 - **Friends feed:** see friends' daily posts, react, and message them directly.
 - **Journal and calendar:** look back through past days, with an "On this day" view, mood tags, and a PIN lock for private entries.
 - **Streaks, badges, and weekly recap:** light gamification to keep the habit going.
